@@ -2,21 +2,24 @@ namespace CosmicConnector;
 
 public sealed class DocumentSession : IDocumentSession
 {
-    private readonly DocumentStore _documentStore;
-    private readonly IdentityMap _identityMap = new();
-
-    internal DocumentSession(DocumentStore documentStore)
+    internal DocumentSession(IdentityAccessor identityAccessor)
     {
-        _documentStore = documentStore;
+        ArgumentNullException.ThrowIfNull(identityAccessor);
+
+        IdentityAccessor = identityAccessor;
     }
+
+    public ChangeTracker ChangeTracker { get; } = new();
+    public IdentityMap IdentityMap { get; } = new();
+    public IdentityAccessor IdentityAccessor { get; }
 
     public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
-        _documentStore.IdAccessor.EnsureRegistered<TEntity>();
+        IdentityAccessor.EnsureRegistered<TEntity>();
 
-        _identityMap.TryGet(id, out TEntity? entity);
+        IdentityMap.TryGet(id, out TEntity? entity);
 
         return ValueTask.FromResult(entity);
     }
@@ -30,14 +33,19 @@ public sealed class DocumentSession : IDocumentSession
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var id = _documentStore.IdAccessor.GetEntityId(entity);
+        var id = IdentityAccessor.GetId(entity);
 
-        _identityMap.Put(id, entity);
+        IdentityMap.Put(id, entity);
+        ChangeTracker.Track(id, entity);
     }
 
-    public void Update(object entity)
+    public void Update<TEntity>(TEntity entity) where TEntity : class
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(entity);
+
+        var entry = ChangeTracker.FindEntry(entity) ?? throw new InvalidOperationException($"Cannot update entity of type {typeof(TEntity)} because it has not been loaded into the session.");
+
+        entry.Modify();
     }
 
     public void Delete(object entity)
@@ -47,6 +55,9 @@ public sealed class DocumentSession : IDocumentSession
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        foreach (var entity in ChangeTracker.Entries)
+            entity.Unchange();
+
+        return Task.CompletedTask;
     }
 }

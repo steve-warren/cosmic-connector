@@ -36,4 +36,9 @@ public sealed class IdentityMap
     {
         _entities[(Type: typeof(TEntity), Id: id)] = entity;
     }
+
+    public bool Exists<TEntity>(string id)
+    {
+        return _entities.ContainsKey((Type: typeof(TEntity), Id: id));
+    }
 }

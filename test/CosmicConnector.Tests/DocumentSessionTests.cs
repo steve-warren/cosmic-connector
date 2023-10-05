@@ -104,4 +104,55 @@ public class DocumentStoreTests
 
         await action.Should().ThrowAsync<InvalidOperationException>(because: "we should not be able to find an entity that has not been configured");
     }
+
+    [Fact]
+    public void Stored_Entity_Should_Be_In_Added_State()
+    {
+        var documentStore = new DocumentStore()
+                            .ConfigureEntity<ReminderList>();
+
+        var session = documentStore.CreateSession();
+
+        var entity = new ReminderList("id");
+
+        session.Store(entity);
+
+        session.ChangeTracker.Entries.Should().HaveCount(1, because: "we should have one entity in the change tracker");
+        session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Added, because: "we should have one entity in the change tracker in the added state");
+    }
+
+    [Fact]
+    public async Task Call_To_SaveChanges_Should_Transition_Added_Entity_To_Unmodified_State()
+    {
+        var documentStore = new DocumentStore()
+                            .ConfigureEntity<ReminderList>();
+
+        var session = documentStore.CreateSession();
+
+        var entity = new ReminderList("id");
+
+        session.Store(entity);
+
+        await session.SaveChangesAsync();
+
+        session.ChangeTracker.Entries.Should().HaveCount(1, because: "we should have one entity in the change tracker");
+        session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state");
+    }
+
+    [Fact]
+    public void Updated_Entity_Should_Be_In_Modified_State()
+    {
+        var documentStore = new DocumentStore()
+                            .ConfigureEntity<ReminderList>();
+
+        var session = documentStore.CreateSession();
+
+        var entity = new ReminderList("id");
+
+        session.Store(entity);
+        session.Update(entity);
+
+        session.ChangeTracker.Entries.Should().HaveCount(1, because: "we should have one entity in the change tracker");
+        session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Modified, because: "we should have one entity in the change tracker in the modified state");
+    }
 }

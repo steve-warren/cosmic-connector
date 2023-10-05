@@ -5,7 +5,7 @@ namespace CosmicConnector;
 /// <summary>
 /// Provides a mechanism for accessing the ID of an entity of a specified type.
 /// </summary>
-public sealed class EntityIdAccessor
+public sealed class IdentityAccessor
 {
     private readonly Dictionary<Type, Func<object, string>> _accessors = new();
 
@@ -13,7 +13,7 @@ public sealed class EntityIdAccessor
     /// Configures the entity ID accessor for the specified entity type.
     /// </summary>
     /// <typeparam name="TEntity">The type of entity to configure the ID accessor for.</typeparam>
-    public void RegisterEntity<TEntity>() where TEntity : class
+    public void Register<TEntity>() where TEntity : class
     {
         var entityType = typeof(TEntity);
 
@@ -42,7 +42,7 @@ public sealed class EntityIdAccessor
     /// <returns>The ID of the entity.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the entity is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no ID accessor has been registered for the specified entity type.</exception>
-    public string GetEntityId<TEntity>(TEntity entity) where TEntity : class
+    public string GetId<TEntity>(TEntity entity) where TEntity : class
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 

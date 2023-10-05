@@ -1,5 +1,3 @@
-using Microsoft.Azure.Cosmos;
-
 namespace CosmicConnector;
 
 public sealed class DocumentStore : IDocumentStore
@@ -9,16 +7,16 @@ public sealed class DocumentStore : IDocumentStore
 
     }
 
-    internal EntityIdAccessor IdAccessor { get; } = new();
+    internal IdentityAccessor IdAccessor { get; } = new();
 
     public IDocumentSession CreateSession()
     {
-        return new DocumentSession(this);
+        return new DocumentSession(IdAccessor);
     }
 
     public DocumentStore ConfigureEntity<TEntity>() where TEntity : class
     {
-        IdAccessor.RegisterEntity<TEntity>();
+        IdAccessor.Register<TEntity>();
 
         return this;
     }
