@@ -48,16 +48,21 @@ public sealed class DocumentSession : IDocumentSession
         entry.Modify();
     }
 
-    public void Delete(object entity)
+    public void Remove(object entity)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(entity);
+
+        var entry = ChangeTracker.FindEntry(entity) ?? throw new InvalidOperationException($"Cannot remove entity of type {entity.GetType()} because it has not been loaded into the session.");
+
+        entry.Remove();
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        foreach (var entity in ChangeTracker.Entries)
-            entity.Unchange();
+        foreach (var entry in ChangeTracker.RemovedEntries)
+            IdentityMap.Remove(entry.EntityType, entry.Id);
 
+        ChangeTracker.Reset();
         return Task.CompletedTask;
     }
 }

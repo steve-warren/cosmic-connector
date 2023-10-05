@@ -155,4 +155,47 @@ public class DocumentStoreTests
         session.ChangeTracker.Entries.Should().HaveCount(1, because: "we should have one entity in the change tracker");
         session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Modified, because: "we should have one entity in the change tracker in the modified state");
     }
+
+    [Fact]
+    public async Task Removed_Entity_Should_Be_In_Deleted_State_And_Removed_From_Tracking()
+    {
+        var documentStore = new DocumentStore()
+                            .ConfigureEntity<ReminderList>();
+
+        var session = documentStore.CreateSession();
+
+        var entity = new ReminderList("id");
+
+        session.Store(entity);
+        session.Remove(entity);
+
+        var trackedEntity = session.ChangeTracker.Entries[0];
+
+        session.ChangeTracker.Entries.Should().HaveCount(1, because: "we should have one entity in the change tracker");
+        trackedEntity.State.Should().Be(EntityState.Removed, because: "we should have one entity in the change tracker in the modified state");
+
+        await session.SaveChangesAsync();
+
+        session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
+        trackedEntity.State.Should().Be(EntityState.Removed, because: "we should have the entity in the removed state");
+    }
+
+    [Fact]
+    public async Task Removed_Entity_Should_Be_Removed_From_IdentityMap()
+    {
+        var documentStore = new DocumentStore()
+                            .ConfigureEntity<ReminderList>();
+
+        var session = documentStore.CreateSession();
+
+        var entity = new ReminderList("id");
+
+        session.Store(entity);
+        session.Remove(entity);
+
+        await session.SaveChangesAsync();
+
+        session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
+        session.IdentityMap.Exists<ReminderList>("id").Should().BeFalse(because: "we should not have the entity in the identity map");
+    }
 }
