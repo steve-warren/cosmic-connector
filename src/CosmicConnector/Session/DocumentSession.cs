@@ -2,26 +2,36 @@ namespace CosmicConnector;
 
 public sealed class DocumentSession : IDocumentSession
 {
-    internal DocumentSession(IdentityAccessor identityAccessor)
+    internal DocumentSession(IdentityAccessor identityAccessor, IDatabaseFacade databaseFacade)
     {
         ArgumentNullException.ThrowIfNull(identityAccessor);
 
         IdentityAccessor = identityAccessor;
+        DatabaseFacade = databaseFacade;
     }
 
     public ChangeTracker ChangeTracker { get; } = new();
     public IdentityMap IdentityMap { get; } = new();
     public IdentityAccessor IdentityAccessor { get; }
+    public IDatabaseFacade DatabaseFacade { get; }
 
-    public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
+    public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
         IdentityAccessor.EnsureRegistered<TEntity>();
 
-        IdentityMap.TryGet(id, out TEntity? entity);
+        if (!IdentityMap.TryGet(id, out TEntity? entity))
+        {
+            entity = await DatabaseFacade.FindAsync<TEntity>(id, partitionKey, cancellationToken);
 
-        return ValueTask.FromResult(entity);
+            IdentityMap.Put(id, entity);
+
+            if (entity is not null)
+                ChangeTracker.TrackUnchanged(id, entity);
+        }
+
+        return entity;
     }
 
     public IQueryable<TEntity> Query<TEntity>() where TEntity : class
@@ -36,7 +46,7 @@ public sealed class DocumentSession : IDocumentSession
         var id = IdentityAccessor.GetId(entity);
 
         IdentityMap.Put(id, entity);
-        ChangeTracker.Track(id, entity);
+        ChangeTracker.TrackAdded(id, entity);
     }
 
     public void Update<TEntity>(TEntity entity) where TEntity : class

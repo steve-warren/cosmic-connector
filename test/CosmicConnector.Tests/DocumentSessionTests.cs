@@ -8,7 +8,8 @@ public class DocumentStoreTests
     [Fact]
     public void Can_Create_Session()
     {
-        var documentStore = new DocumentStore();
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database);
 
         var session = documentStore.CreateSession();
 
@@ -18,7 +19,8 @@ public class DocumentStoreTests
     [Fact]
     public void Storing_Null_Entity_Throws()
     {
-        var documentStore = new DocumentStore();
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database);
 
         var session = documentStore.CreateSession();
 
@@ -30,7 +32,8 @@ public class DocumentStoreTests
     [Fact]
     public async Task Finding_Entity_By_Id_Should_Return_Same_Instance()
     {
-        var documentStore = new DocumentStore();
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database);
         documentStore.ConfigureEntity<ReminderList>();
 
         var session = documentStore.CreateSession();
@@ -47,7 +50,8 @@ public class DocumentStoreTests
     [Fact]
     public async Task Entity_Not_Found_Should_Return_Null()
     {
-        var documentStore = new DocumentStore();
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database);
         documentStore.ConfigureEntity<ReminderList>();
 
         var session = documentStore.CreateSession();
@@ -60,7 +64,8 @@ public class DocumentStoreTests
     [Fact]
     public async Task Can_Store_Entities_Of_Different_Types()
     {
-        var documentStore = new DocumentStore()
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>()
                             .ConfigureEntity<Reminder>();
 
@@ -82,7 +87,8 @@ public class DocumentStoreTests
     [Fact]
     public void Given_Unregistered_Entity_Type_Then_Store_Should_Throw()
     {
-        var documentStore = new DocumentStore();
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database);
 
         var session = documentStore.CreateSession();
 
@@ -96,7 +102,8 @@ public class DocumentStoreTests
     [Fact]
     public async Task Given_Unregistered_Entity_Type_Then_Find_Should_Throw()
     {
-        var documentStore = new DocumentStore();
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database);
 
         var session = documentStore.CreateSession();
 
@@ -108,7 +115,8 @@ public class DocumentStoreTests
     [Fact]
     public void Stored_Entity_Should_Be_In_Added_State()
     {
-        var documentStore = new DocumentStore()
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>();
 
         var session = documentStore.CreateSession();
@@ -124,8 +132,9 @@ public class DocumentStoreTests
     [Fact]
     public async Task Call_To_SaveChanges_Should_Transition_Added_Entity_To_Unmodified_State()
     {
-        var documentStore = new DocumentStore()
-                            .ConfigureEntity<ReminderList>();
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database)
+                           .ConfigureEntity<ReminderList>();
 
         var session = documentStore.CreateSession();
 
@@ -142,7 +151,8 @@ public class DocumentStoreTests
     [Fact]
     public void Updated_Entity_Should_Be_In_Modified_State()
     {
-        var documentStore = new DocumentStore()
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>();
 
         var session = documentStore.CreateSession();
@@ -159,7 +169,8 @@ public class DocumentStoreTests
     [Fact]
     public async Task Removed_Entity_Should_Be_In_Deleted_State_And_Removed_From_Tracking()
     {
-        var documentStore = new DocumentStore()
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>();
 
         var session = documentStore.CreateSession();
@@ -183,7 +194,8 @@ public class DocumentStoreTests
     [Fact]
     public async Task Removed_Entity_Should_Be_Removed_From_IdentityMap()
     {
-        var documentStore = new DocumentStore()
+        var database = new MockDatabaseFacade();
+        var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>();
 
         var session = documentStore.CreateSession();
@@ -197,5 +209,23 @@ public class DocumentStoreTests
 
         session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
         session.IdentityMap.Exists<ReminderList>("id").Should().BeFalse(because: "we should not have the entity in the identity map");
+    }
+
+    [Fact]
+    public async Task Find_Entity_Should_Track_Entity_As_Unchanged()
+    {
+        var entity = new ReminderList("id");
+
+        var database = new MockDatabaseFacade();
+        database.Add("id", entity);
+
+        var documentStore = new DocumentStore(database)
+                            .ConfigureEntity<ReminderList>();
+
+        var session = documentStore.CreateSession();
+
+        _ = await session.FindAsync<ReminderList>("id");
+
+        session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state after finding it");
     }
 }

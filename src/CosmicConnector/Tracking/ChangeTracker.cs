@@ -21,8 +21,11 @@ public sealed class ChangeTracker
     /// </summary>
     /// <param name="id">The ID of the entity to track.</param>
     /// <param name="entity">The entity to track.</param>
-    public void Track(string id, object entity) =>
+    public void TrackAdded(string id, object entity) =>
         Register(id, entity, EntityState.Added);
+
+    public void TrackUnchanged(string id, object entity) =>
+        Register(id, entity, EntityState.Unchanged);
 
     private void Register(string id, object entity, EntityState state)
     {
