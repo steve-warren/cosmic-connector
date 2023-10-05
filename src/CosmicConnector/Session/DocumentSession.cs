@@ -3,6 +3,7 @@ namespace CosmicConnector;
 public sealed class DocumentSession : IDocumentSession
 {
     private readonly DocumentStore _documentStore;
+    private readonly IdentityMap _identityMap = new();
 
     public DocumentSession(DocumentStore documentStore)
     {
@@ -11,7 +12,8 @@ public sealed class DocumentSession : IDocumentSession
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {
-        throw new NotImplementedException();
+        _identityMap.TryGet(id, out TEntity? entity);
+        return entity;
     }
 
     public IQueryable<TEntity> Query<TEntity>()
@@ -19,9 +21,11 @@ public sealed class DocumentSession : IDocumentSession
         throw new NotImplementedException();
     }
 
-    public void Store(object entity)
+    public void Store<TEntity>(TEntity entity)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(entity);
+
+        _identityMap.Put("id", entity);
     }
 
     public void Delete(object entity)
