@@ -34,6 +34,6 @@ public sealed class IdentityMap
     /// <param name="entity">The entity to add or update.</param>
     public void Put<TEntity>(string id, TEntity? entity)
     {
-        _entities.TryAdd((Type: typeof(TEntity), Id: id), entity);
+        _entities[(Type: typeof(TEntity), Id: id)] = entity;
     }
 }

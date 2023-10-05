@@ -9,8 +9,17 @@ public sealed class DocumentStore : IDocumentStore
 
     }
 
+    internal EntityIdAccessor IdAccessor { get; } = new();
+
     public IDocumentSession CreateSession()
     {
         return new DocumentSession(this);
+    }
+
+    public DocumentStore ConfigureEntity<TEntity>() where TEntity : class
+    {
+        IdAccessor.RegisterEntity<TEntity>();
+
+        return this;
     }
 }
