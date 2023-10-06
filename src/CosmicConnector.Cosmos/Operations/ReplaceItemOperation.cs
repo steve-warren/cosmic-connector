@@ -2,21 +2,23 @@ using Microsoft.Azure.Cosmos;
 
 namespace CosmicConnector.Cosmos;
 
-internal class DeleteItemOperation : ICosmosWriteOperation
+internal class ReplaceItemOperation : ICosmosWriteOperation
 {
     private readonly Container _container;
+    private readonly object _entity;
     private readonly string _id;
     private readonly string? _partitionKey;
 
-    public DeleteItemOperation(Container container, string id, string? partitionKey)
+    public ReplaceItemOperation(Container container, object entity, string id, string? partitionKey)
     {
         _container = container;
+        _entity = entity;
         _id = id;
         _partitionKey = partitionKey;
     }
 
     public Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return _container.DeleteItemStreamAsync(_id, new PartitionKey(_partitionKey ?? _id), cancellationToken: cancellationToken);
+        return _container.ReplaceItemAsync(_entity, _id, new PartitionKey(_partitionKey ?? _id), cancellationToken: cancellationToken);
     }
 }

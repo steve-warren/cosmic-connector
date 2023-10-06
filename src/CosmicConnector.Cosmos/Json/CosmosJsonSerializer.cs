@@ -4,7 +4,7 @@ using Microsoft.Azure.Cosmos;
 
 namespace CosmicConnector.Cosmos;
 
-internal sealed class CosmosJsonSerializer : CosmosSerializer
+public sealed class CosmosJsonSerializer : CosmosSerializer
 {
     public CosmosJsonSerializer(JsonSerializerOptions options)
     {

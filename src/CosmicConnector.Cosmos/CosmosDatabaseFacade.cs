@@ -32,17 +32,22 @@ public sealed class CosmosDatabaseFacade : IDatabaseFacade
             if (entry.IsUnchanged)
                 return;
 
-            var container = GetContainerFor(entry.EntityType);
-
-            ICosmosWriteOperation operation = entry.State switch
-            {
-                EntityState.Added => new CreateItemOperation(container, entry.Entity),
-                EntityState.Removed => new DeleteItemOperation(container, entry),
-                _ => throw new NotImplementedException()
-            };
-
+            var operation = CreateOperation(entry);
             await operation.ExecuteAsync(cancellationToken);
         }
+    }
+
+    private ICosmosWriteOperation CreateOperation(EntityEntry entry)
+    {
+        var container = GetContainerFor(entry.EntityType);
+
+        return entry.State switch
+        {
+            EntityState.Added => new CreateItemOperation(container, entry.Entity),
+            EntityState.Removed => new DeleteItemOperation(container, entry.Id, entry.PartitionKey),
+            EntityState.Modified => new ReplaceItemOperation(container, entry.Entity, entry.Id, entry.PartitionKey),
+            _ => throw new NotImplementedException()
+        };
     }
 
     private Container GetContainerFor(Type entityType)

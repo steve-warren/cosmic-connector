@@ -6,7 +6,16 @@ namespace CosmicConnector.Cosmos.Tests;
 
 public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
 {
-    public record AccountPlan(string Id);
+    public class AccountPlan
+    {
+        public AccountPlan(string id)
+        {
+            Id = id;
+        }
+
+        public string Id { get; init; }
+        public string Name { get; set; } = "Test Plan";
+    }
 
     private readonly CosmosDatabaseFacade _db;
 
@@ -35,7 +44,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
     }
 
     [Fact]
-    public async Task Can_Add_Find_And_Delete_Entity()
+    public async Task Can_Add_Find_Delete_Entity_In_Separate_Sessions()
     {
         var store = new DocumentStore(_db)
             .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
@@ -60,5 +69,37 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
         var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id);
 
         readEntity.Should().BeNull(because: "we should not be able to find the entity we just deleted");
+    }
+
+    [Fact]
+    public async Task Can_Add_Find_Update_Entity_In_Separate_Session()
+    {
+        var store = new DocumentStore(_db)
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+
+        var entity = new AccountPlan(Guid.NewGuid().ToString());
+
+        var writeSession = store.CreateSession();
+
+        writeSession.Store(entity);
+        await writeSession.SaveChangesAsync();
+
+        var updateSession = store.CreateSession();
+        var updatedEntity = await updateSession.FindAsync<AccountPlan>(entity.Id);
+
+        updatedEntity.Should().NotBeSameAs(entity, because: "the entity should be a different instance since it is from a different session");
+        updatedEntity.Should().NotBeNull(because: "we should be able to find the entity we just created");
+
+        updatedEntity!.Name = "Updated Plan";
+        updateSession.Update(updatedEntity);
+
+        await updateSession.SaveChangesAsync();
+
+        var readSession = store.CreateSession();
+        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id);
+
+        readEntity.Should().NotBeSameAs(updatedEntity, because: "the entity should be a different instance since it is from a different session");
+        readEntity.Should().NotBeNull(because: "we should be able to find the entity we just updated");
+        readEntity!.Name.Should().Be(updatedEntity.Name, because: "we should have updated the entity name");
     }
 }

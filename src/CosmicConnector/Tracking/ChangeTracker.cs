@@ -37,6 +37,7 @@ public sealed class ChangeTracker
         var entry = new EntityEntry
         {
             Id = id,
+            PartitionKey = id,
             Entity = entity,
             EntityType = entity.GetType(),
             State = state
