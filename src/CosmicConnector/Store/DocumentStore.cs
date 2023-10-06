@@ -1,23 +1,40 @@
 namespace CosmicConnector;
-
 public sealed class DocumentStore : IDocumentStore
 {
+
     public DocumentStore(IDatabaseFacade databaseFacade)
     {
         DatabaseFacade = databaseFacade;
+        EntityConfiguration = new();
+        databaseFacade.EntityConfiguration = EntityConfiguration;
     }
 
     internal IdentityAccessor IdAccessor { get; } = new();
     public IDatabaseFacade DatabaseFacade { get; }
+    public EntityConfigurationHolder EntityConfiguration { get; }
 
     public IDocumentSession CreateSession()
     {
         return new DocumentSession(IdAccessor, DatabaseFacade);
     }
 
-    public DocumentStore ConfigureEntity<TEntity>() where TEntity : class
+    /// <summary>
+    /// Maps the entity with the specified database name, container name, and partition key selector.
+    /// </summary>
+    /// <typeparam name="TEntity">The type of the entity to configure.</typeparam>
+    /// <param name="databaseName">The name of the database.</param>
+    /// <param name="containerName">The name of the container.</param>
+    /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
+    public DocumentStore ConfigureEntity<TEntity>(string databaseName, string containerName) where TEntity : class
     {
-        IdAccessor.Register<TEntity>();
+        ArgumentException.ThrowIfNullOrEmpty(databaseName);
+        ArgumentException.ThrowIfNullOrEmpty(containerName);
+
+        var entityConfiguration = new EntityConfiguration(typeof(TEntity), databaseName, containerName);
+
+        EntityConfiguration.Add(entityConfiguration);
+
+        IdAccessor.RegisterType<TEntity>();
 
         return this;
     }
