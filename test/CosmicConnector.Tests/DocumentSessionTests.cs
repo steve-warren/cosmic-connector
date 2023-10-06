@@ -228,4 +228,24 @@ public class DocumentStoreTests
 
         session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state after finding it");
     }
+
+    [Fact]
+    public async Task Call_To_SaveChanges_Should_Call_Database_Facade()
+    {
+        var entity = new ReminderList("id");
+
+        var database = new MockDatabaseFacade();
+        database.Add("id", entity);
+
+        var documentStore = new DocumentStore(database)
+                            .ConfigureEntity<ReminderList>();
+
+        var session = documentStore.CreateSession();
+
+        _ = await session.FindAsync<ReminderList>("id");
+
+        await session.SaveChangesAsync();
+
+        database.SaveChangesWasCalled.Should().BeTrue(because: "we should have called the database facade's SaveChangesAsync method");
+    }
 }

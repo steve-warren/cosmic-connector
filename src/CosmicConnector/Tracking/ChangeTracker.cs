@@ -13,8 +13,13 @@ public sealed class ChangeTracker
     public IEnumerable<EntityEntry> RemovedEntries =>
         _entries.Where(x => x.State == EntityState.Removed);
 
+    public IEnumerable<EntityEntry> PendingChanges =>
+        _entries.Where(x => x.State != EntityState.Unchanged);
+
     public EntityEntry? FindEntry(object entity) =>
         _entries.FirstOrDefault(x => x.Entity == entity);
+
+    public int Count => _entries.Count;
 
     /// <summary>
     /// Tracks changes made to an entity with the specified ID.

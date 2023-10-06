@@ -67,12 +67,13 @@ public sealed class DocumentSession : IDocumentSession
         entry.Remove();
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        await DatabaseFacade.SaveChangesAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
+
         foreach (var entry in ChangeTracker.RemovedEntries)
-            IdentityMap.Remove(entry.EntityType, entry.Id);
+            IdentityMap.Detatch(entry.EntityType, entry.Id);
 
         ChangeTracker.Reset();
-        return Task.CompletedTask;
     }
 }

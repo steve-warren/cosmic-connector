@@ -36,5 +36,5 @@ public sealed class IdentityMap
 
     public bool Exists<TEntity>(string id) => _entities.ContainsKey((Type: typeof(TEntity), Id: id));
 
-    public bool Remove(Type entityType, string id) => _entities.Remove((Type: entityType, Id: id));
+    public bool Detatch(Type entityType, string id) => _entities.Remove((Type: entityType, Id: id));
 }
