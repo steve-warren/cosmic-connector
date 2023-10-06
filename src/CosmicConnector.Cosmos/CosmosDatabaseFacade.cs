@@ -2,50 +2,62 @@
 
 namespace CosmicConnector.Cosmos;
 
-public class CosmosDatabaseFacade : IDatabaseFacade
+public sealed class CosmosDatabaseFacade : IDatabaseFacade
 {
     private readonly CosmosClient _client;
     private readonly Dictionary<Type, Container> _containers = new();
 
-    public CosmosDatabaseFacade(string connectionString)
+    public CosmosDatabaseFacade(CosmosClient client)
     {
-        _client = new CosmosClient(connectionString);
+        _client = client;
     }
 
     public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {
-        var container = GetContainerFor<TEntity>();
+        var container = GetContainerFor(typeof(TEntity));
 
-        var response = await container.ReadItemAsync<TEntity>(id, new PartitionKey(partitionKey ?? id), cancellationToken: cancellationToken);
+        var operation = new ReadItemOperation<TEntity>(container, id, partitionKey);
 
-        return response.Resource;
+        var entity = await operation.ExecuteAsync(cancellationToken);
+
+        return entity;
     }
 
-    public Task SaveChangesAsync(EntityEntry entry, CancellationToken cancellationToken = default)
+    public async Task SaveChangesAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        foreach (var entry in entries)
+        {
+            if (entry.IsUnchanged)
+                return;
+
+            var container = GetContainerFor(entry.EntityType);
+
+            ICosmosWriteOperation operation = entry.State switch
+            {
+                EntityState.Added => new CreateItemOperation(container, entry.Entity),
+                EntityState.Removed => new DeleteItemOperation(container, entry),
+                _ => throw new NotImplementedException()
+            };
+
+            await operation.ExecuteAsync(cancellationToken);
+        }
     }
 
-    public Task SaveChangesAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
+    private Container GetContainerFor(Type entityType)
     {
-        throw new NotImplementedException();
-    }
-
-    private Container GetContainerFor<TEntity>()
-    {
-        if (_containers.TryGetValue(typeof(TEntity), out var container))
+        if (_containers.TryGetValue(entityType, out var container))
             return container;
 
-        var entityConfiguration = GetConfigurationFor<TEntity>();
+        var entityConfiguration = GetConfigurationFor(entityType);
 
         container = _client.GetContainer(entityConfiguration.DatabaseName, entityConfiguration.ContainerName);
 
-        _containers.Add(typeof(TEntity), container);
+        _containers.Add(entityType, container);
 
         return container;
     }
 
-    private EntityConfiguration GetConfigurationFor<TEntity>() => EntityConfiguration.Get(typeof(TEntity)) ?? throw new InvalidOperationException("No configuration found for the given entity type.");
+    private EntityConfiguration GetConfigurationFor(Type entityType) => EntityConfiguration.Get(entityType) ?? throw new InvalidOperationException("No configuration found for the given entity type.");
 }
