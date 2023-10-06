@@ -21,15 +21,15 @@ public sealed class DocumentSession : IDocumentSession
 
         IdentityAccessor.EnsureRegistered<TEntity>();
 
-        if (!IdentityMap.TryGet(id, out TEntity? entity))
-        {
-            entity = await DatabaseFacade.FindAsync<TEntity>(id, partitionKey, cancellationToken);
+        if (IdentityMap.TryGet(id, out TEntity? entity))
+            return entity;
 
-            IdentityMap.Put(id, entity);
+        entity = await DatabaseFacade.FindAsync<TEntity>(id, partitionKey, cancellationToken);
 
-            if (entity is not null)
-                ChangeTracker.TrackUnchanged(id, entity);
-        }
+        IdentityMap.Attach(id, entity);
+
+        if (entity is not null)
+            ChangeTracker.TrackUnchanged(id, entity);
 
         return entity;
     }
@@ -45,7 +45,7 @@ public sealed class DocumentSession : IDocumentSession
 
         var id = IdentityAccessor.GetId(entity);
 
-        IdentityMap.Put(id, entity);
+        IdentityMap.Attach(id, entity);
         ChangeTracker.TrackAdded(id, entity);
     }
 

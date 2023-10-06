@@ -10,10 +10,10 @@ public sealed class IdentityAccessor
     private readonly Dictionary<Type, Func<object, string>> _accessors = new();
 
     /// <summary>
-    /// Configures the entity ID accessor for the specified entity type.
+    /// Registers a type with the identity accessor.
     /// </summary>
-    /// <typeparam name="TEntity">The type of entity to configure the ID accessor for.</typeparam>
-    public void Register<TEntity>() where TEntity : class
+    /// <typeparam name="TEntity">The type to register.</typeparam>
+    public void RegisterType<TEntity>() where TEntity : class
     {
         var entityType = typeof(TEntity);
 

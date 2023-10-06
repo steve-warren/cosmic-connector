@@ -45,6 +45,9 @@ public sealed class ChangeTracker
         _entries.Add(entry);
     }
 
+    /// <summary>
+    /// Resets the change tracker by unchanging all added and modified entities, and removing all removed entities.
+    /// </summary>
     public void Reset()
     {
         for (var i = 0; i < _entries.Count; i++)
@@ -62,6 +65,8 @@ public sealed class ChangeTracker
                 case EntityState.Removed:
                     _entries.RemoveAt(i);
                     i--;
+                    break;
+                case EntityState.Unchanged:
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown entity state: {entry.State}");
