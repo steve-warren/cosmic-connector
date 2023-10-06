@@ -32,8 +32,9 @@ public sealed class IdentityMap
     /// <typeparam name="TEntity">The type of entity being added or updated.</typeparam>
     /// <param name="id">The unique identifier for the entity.</param>
     /// <param name="entity">The entity to add or update.</param>
-    public void Put<TEntity>(string id, TEntity? entity)
-    {
-        _entities[(Type: typeof(TEntity), Id: id)] = entity;
-    }
+    public void Put<TEntity>(string id, TEntity? entity) => _entities[(Type: typeof(TEntity), Id: id)] = entity;
+
+    public bool Exists<TEntity>(string id) => _entities.ContainsKey((Type: typeof(TEntity), Id: id));
+
+    public bool Detatch(Type entityType, string id) => _entities.Remove((Type: entityType, Id: id));
 }

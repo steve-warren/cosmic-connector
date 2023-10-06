@@ -2,23 +2,36 @@ namespace CosmicConnector;
 
 public sealed class DocumentSession : IDocumentSession
 {
-    private readonly DocumentStore _documentStore;
-    private readonly IdentityMap _identityMap = new();
-
-    internal DocumentSession(DocumentStore documentStore)
+    internal DocumentSession(IdentityAccessor identityAccessor, IDatabaseFacade databaseFacade)
     {
-        _documentStore = documentStore;
+        ArgumentNullException.ThrowIfNull(identityAccessor);
+
+        IdentityAccessor = identityAccessor;
+        DatabaseFacade = databaseFacade;
     }
 
-    public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
+    public ChangeTracker ChangeTracker { get; } = new();
+    public IdentityMap IdentityMap { get; } = new();
+    public IdentityAccessor IdentityAccessor { get; }
+    public IDatabaseFacade DatabaseFacade { get; }
+
+    public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
-        _documentStore.IdAccessor.EnsureRegistered<TEntity>();
+        IdentityAccessor.EnsureRegistered<TEntity>();
 
-        _identityMap.TryGet(id, out TEntity? entity);
+        if (!IdentityMap.TryGet(id, out TEntity? entity))
+        {
+            entity = await DatabaseFacade.FindAsync<TEntity>(id, partitionKey, cancellationToken);
 
-        return ValueTask.FromResult(entity);
+            IdentityMap.Put(id, entity);
+
+            if (entity is not null)
+                ChangeTracker.TrackUnchanged(id, entity);
+        }
+
+        return entity;
     }
 
     public IQueryable<TEntity> Query<TEntity>() where TEntity : class
@@ -30,23 +43,37 @@ public sealed class DocumentSession : IDocumentSession
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var id = _documentStore.IdAccessor.GetEntityId(entity);
+        var id = IdentityAccessor.GetId(entity);
 
-        _identityMap.Put(id, entity);
+        IdentityMap.Put(id, entity);
+        ChangeTracker.TrackAdded(id, entity);
     }
 
-    public void Update(object entity)
+    public void Update<TEntity>(TEntity entity) where TEntity : class
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(entity);
+
+        var entry = ChangeTracker.FindEntry(entity) ?? throw new InvalidOperationException($"Cannot update entity of type {typeof(TEntity)} because it has not been loaded into the session.");
+
+        entry.Modify();
     }
 
-    public void Delete(object entity)
+    public void Remove(object entity)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(entity);
+
+        var entry = ChangeTracker.FindEntry(entity) ?? throw new InvalidOperationException($"Cannot remove entity of type {entity.GetType()} because it has not been loaded into the session.");
+
+        entry.Remove();
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await DatabaseFacade.SaveChangesAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
+
+        foreach (var entry in ChangeTracker.RemovedEntries)
+            IdentityMap.Detatch(entry.EntityType, entry.Id);
+
+        ChangeTracker.Reset();
     }
 }
