@@ -1,16 +1,17 @@
 namespace CosmicConnector;
 public sealed class DocumentStore : IDocumentStore
 {
-    private readonly EntityMappingCollection _entityMaps = new();
 
-    public DocumentStore(IDatabaseFacade databaseFacade, EntityMappingCollection entityMaps)
+    public DocumentStore(IDatabaseFacade databaseFacade)
     {
         DatabaseFacade = databaseFacade;
-        _entityMaps = entityMaps;
+        EntityConfiguration = new();
+        databaseFacade.EntityConfiguration = EntityConfiguration;
     }
 
     internal IdentityAccessor IdAccessor { get; } = new();
     public IDatabaseFacade DatabaseFacade { get; }
+    public EntityConfigurationHolder EntityConfiguration { get; }
 
     public IDocumentSession CreateSession()
     {
@@ -24,14 +25,14 @@ public sealed class DocumentStore : IDocumentStore
     /// <param name="databaseName">The name of the database.</param>
     /// <param name="containerName">The name of the container.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore MapEntity<TEntity>(string databaseName, string containerName) where TEntity : class
+    public DocumentStore ConfigureEntity<TEntity>(string databaseName, string containerName) where TEntity : class
     {
         ArgumentException.ThrowIfNullOrEmpty(databaseName);
         ArgumentException.ThrowIfNullOrEmpty(containerName);
 
-        var entityConfiguration = new EntityMapping(typeof(TEntity), databaseName, containerName);
+        var entityConfiguration = new EntityConfiguration(typeof(TEntity), databaseName, containerName);
 
-        _entityMaps.Add(entityConfiguration);
+        EntityConfiguration.Add(entityConfiguration);
 
         IdAccessor.RegisterType<TEntity>();
 

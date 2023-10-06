@@ -18,12 +18,10 @@ public class CosmosDatabaseFacadeTests : IClassFixture<ConfigurationTextFixture>
     [Fact]
     public async void Test1()
     {
-        var entityMaps = new EntityMappingCollection();
+        var db = new CosmosDatabaseFacade(_configuration["CosmosConnectionString"]);
 
-        var db = new CosmosDatabaseFacade(_configuration["CosmosConnectionString"], entityMaps);
-
-        var store = new DocumentStore(db, entityMaps)
-            .MapEntity<AccountPlan>("reminderdb", "accountPlans");
+        var store = new DocumentStore(db)
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
 
         var session = store.CreateSession();
 

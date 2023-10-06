@@ -6,6 +6,7 @@ public sealed class MockDatabaseFacade : IDatabaseFacade
 
     public int Count => _entities.Count;
     public bool SaveChangesWasCalled { get; private set; }
+    public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
 
     public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {

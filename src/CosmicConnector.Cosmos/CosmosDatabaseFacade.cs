@@ -6,13 +6,13 @@ public class CosmosDatabaseFacade : IDatabaseFacade
 {
     private readonly CosmosClient _client;
     private readonly Dictionary<Type, Container> _containers = new();
-    private readonly EntityMappingCollection _entityMapping;
 
-    public CosmosDatabaseFacade(string connectionString, EntityMappingCollection entityMapping)
+    public CosmosDatabaseFacade(string connectionString)
     {
         _client = new CosmosClient(connectionString);
-        _entityMapping = entityMapping;
     }
+
+    public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {
@@ -47,5 +47,5 @@ public class CosmosDatabaseFacade : IDatabaseFacade
         return container;
     }
 
-    private EntityMapping GetConfigurationFor<TEntity>() => _entityMapping.Get(typeof(TEntity)) ?? throw new InvalidOperationException("No configuration found for the given entity type.");
+    private EntityConfiguration GetConfigurationFor<TEntity>() => EntityConfiguration.Get(typeof(TEntity)) ?? throw new InvalidOperationException("No configuration found for the given entity type.");
 }
