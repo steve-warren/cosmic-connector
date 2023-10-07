@@ -121,9 +121,39 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
 
         var readSession = store.CreateSession();
         var readEntities = await readSession.Query<AccountPlan>()
-                                          .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
-                                          .ToListAsync();
+                                .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
+                                .ToListAsync();
 
+        readEntities.Should().HaveCount(2, because: "we should have found the two entities we just created");
         readEntities.Should().BeEquivalentTo(entities, because: "we should be able to query the entities we just created");
+    }
+
+    [Fact]
+    public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
+    {
+        var store = new DocumentStore(_db)
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+
+        var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
+
+        var writeSession = store.CreateSession();
+
+        foreach (var entity in entities)
+            writeSession.Store(entity);
+
+        await writeSession.SaveChangesAsync();
+
+        var readSession = store.CreateSession();
+        var readEntities = readSession.Query<AccountPlan>()
+                           .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
+                           .ToAsyncEnumerable();
+
+        var list = new List<AccountPlan>();
+
+        await foreach (var entity in readEntities)
+            list.Add(entity);
+
+        list.Should().HaveCount(2, because: "we should have found the two entities we just created");
+        list.Should().BeEquivalentTo(entities, because: "we should be able to query the entities we just created");
     }
 }
