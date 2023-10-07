@@ -20,13 +20,18 @@ public sealed class MockDatabaseFacade : IDatabaseFacade
 
     public IQueryable<TEntity> GetLinqQuery<TEntity>() where TEntity : class => _entities.Values.OfType<TEntity>().AsQueryable();
 
-    public async IAsyncEnumerable<TEntity> ExecuteQuery<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
     {
         foreach (var entity in queryable)
         {
             await Task.Yield();
             yield return entity;
         }
+    }
+
+    public Task<TEntity?> FirstOrDefaultAsync<TEntity>(IQueryable<TEntity> queryable, CancellationToken cancellationToken = default) where TEntity : class
+    {
+        throw new NotImplementedException();
     }
 
     public void Add(string id, object entity)

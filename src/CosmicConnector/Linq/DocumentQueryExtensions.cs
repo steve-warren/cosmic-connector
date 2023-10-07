@@ -9,7 +9,7 @@ public static class DocumentQueryExtensions
         if (queryable is not DocumentQuery<TEntity> documentQueryable)
             throw new ArgumentException($"The {nameof(queryable)} must be of type {nameof(DocumentQuery<TEntity>)}", nameof(queryable));
 
-        var query = documentQueryable.DocumentSession.DatabaseFacade.ExecuteQuery(documentQueryable.OriginalQueryable);
+        var query = documentQueryable.DocumentSession.DatabaseFacade.ToAsyncEnumerable(documentQueryable.OriginalQueryable);
 
         var list = new List<TEntity>();
 
@@ -29,7 +29,7 @@ public static class DocumentQueryExtensions
         if (queryable is not DocumentQuery<TEntity> documentQueryable)
             throw new ArgumentException($"The {nameof(queryable)} must be of type {nameof(DocumentQuery<TEntity>)}", nameof(queryable));
 
-        var query = documentQueryable.DocumentSession.DatabaseFacade.ExecuteQuery(documentQueryable.OriginalQueryable);
+        var query = documentQueryable.DocumentSession.DatabaseFacade.ToAsyncEnumerable(documentQueryable.OriginalQueryable);
 
         await foreach (var entity in query.WithCancellation(cancellationToken))
         {
@@ -38,5 +38,21 @@ public static class DocumentQueryExtensions
 
             yield return entity;
         }
+    }
+
+    public static async Task<TEntity?> FirstOrDefaultAsync<TEntity>(this IQueryable<TEntity> queryable, CancellationToken cancellationToken = default) where TEntity : class
+    {
+        if (queryable is not DocumentQuery<TEntity> documentQueryable)
+            throw new ArgumentException($"The {nameof(queryable)} must be of type {nameof(DocumentQuery<TEntity>)}", nameof(queryable));
+
+        var entity = await documentQueryable.DocumentSession.DatabaseFacade.FirstOrDefaultAsync(documentQueryable.OriginalQueryable, cancellationToken);
+
+        if (entity is not null)
+        {
+            documentQueryable.DocumentSession.IdentityMap.Attach(entity);
+            documentQueryable.DocumentSession.ChangeTracker.RegisterUnchanged(entity);
+        }
+
+        return entity;
     }
 }

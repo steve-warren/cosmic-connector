@@ -35,6 +35,8 @@ public sealed class IdentityMap
 
     public void Attach<TEntity>(TEntity entity) where TEntity : class
     {
+        ArgumentNullException.ThrowIfNull(entity);
+
         var id = IdentityAccessor.GetId(entity);
         Attach(id, entity);
     }
