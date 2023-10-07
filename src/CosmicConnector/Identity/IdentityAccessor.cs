@@ -24,32 +24,28 @@ public sealed class IdentityAccessor
     }
 
     /// <summary>
-    /// Ensures that an ID accessor has been registered for the specified entity type.
-    /// </summary>
-    /// <typeparam name="TEntity">The type of entity to check for a registered ID accessor.</typeparam>
-    /// <exception cref="InvalidOperationException">Thrown if no ID accessor has been registered for the specified entity type.</exception>
-    public void EnsureRegistered<TEntity>() where TEntity : class
-    {
-        if (!_accessors.ContainsKey(typeof(TEntity)))
-            throw new InvalidOperationException($"No ID accessor has been registered for type {typeof(TEntity).FullName}.");
-    }
-
-    /// <summary>
     /// Gets the ID of the specified entity.
     /// </summary>
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
     /// <param name="entity">The entity.</param>
     /// <returns>The ID of the entity.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the entity is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when no ID accessor has been registered for the specified entity type.</exception>
-    public string GetId<TEntity>(TEntity entity) where TEntity : class
+    /// <exception cref="InvalidOperationException">Thrown when no ID accessor has been registered for the entity type, or when the entity does not have an ID.</exception>
+    public string GetId<TEntity>(TEntity entity) where TEntity : class =>
+        GetId((object) entity);
+
+    public string GetId(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        if (_accessors.TryGetValue(typeof(TEntity), out var accessor))
-            return accessor(entity);
+        var entityType = entity.GetType();
 
-        throw new InvalidOperationException($"No ID accessor has been registered for type {typeof(TEntity).FullName}.");
+        if (!_accessors.TryGetValue(entityType, out var accessor))
+            throw new InvalidOperationException($"No ID accessor has been registered for type {entityType.FullName}.");
+
+        var id = accessor(entity);
+
+        return string.IsNullOrEmpty(id) ? throw new InvalidOperationException($"The entity of type '{entityType.Name}' does not have an Id.") : id;
     }
 
     private static Func<object, string> CreateAccessor(Type entityType)

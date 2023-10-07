@@ -20,11 +20,12 @@ public class DocumentStoreTests
     public void Storing_Null_Entity_Throws()
     {
         var database = new MockDatabaseFacade();
-        var documentStore = new DocumentStore(database);
+        var documentStore = new DocumentStore(database)
+                            .ConfigureEntity<ReminderList>("db", "container");
 
         var session = documentStore.CreateSession();
 
-        Action action = () => session.Store(null as ReminderList);
+        Action action = () => session.Store<ReminderList>(null!);
 
         action.Should().Throw<ArgumentNullException>(because: "we should not be able to store a null entity");
     }
@@ -188,7 +189,7 @@ public class DocumentStoreTests
         await session.SaveChangesAsync();
 
         session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
-        trackedEntity.State.Should().Be(EntityState.Removed, because: "we should have the entity in the removed state");
+        trackedEntity.State.Should().Be(EntityState.Detached, because: "we should have the entity in the detached state");
     }
 
     [Fact]
@@ -247,5 +248,46 @@ public class DocumentStoreTests
         await session.SaveChangesAsync();
 
         database.SaveChangesWasCalled.Should().BeTrue(because: "we should have called the database facade's SaveChangesAsync method");
+    }
+
+    [Fact]
+    public void Can_Query_Entity_By_Id_Using_Linq_Expression()
+    {
+        var entity = new ReminderList("id");
+
+        var database = new MockDatabaseFacade();
+        database.Add("id", entity);
+
+        var documentStore = new DocumentStore(database)
+                            .ConfigureEntity<ReminderList>("db", "container");
+
+        var session = documentStore.CreateSession();
+
+        var result = session.Query<ReminderList>()
+                                  .Where(x => x.Id == "id")
+                                  .ToList();
+
+        result.Should().HaveCount(1, because: "we should have one entity in the result set");
+        result[0].Should().BeEquivalentTo(entity, because: "we should get the same entity instance back");
+    }
+
+    [Fact]
+    public void Query_Should_Attach_Entities_To_Change_Tracker()
+    {
+        var entity = new ReminderList("id");
+
+        var database = new MockDatabaseFacade();
+        database.Add("id", entity);
+
+        var documentStore = new DocumentStore(database)
+                            .ConfigureEntity<ReminderList>("db", "container");
+
+        var session = documentStore.CreateSession();
+
+        _ = session.Query<ReminderList>()
+                    .Where(x => x.Id == "id")
+                    .ToList();
+
+        session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state after finding it");
     }
 }

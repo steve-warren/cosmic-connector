@@ -4,6 +4,14 @@ public sealed class ChangeTracker
 {
     private readonly List<EntityEntry> _entries = new();
 
+    public ChangeTracker(IdentityAccessor identityAccessor)
+    {
+        ArgumentNullException.ThrowIfNull(identityAccessor);
+
+        IdentityAccessor = identityAccessor;
+    }
+
+    public IdentityAccessor IdentityAccessor { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
     /// <summary>
@@ -19,37 +27,60 @@ public sealed class ChangeTracker
     public EntityEntry? FindEntry(object entity) =>
         _entries.FirstOrDefault(x => x.Entity == entity);
 
-    public int Count => _entries.Count;
-
     /// <summary>
-    /// Tracks changes made to an entity with the specified ID.
+    /// Registers an entity as added in the change tracker.
     /// </summary>
-    /// <param name="id">The ID of the entity to track.</param>
-    /// <param name="entity">The entity to track.</param>
-    public void TrackAdded(string id, object entity) =>
-        Register(id, entity, EntityState.Added);
-
-    public void TrackUnchanged(string id, object entity) =>
-        Register(id, entity, EntityState.Unchanged);
-
-    private void Register(string id, object entity, EntityState state)
+    /// <param name="id">The ID of the entity.</param>
+    /// <param name="entity">The entity to register.</param>
+    public void RegisterAdded(object entity)
     {
-        var entry = new EntityEntry
-        {
-            Id = id,
-            PartitionKey = id,
-            Entity = entity,
-            EntityType = entity.GetType(),
-            State = state
-        };
+        var entry = CreateEntry(entity);
+
+        entry.Add();
 
         _entries.Add(entry);
     }
 
     /// <summary>
-    /// Resets the change tracker by unchanging all added and modified entities, and removing all removed entities.
+    /// Registers an entity as unchanged in the change tracker.
     /// </summary>
-    public void Reset()
+    /// <param name="id">The ID of the entity.</param>
+    /// <param name="entity">The entity to register.</param>
+    public void RegisterUnchanged(object entity)
+    {
+        var entry = CreateEntry(entity);
+
+        entry.Unchange();
+
+        _entries.Add(entry);
+    }
+
+    /// <summary>
+    /// Registers an entity as modified in the change tracker.
+    /// </summary>
+    /// <param name="entity">The entity to register as modified.</param>
+    public void RegisterModified(object entity)
+    {
+        var entry = FindEntry(entity) ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
+
+        entry.Modify();
+    }
+
+    /// <summary>
+    /// Registers an entity to be removed from the session.
+    /// </summary>
+    /// <param name="entity">The entity to remove.</param>
+    public void RegisterRemoved(object entity)
+    {
+        var entry = FindEntry(entity) ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
+
+        entry.Remove();
+    }
+
+    /// <summary>
+    /// Commits all changes made to the tracked entities by removing all entities marked as removed and unchanging all entities marked as added or modified.
+    /// </summary>
+    public void Commit()
     {
         for (var i = 0; i < _entries.Count; i++)
         {
@@ -58,12 +89,12 @@ public sealed class ChangeTracker
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Unchange();
-                    break;
                 case EntityState.Modified:
                     entry.Unchange();
                     break;
+
                 case EntityState.Removed:
+                    entry.Detach();
                     _entries.RemoveAt(i);
                     i--;
                     break;
@@ -74,4 +105,12 @@ public sealed class ChangeTracker
             }
         }
     }
+
+    private EntityEntry CreateEntry(object entity) => new()
+    {
+        Id = IdentityAccessor.GetId(entity),
+        PartitionKey = IdentityAccessor.GetId(entity),
+        Entity = entity,
+        EntityType = entity.GetType()
+    };
 }

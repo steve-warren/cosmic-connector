@@ -9,13 +9,13 @@ public sealed class DocumentStore : IDocumentStore
         databaseFacade.EntityConfiguration = EntityConfiguration;
     }
 
-    internal IdentityAccessor IdAccessor { get; } = new();
+    internal IdentityAccessor IdentityAccessor { get; } = new();
     public IDatabaseFacade DatabaseFacade { get; }
     public EntityConfigurationHolder EntityConfiguration { get; }
 
     public IDocumentSession CreateSession()
     {
-        return new DocumentSession(IdAccessor, DatabaseFacade);
+        return new DocumentSession(this, IdentityAccessor, DatabaseFacade);
     }
 
     /// <summary>
@@ -34,8 +34,14 @@ public sealed class DocumentStore : IDocumentStore
 
         EntityConfiguration.Add(entityConfiguration);
 
-        IdAccessor.RegisterType<TEntity>();
+        IdentityAccessor.RegisterType<TEntity>();
 
         return this;
+    }
+
+    internal void EnsureConfigured<TEntity>() where TEntity : class
+    {
+        _ = EntityConfiguration.Get(typeof(TEntity)) ??
+            throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
     }
 }

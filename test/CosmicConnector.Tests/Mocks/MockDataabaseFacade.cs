@@ -16,6 +16,11 @@ public sealed class MockDatabaseFacade : IDatabaseFacade
         return default;
     }
 
+    public IQueryable<TEntity> Query<TEntity>() where TEntity : class
+    {
+        return _entities.Values.OfType<TEntity>().AsQueryable();
+    }
+
     public void Add(string id, object entity)
     {
         _entities.Add((entity.GetType(), id), entity);
