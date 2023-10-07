@@ -1,9 +1,12 @@
 ﻿using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Linq;
 
 namespace CosmicConnector.Cosmos;
 
 public sealed class CosmosDatabaseFacade : IDatabaseFacade
 {
+    private static readonly CosmosLinqSerializerOptions s_linqSerializerOptions = new() { PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase };
+
     private readonly CosmosClient _client;
     private readonly Dictionary<Type, Container> _containers = new();
 
@@ -25,7 +28,27 @@ public sealed class CosmosDatabaseFacade : IDatabaseFacade
         return entity;
     }
 
-    public async Task SaveChangesAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
+    public IQueryable<TEntity> GetLinqQuery<TEntity>() where TEntity : class
+    {
+        var container = GetContainerFor(typeof(TEntity));
+
+        return container.GetItemLinqQueryable<TEntity>(linqSerializerOptions: s_linqSerializerOptions);
+    }
+
+    public async IAsyncEnumerable<TEntity> ExecuteQuery<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    {
+        using var feed = queryable.ToFeedIterator();
+
+        while (feed.HasMoreResults)
+        {
+            var response = await feed.ReadNextAsync();
+
+            foreach (var entity in response)
+                yield return entity;
+        }
+    }
+
+    public async Task CommitAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
     {
         foreach (var entry in entries)
         {

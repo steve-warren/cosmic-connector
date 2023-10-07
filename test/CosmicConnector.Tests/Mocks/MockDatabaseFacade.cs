@@ -1,3 +1,5 @@
+using CosmicConnector.Linq;
+
 namespace CosmicConnector.Tests;
 
 public sealed class MockDatabaseFacade : IDatabaseFacade
@@ -16,19 +18,23 @@ public sealed class MockDatabaseFacade : IDatabaseFacade
         return default;
     }
 
+    public IQueryable<TEntity> GetLinqQuery<TEntity>() where TEntity : class => _entities.Values.OfType<TEntity>().AsQueryable();
+
+    public async IAsyncEnumerable<TEntity> ExecuteQuery<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    {
+        foreach (var entity in queryable)
+        {
+            await Task.Yield();
+            yield return entity;
+        }
+    }
+
     public void Add(string id, object entity)
     {
         _entities.Add((entity.GetType(), id), entity);
     }
 
-    public Task SaveChangesAsync(EntityEntry entry, CancellationToken cancellationToken = default)
-    {
-        SaveChangesWasCalled = true;
-
-        return Task.CompletedTask;
-    }
-
-    public Task SaveChangesAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
+    public Task CommitAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
     {
         SaveChangesWasCalled = true;
 

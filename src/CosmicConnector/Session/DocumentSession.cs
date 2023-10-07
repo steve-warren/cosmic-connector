@@ -1,25 +1,30 @@
+using CosmicConnector.Linq;
+
 namespace CosmicConnector;
 
 public sealed class DocumentSession : IDocumentSession
 {
-    internal DocumentSession(IdentityAccessor identityAccessor, IDatabaseFacade databaseFacade)
+    internal DocumentSession(DocumentStore documentStore, IdentityAccessor identityAccessor, IDatabaseFacade databaseFacade)
     {
+        ArgumentNullException.ThrowIfNull(documentStore);
         ArgumentNullException.ThrowIfNull(identityAccessor);
 
-        IdentityAccessor = identityAccessor;
+        DocumentStore = documentStore;
         DatabaseFacade = databaseFacade;
+
+        IdentityMap = new IdentityMap(identityAccessor);
+        ChangeTracker = new ChangeTracker(identityAccessor);
     }
 
-    public ChangeTracker ChangeTracker { get; } = new();
-    public IdentityMap IdentityMap { get; } = new();
-    public IdentityAccessor IdentityAccessor { get; }
+    public ChangeTracker ChangeTracker { get; }
+    public IdentityMap IdentityMap { get; }
+    public DocumentStore DocumentStore { get; }
     public IDatabaseFacade DatabaseFacade { get; }
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
     {
+        DocumentStore.EnsureConfigured<TEntity>();
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
-
-        IdentityAccessor.EnsureRegistered<TEntity>();
 
         if (IdentityMap.TryGet(id, out TEntity? entity))
             return entity;
@@ -29,51 +34,67 @@ public sealed class DocumentSession : IDocumentSession
         IdentityMap.Attach(id, entity);
 
         if (entity is not null)
-            ChangeTracker.TrackUnchanged(id, entity);
+            ChangeTracker.RegisterUnchanged(entity);
 
         return entity;
     }
 
     public IQueryable<TEntity> Query<TEntity>() where TEntity : class
     {
-        throw new NotImplementedException();
+        DocumentStore.EnsureConfigured<TEntity>();
+        return new DocumentQuery<TEntity>(this, DatabaseFacade.GetLinqQuery<TEntity>());
+    }
+
+    public async IAsyncEnumerable<TEntity> ExecuteQueryAsync<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    {
+        DocumentStore.EnsureConfigured<TEntity>();
+        ArgumentNullException.ThrowIfNull(queryable);
+
+        var query = DatabaseFacade.ExecuteQuery(queryable);
+
+        await foreach (var entity in query)
+        {
+            IdentityMap.Attach(entity);
+            ChangeTracker.RegisterUnchanged(entity);
+
+            yield return entity;
+        }
     }
 
     public void Store<TEntity>(TEntity entity) where TEntity : class
     {
+        DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
 
-        var id = IdentityAccessor.GetId(entity);
-
-        IdentityMap.Attach(id, entity);
-        ChangeTracker.TrackAdded(id, entity);
+        IdentityMap.Attach(entity);
+        ChangeTracker.RegisterAdded(entity);
     }
 
     public void Update<TEntity>(TEntity entity) where TEntity : class
     {
+        DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
 
-        var entry = ChangeTracker.FindEntry(entity) ?? throw new InvalidOperationException($"Cannot update entity of type {typeof(TEntity)} because it has not been loaded into the session.");
-
-        entry.Modify();
+        IdentityMap.EnsureExists(entity);
+        ChangeTracker.RegisterModified(entity);
     }
 
-    public void Remove(object entity)
+    public void Remove<TEntity>(TEntity entity) where TEntity : class
     {
+        DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
 
-        var entry = ChangeTracker.FindEntry(entity) ?? throw new InvalidOperationException($"Cannot remove entity of type {entity.GetType()} because it has not been loaded into the session.");
-
-        entry.Remove();
+        IdentityMap.EnsureExists(entity);
+        ChangeTracker.RegisterRemoved(entity);
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await DatabaseFacade.SaveChangesAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
+        await DatabaseFacade.CommitAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
 
         foreach (var entry in ChangeTracker.RemovedEntries)
             IdentityMap.Detatch(entry.EntityType, entry.Id);
 
-        ChangeTracker.Reset();
+        ChangeTracker.Commit();
     }
 }
