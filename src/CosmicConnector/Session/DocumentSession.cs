@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using CosmicConnector.Linq;
+using CosmicConnector.Query;
 
 namespace CosmicConnector;
 
@@ -21,7 +23,7 @@ public sealed class DocumentSession : IDocumentSession
     public DocumentStore DocumentStore { get; }
     public IDatabaseFacade DatabaseFacade { get; }
 
-    public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
+    public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
@@ -39,21 +41,24 @@ public sealed class DocumentSession : IDocumentSession
         return entity;
     }
 
-    public IQueryable<TEntity> Query<TEntity>() where TEntity : class
+    public IQueryable<TEntity> Query<TEntity>(string? partitionKey = null)
     {
         DocumentStore.EnsureConfigured<TEntity>();
-        return new DocumentQuery<TEntity>(this, DatabaseFacade.GetLinqQuery<TEntity>());
+        return new DocumentQuery<TEntity>(this, DatabaseFacade.GetLinqQuery<TEntity>(partitionKey));
     }
 
-    public async IAsyncEnumerable<TEntity> ExecuteQueryAsync<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    public async IAsyncEnumerable<TEntity> GetAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(queryable);
 
-        var query = DatabaseFacade.ToAsyncEnumerable(queryable);
+        var query = DatabaseFacade.GetAsyncEnumerable(queryable, cancellationToken);
 
-        await foreach (var entity in query)
+        await foreach (var entity in query.WithCancellation(cancellationToken))
         {
+            if (entity is null)
+                continue;
+
             IdentityMap.Attach(entity);
             ChangeTracker.RegisterUnchanged(entity);
 
@@ -61,7 +66,7 @@ public sealed class DocumentSession : IDocumentSession
         }
     }
 
-    public void Store<TEntity>(TEntity entity) where TEntity : class
+    public void Store<TEntity>(TEntity entity)
     {
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
@@ -70,7 +75,7 @@ public sealed class DocumentSession : IDocumentSession
         ChangeTracker.RegisterAdded(entity);
     }
 
-    public void Update<TEntity>(TEntity entity) where TEntity : class
+    public void Update<TEntity>(TEntity entity)
     {
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
@@ -79,7 +84,7 @@ public sealed class DocumentSession : IDocumentSession
         ChangeTracker.RegisterModified(entity);
     }
 
-    public void Remove<TEntity>(TEntity entity) where TEntity : class
+    public void Remove<TEntity>(TEntity entity)
     {
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);

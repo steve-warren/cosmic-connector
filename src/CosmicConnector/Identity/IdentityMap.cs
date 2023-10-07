@@ -21,7 +21,7 @@ public sealed class IdentityMap
     /// <param name="id">The ID of the entity to retrieve.</param>
     /// <param name="entity">When this method returns, contains the entity associated with the specified ID, if the ID is found; otherwise, the default value for the type of the <paramref name="entity"/> parameter. This parameter is passed uninitialized.</param>
     /// <returns><c>true</c> if the identity map contains an entity with the specified ID; otherwise, <c>false</c>.</returns>
-    public bool TryGet<TEntity>(string id, out TEntity? entity) where TEntity : class
+    public bool TryGet<TEntity>(string id, out TEntity? entity)
     {
         if (_entities.TryGetValue((Type: typeof(TEntity), Id: id), out var value))
         {
@@ -33,7 +33,7 @@ public sealed class IdentityMap
         return false;
     }
 
-    public void Attach<TEntity>(TEntity entity) where TEntity : class
+    public void Attach<TEntity>(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -47,14 +47,14 @@ public sealed class IdentityMap
     /// <typeparam name="TEntity">The type of entity being added or updated.</typeparam>
     /// <param name="id">The unique identifier for the entity.</param>
     /// <param name="entity">The entity to add or update.</param>
-    public void Attach<TEntity>(string id, TEntity? entity) where TEntity : class
+    public void Attach<TEntity>(string id, TEntity? entity)
     {
         _entities.Add((Type: typeof(TEntity), Id: id), entity);
     }
 
-    public bool Exists<TEntity>(string id) where TEntity : class => _entities.ContainsKey((Type: typeof(TEntity), Id: id));
+    public bool Exists<TEntity>(string id) => _entities.ContainsKey((Type: typeof(TEntity), Id: id));
 
-    public void EnsureExists<TEntity>(TEntity entity) where TEntity : class
+    public void EnsureExists<TEntity>(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 

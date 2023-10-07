@@ -4,7 +4,6 @@ using Microsoft.Azure.Cosmos;
 namespace CosmicConnector.Cosmos;
 
 internal class ReadItemOperation<TEntity> : ICosmosReadOperation<TEntity>
-    where TEntity : class
 {
     private readonly Container _container;
     private readonly string _id;
