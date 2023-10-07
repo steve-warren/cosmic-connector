@@ -50,7 +50,7 @@ public sealed class DocumentSession : IDocumentSession
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(queryable);
 
-        var query = DatabaseFacade.ExecuteQuery(queryable);
+        var query = DatabaseFacade.ToAsyncEnumerable(queryable);
 
         await foreach (var entity in query)
         {

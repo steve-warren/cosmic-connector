@@ -13,14 +13,11 @@ internal sealed class DocumentQueryProvider<TEntity> : IQueryProvider
         _originalProvider = originalProvider;
     }
 
-    public IQueryable CreateQuery(Expression expression) => throw new NotImplementedException();
+    public IQueryable CreateQuery(Expression expression) => throw new NotSupportedException();
 
-    public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-    {
-        return new DocumentQuery<TElement>(_session, _originalProvider.CreateQuery<TElement>(expression));
-    }
+    public object? Execute(Expression expression) => throw new NotSupportedException();
 
-    public object? Execute(Expression expression) => _originalProvider.Execute(expression);
+    public IQueryable<TElement> CreateQuery<TElement>(Expression expression) => new DocumentQuery<TElement>(_session, _originalProvider.CreateQuery<TElement>(expression));
 
     public TResult Execute<TResult>(Expression expression) => _originalProvider.Execute<TResult>(expression);
 }

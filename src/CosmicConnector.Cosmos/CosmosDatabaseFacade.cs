@@ -35,7 +35,7 @@ public sealed class CosmosDatabaseFacade : IDatabaseFacade
         return container.GetItemLinqQueryable<TEntity>(linqSerializerOptions: s_linqSerializerOptions);
     }
 
-    public async IAsyncEnumerable<TEntity> ExecuteQuery<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
     {
         using var feed = queryable.ToFeedIterator();
 
@@ -46,6 +46,15 @@ public sealed class CosmosDatabaseFacade : IDatabaseFacade
             foreach (var entity in response)
                 yield return entity;
         }
+    }
+
+    public async Task<TEntity?> FirstOrDefaultAsync<TEntity>(IQueryable<TEntity> queryable, CancellationToken cancellationToken = default) where TEntity : class
+    {
+        using var feed = queryable.Take(1).ToFeedIterator();
+
+        var page = await feed.ReadNextAsync(cancellationToken);
+
+        return page.FirstOrDefault();
     }
 
     public async Task CommitAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
