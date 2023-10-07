@@ -1,3 +1,5 @@
+using CosmicConnector.Linq;
+
 namespace CosmicConnector.Tests;
 
 public class DocumentStoreTests
@@ -272,22 +274,23 @@ public class DocumentStoreTests
     }
 
     [Fact]
-    public void Query_Should_Attach_Entities_To_Change_Tracker()
+    public async void Query_Should_Attach_Entities_To_Change_Tracker()
     {
-        var entity = new ReminderList("id");
-
         var database = new MockDatabaseFacade();
-        database.Add("id", entity);
+        database.Add("id1", new ReminderList("id1"));
+        database.Add("id2", new ReminderList("id2"));
 
         var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>("db", "container");
 
         var session = documentStore.CreateSession();
 
-        _ = session.Query<ReminderList>()
-                    .Where(x => x.Id == "id")
-                    .ToList();
+        await session.Query<ReminderList>()
+                    .Where(x => x.Id == "id1" || x.Id == "id2")
+                    .ToListAsync();
 
+        session.ChangeTracker.Entries.Should().HaveCount(2, because: "we should have two entities in the change tracker");
+        session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state after finding it");
         session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state after finding it");
     }
 }

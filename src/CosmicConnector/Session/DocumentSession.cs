@@ -1,3 +1,5 @@
+using CosmicConnector.Linq;
+
 namespace CosmicConnector;
 
 public sealed class DocumentSession : IDocumentSession
@@ -40,7 +42,23 @@ public sealed class DocumentSession : IDocumentSession
     public IQueryable<TEntity> Query<TEntity>() where TEntity : class
     {
         DocumentStore.EnsureConfigured<TEntity>();
-        return DatabaseFacade.Query<TEntity>();
+        return new DocumentQuery<TEntity>(this, DatabaseFacade.GetLinqQuery<TEntity>());
+    }
+
+    public async IAsyncEnumerable<TEntity> ExecuteQueryAsync<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    {
+        DocumentStore.EnsureConfigured<TEntity>();
+        ArgumentNullException.ThrowIfNull(queryable);
+
+        var query = DatabaseFacade.ExecuteQuery(queryable);
+
+        await foreach (var entity in query)
+        {
+            IdentityMap.Attach(entity);
+            ChangeTracker.RegisterUnchanged(entity);
+
+            yield return entity;
+        }
     }
 
     public void Store<TEntity>(TEntity entity) where TEntity : class
@@ -72,7 +90,7 @@ public sealed class DocumentSession : IDocumentSession
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await DatabaseFacade.SaveChangesAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
+        await DatabaseFacade.CommitAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
 
         foreach (var entry in ChangeTracker.RemovedEntries)
             IdentityMap.Detatch(entry.EntityType, entry.Id);

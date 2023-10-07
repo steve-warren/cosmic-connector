@@ -1,3 +1,5 @@
+using CosmicConnector.Linq;
+
 namespace CosmicConnector;
 
 public interface IDocumentSession

@@ -25,12 +25,17 @@ public sealed class CosmosDatabaseFacade : IDatabaseFacade
         return entity;
     }
 
-    public IQueryable<TEntity> Query<TEntity>() where TEntity : class
+    public IQueryable<TEntity> GetLinqQuery<TEntity>() where TEntity : class
     {
         throw new NotImplementedException();
     }
 
-    public async Task SaveChangesAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
+    public IAsyncEnumerable<TEntity> ExecuteQuery<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task CommitAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
     {
         foreach (var entry in entries)
         {
