@@ -1,7 +1,8 @@
+using CosmicConnector.Query;
+
 namespace CosmicConnector;
 public sealed class DocumentStore : IDocumentStore
 {
-
     public DocumentStore(IDatabaseFacade databaseFacade)
     {
         DatabaseFacade = databaseFacade;
@@ -25,12 +26,14 @@ public sealed class DocumentStore : IDocumentStore
     /// <param name="databaseName">The name of the database.</param>
     /// <param name="containerName">The name of the container.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore ConfigureEntity<TEntity>(string databaseName, string containerName) where TEntity : class
+    public DocumentStore ConfigureEntity<TEntity>(string databaseName, string containerName, Func<TEntity, string>? partitionKeySelector = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(databaseName);
         ArgumentException.ThrowIfNullOrEmpty(containerName);
 
-        var entityConfiguration = new EntityConfiguration(typeof(TEntity), databaseName, containerName);
+        var partitionKeySelectorInstance = partitionKeySelector is null ? NullPartitionKeySelector.Instance : new PartitionKeySelector<TEntity>(partitionKeySelector);
+
+        var entityConfiguration = new EntityConfiguration(typeof(TEntity), databaseName, containerName, partitionKeySelectorInstance);
 
         EntityConfiguration.Add(entityConfiguration);
 
@@ -39,7 +42,7 @@ public sealed class DocumentStore : IDocumentStore
         return this;
     }
 
-    internal void EnsureConfigured<TEntity>() where TEntity : class
+    internal void EnsureConfigured<TEntity>()
     {
         _ = EntityConfiguration.Get(typeof(TEntity)) ??
             throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");

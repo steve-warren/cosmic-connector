@@ -20,7 +20,8 @@ internal sealed class DocumentQuery<TEntity> : IQueryable<TEntity>
     public IQueryProvider Provider { get; }
     public IQueryable<TEntity> OriginalQueryable { get; }
 
-    public IEnumerator<TEntity> GetEnumerator() => OriginalQueryable.GetEnumerator();
+    public IAsyncEnumerable<TEntity> GetAsyncEnumerable(CancellationToken cancellationToken = default) => DocumentSession.GetAsyncEnumerable(OriginalQueryable, cancellationToken);
 
+    public IEnumerator<TEntity> GetEnumerator() => OriginalQueryable.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

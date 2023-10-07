@@ -13,7 +13,7 @@ public sealed class IdentityAccessor
     /// Registers a type with the identity accessor.
     /// </summary>
     /// <typeparam name="TEntity">The type to register.</typeparam>
-    public void RegisterType<TEntity>() where TEntity : class
+    public void RegisterType<TEntity>()
     {
         var entityType = typeof(TEntity);
 
@@ -31,7 +31,7 @@ public sealed class IdentityAccessor
     /// <returns>The ID of the entity.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the entity is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no ID accessor has been registered for the entity type, or when the entity does not have an ID.</exception>
-    public string GetId<TEntity>(TEntity entity) where TEntity : class =>
+    public string GetId<TEntity>(TEntity entity) =>
         GetId((object) entity);
 
     public string GetId(object entity)

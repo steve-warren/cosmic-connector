@@ -48,6 +48,8 @@ public sealed class ChangeTracker
     /// <param name="entity">The entity to register.</param>
     public void RegisterUnchanged(object entity)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+        
         var entry = CreateEntry(entity);
 
         entry.Unchange();

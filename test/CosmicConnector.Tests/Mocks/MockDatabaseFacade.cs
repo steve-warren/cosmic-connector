@@ -1,4 +1,4 @@
-using CosmicConnector.Linq;
+using System.Runtime.CompilerServices;
 
 namespace CosmicConnector.Tests;
 
@@ -10,28 +10,12 @@ public sealed class MockDatabaseFacade : IDatabaseFacade
     public bool SaveChangesWasCalled { get; private set; }
     public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
 
-    public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default) where TEntity : class
+    public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
         if (_entities.TryGetValue((typeof(TEntity), id), out var entity))
             return new ValueTask<TEntity?>((TEntity?) entity);
 
         return default;
-    }
-
-    public IQueryable<TEntity> GetLinqQuery<TEntity>() where TEntity : class => _entities.Values.OfType<TEntity>().AsQueryable();
-
-    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable) where TEntity : class
-    {
-        foreach (var entity in queryable)
-        {
-            await Task.Yield();
-            yield return entity;
-        }
-    }
-
-    public Task<TEntity?> FirstOrDefaultAsync<TEntity>(IQueryable<TEntity> queryable, CancellationToken cancellationToken = default) where TEntity : class
-    {
-        throw new NotImplementedException();
     }
 
     public void Add(string id, object entity)
@@ -44,5 +28,19 @@ public sealed class MockDatabaseFacade : IDatabaseFacade
         SaveChangesWasCalled = true;
 
         return Task.CompletedTask;
+    }
+
+    public IQueryable<TEntity> GetLinqQuery<TEntity>(string? partitionKey = null)
+    {
+        return _entities.Values.OfType<TEntity>().AsQueryable();
+    }
+
+    public async IAsyncEnumerable<TEntity> GetAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var entity in queryable)
+        {
+            await Task.Yield();
+            yield return entity;
+        }
     }
 }
