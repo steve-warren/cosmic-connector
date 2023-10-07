@@ -53,7 +53,7 @@ public sealed class CosmosDatabaseFacade : IDatabaseFacade
         foreach (var entry in entries)
         {
             if (entry.IsUnchanged)
-                return;
+                continue;
 
             var operation = CreateOperation(entry);
             await operation.ExecuteAsync(cancellationToken);
