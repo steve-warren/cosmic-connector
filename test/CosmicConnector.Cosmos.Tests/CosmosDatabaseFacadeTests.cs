@@ -1,3 +1,4 @@
+using CosmicConnector.Linq;
 using FluentAssertions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
@@ -13,7 +14,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
             Id = id;
         }
 
-        public string Id { get; init; }
+        public string Id { get; set; } = "";
         public string Name { get; set; } = "Test Plan";
     }
 
@@ -101,5 +102,28 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
         readEntity.Should().NotBeSameAs(updatedEntity, because: "the entity should be a different instance since it is from a different session");
         readEntity.Should().NotBeNull(because: "we should be able to find the entity we just updated");
         readEntity!.Name.Should().Be(updatedEntity.Name, because: "we should have updated the entity name");
+    }
+
+    [Fact]
+    public async Task Can_Execute_Linq_Query_As_List()
+    {
+        var store = new DocumentStore(_db)
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+
+        var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
+
+        var writeSession = store.CreateSession();
+
+        foreach (var entity in entities)
+            writeSession.Store(entity);
+
+        await writeSession.SaveChangesAsync();
+
+        var readSession = store.CreateSession();
+        var readEntities = await readSession.Query<AccountPlan>()
+                                          .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
+                                          .ToListAsync();
+
+        readEntities.Should().BeEquivalentTo(entities, because: "we should be able to query the entities we just created");
     }
 }

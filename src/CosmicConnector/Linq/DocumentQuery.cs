@@ -5,10 +5,9 @@ namespace CosmicConnector.Linq;
 
 internal sealed class DocumentQuery<TEntity> : IQueryable<TEntity>
 {
-    private readonly IQueryable<TEntity> _queryable;
     public DocumentQuery(DocumentSession session, IQueryable<TEntity> queryable)
     {
-        _queryable = queryable;
+        OriginalQueryable = queryable;
         DocumentSession = session;
         ElementType = queryable.ElementType;
         Expression = queryable.Expression;
@@ -19,8 +18,9 @@ internal sealed class DocumentQuery<TEntity> : IQueryable<TEntity>
     public Type ElementType { get; }
     public Expression Expression { get; }
     public IQueryProvider Provider { get; }
+    public IQueryable<TEntity> OriginalQueryable { get; }
 
-    public IEnumerator<TEntity> GetEnumerator() => _queryable.GetEnumerator();
+    public IEnumerator<TEntity> GetEnumerator() => OriginalQueryable.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

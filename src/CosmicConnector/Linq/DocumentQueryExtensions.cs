@@ -7,11 +7,11 @@ public static class DocumentQueryExtensions
         if (queryable is not DocumentQuery<TEntity> documentQueryable)
             throw new ArgumentException($"The {nameof(queryable)} must be of type {nameof(DocumentQuery<TEntity>)}", nameof(queryable));
 
-        var query = documentQueryable.DocumentSession.DatabaseFacade.ExecuteQuery(queryable);
+        var query = documentQueryable.DocumentSession.DatabaseFacade.ExecuteQuery(documentQueryable.OriginalQueryable);
 
         var list = new List<TEntity>();
 
-        await foreach (var entity in query.WithCancellation(cancellationToken))
+        await foreach (var entity in query)
         {
             documentQueryable.DocumentSession.IdentityMap.Attach(entity);
             documentQueryable.DocumentSession.ChangeTracker.RegisterUnchanged(entity);
