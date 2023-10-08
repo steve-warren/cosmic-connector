@@ -7,12 +7,12 @@ public sealed class IdentityMap
 {
     private readonly Dictionary<(Type Type, string Id), object?> _entities = new();
 
-    public IdentityMap(IdentityAccessor identityAccessor)
+    public IdentityMap(EntityConfigurationHolder entityConfiguration)
     {
-        IdentityAccessor = identityAccessor;
+        EntityConfiguration = entityConfiguration;
     }
 
-    public IdentityAccessor IdentityAccessor { get; }
+    public EntityConfigurationHolder EntityConfiguration { get; }
 
     /// <summary>
     /// Attempts to retrieve an entity of type <typeparamref name="TEntity"/> with the specified ID from the identity map.
@@ -37,7 +37,7 @@ public sealed class IdentityMap
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var id = IdentityAccessor.GetId(entity);
+        var id = GetId(entity);
         Attach(id, entity);
     }
 
@@ -58,7 +58,7 @@ public sealed class IdentityMap
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var id = IdentityAccessor.GetId(entity);
+        var id = GetId(entity);
 
         if (!_entities.TryGetValue((Type: typeof(TEntity), Id: id), out _))
             throw new InvalidOperationException($"The entity of type '{typeof(TEntity).Name}' with ID '{id}' does not exist in the identity map.");
@@ -71,4 +71,13 @@ public sealed class IdentityMap
     /// <param name="id">The ID of the entity to detach.</param>
     /// <returns><c>true</c> if the entity was detached successfully; otherwise, <c>false</c>.</returns>
     public bool Detatch(Type entityType, string id) => _entities.Remove((Type: entityType, Id: id));
+
+    private string GetId<TEntity>(TEntity entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        var config = EntityConfiguration.Get(typeof(TEntity)) ?? throw new InvalidOperationException($"No ID accessor has been registered for type {typeof(TEntity).FullName}.");
+
+        return config.IdSelector.GetString(entity);
+    }
 }

@@ -12,11 +12,11 @@ internal class DeleteItemOperation : ICosmosWriteOperation
     {
         _container = container;
         _id = id;
-        _partitionKey = partitionKey;
+        _partitionKey = string.IsNullOrEmpty(partitionKey) ? id : partitionKey;
     }
 
     public Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return _container.DeleteItemStreamAsync(_id, new PartitionKey(_partitionKey ?? _id), cancellationToken: cancellationToken);
+        return _container.DeleteItemAsync<object>(_id, new PartitionKey(_partitionKey), cancellationToken: cancellationToken);
     }
 }

@@ -29,7 +29,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Add_And_Find_Entity_In_Separate_Sessions()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans", e => e.Id);
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -48,7 +48,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Add_Find_Delete_Entity_In_Separate_Sessions()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans", e => e.Id);
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -76,7 +76,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Add_Find_Update_Entity_In_Separate_Session()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans", e => e.Id);
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -108,7 +108,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_List()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans", e => e.Id);
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -132,7 +132,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans", e => e.Id);
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -161,7 +161,7 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans");
+            .ConfigureEntity<AccountPlan>("reminderdb", "accountPlans", e => e.Id);
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 

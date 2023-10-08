@@ -4,14 +4,14 @@ public sealed class ChangeTracker
 {
     private readonly List<EntityEntry> _entries = new();
 
-    public ChangeTracker(IdentityAccessor identityAccessor)
+    public ChangeTracker(EntityConfigurationHolder entityConfiguration)
     {
-        ArgumentNullException.ThrowIfNull(identityAccessor);
+        ArgumentNullException.ThrowIfNull(entityConfiguration);
 
-        IdentityAccessor = identityAccessor;
+        EntityConfiguration = entityConfiguration;
     }
 
-    public IdentityAccessor IdentityAccessor { get; }
+    public EntityConfigurationHolder EntityConfiguration { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
     /// <summary>
@@ -49,7 +49,7 @@ public sealed class ChangeTracker
     public void RegisterUnchanged(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-        
+
         var entry = CreateEntry(entity);
 
         entry.Unchange();
@@ -108,11 +108,16 @@ public sealed class ChangeTracker
         }
     }
 
-    private EntityEntry CreateEntry(object entity) => new()
+    private EntityEntry CreateEntry(object entity)
     {
-        Id = IdentityAccessor.GetId(entity),
-        PartitionKey = IdentityAccessor.GetId(entity),
-        Entity = entity,
-        EntityType = entity.GetType()
-    };
+        var config = EntityConfiguration.Get(entity.GetType()) ?? throw new InvalidOperationException($"No configuration has been registered for type {entity.GetType().FullName}.");
+
+        return new()
+        {
+            Id = config.IdSelector.GetString(entity),
+            PartitionKey = config.PartitionKeySelector.GetString(entity),
+            Entity = entity,
+            EntityType = entity.GetType()
+        };
+    }
 }
