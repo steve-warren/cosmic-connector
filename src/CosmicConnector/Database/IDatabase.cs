@@ -1,6 +1,6 @@
 namespace CosmicConnector;
 
-public interface IDatabaseFacade
+public interface IDatabase
 {
     EntityConfigurationHolder EntityConfiguration { get; set; }
     ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = default, CancellationToken cancellationToken = default);

@@ -4,7 +4,7 @@ using Microsoft.Azure.Cosmos.Linq;
 
 namespace CosmicConnector.Cosmos;
 
-public sealed class CosmosDatabaseFacade : IDatabaseFacade
+public sealed class CosmosDatabase : IDatabase
 {
     private static readonly CosmosLinqSerializerOptions s_linqSerializerOptions = new() { PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase };
     private static readonly QueryRequestOptions s_defaultQueryRequestOptions = new();
@@ -12,7 +12,7 @@ public sealed class CosmosDatabaseFacade : IDatabaseFacade
     private readonly CosmosClient _client;
     private readonly Dictionary<Type, Container> _containers = new();
 
-    public CosmosDatabaseFacade(CosmosClient client)
+    public CosmosDatabase(CosmosClient client)
     {
         _client = client;
     }

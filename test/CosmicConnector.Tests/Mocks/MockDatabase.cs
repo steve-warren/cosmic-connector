@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace CosmicConnector.Tests;
 
-public sealed class MockDatabaseFacade : IDatabaseFacade
+public sealed class MockDatabase : IDatabase
 {
     private readonly Dictionary<(Type EntityType, string Id), object> _entities = new();
 

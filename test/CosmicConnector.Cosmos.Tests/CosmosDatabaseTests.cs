@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace CosmicConnector.Cosmos.Tests;
 
-public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
+public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {
     public class AccountPlan
     {
@@ -18,11 +18,11 @@ public class CosmosDatabaseFacadeTests : IClassFixture<CosmosTextFixture>
         public string Name { get; set; } = "Test Plan";
     }
 
-    private readonly CosmosDatabaseFacade _db;
+    private readonly CosmosDatabase _db;
 
-    public CosmosDatabaseFacadeTests(CosmosTextFixture configurationTextFixture)
+    public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
-        _db = new CosmosDatabaseFacade(configurationTextFixture.Client);
+        _db = new CosmosDatabase(configurationTextFixture.Client);
     }
 
     [Fact]
