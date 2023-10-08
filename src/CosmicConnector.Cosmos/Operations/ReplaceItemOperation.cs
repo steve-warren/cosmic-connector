@@ -14,11 +14,11 @@ internal class ReplaceItemOperation : ICosmosWriteOperation
         _container = container;
         _entity = entity;
         _id = id;
-        _partitionKey = partitionKey;
+        _partitionKey = string.IsNullOrEmpty(partitionKey) ? id : partitionKey;
     }
 
     public Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return _container.ReplaceItemAsync(_entity, _id, new PartitionKey(_partitionKey ?? _id), cancellationToken: cancellationToken);
+        return _container.ReplaceItemAsync(_entity, _id, new PartitionKey(_partitionKey), cancellationToken: cancellationToken);
     }
 }

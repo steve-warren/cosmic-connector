@@ -16,7 +16,7 @@ public sealed class DocumentStore : IDocumentStore
 
     public IDocumentSession CreateSession()
     {
-        return new DocumentSession(this, IdentityAccessor, DatabaseFacade);
+        return new DocumentSession(this, EntityConfiguration, DatabaseFacade);
     }
 
     /// <summary>
@@ -26,14 +26,16 @@ public sealed class DocumentStore : IDocumentStore
     /// <param name="databaseName">The name of the database.</param>
     /// <param name="containerName">The name of the container.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore ConfigureEntity<TEntity>(string databaseName, string containerName, Func<TEntity, string>? partitionKeySelector = default)
+    public DocumentStore ConfigureEntity<TEntity>(string databaseName, string containerName, Func<TEntity, string> idSelector, Func<TEntity, string>? partitionKeySelector = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(databaseName);
         ArgumentException.ThrowIfNullOrEmpty(containerName);
 
-        var partitionKeySelectorInstance = partitionKeySelector is null ? NullPartitionKeySelector.Instance : new PartitionKeySelector<TEntity>(partitionKeySelector);
+        var idSelectorInstance = new StringSelector<TEntity>(idSelector);
 
-        var entityConfiguration = new EntityConfiguration(typeof(TEntity), databaseName, containerName, partitionKeySelectorInstance);
+        var partitionKeySelectorInstance = partitionKeySelector is null ? NullStringSelector.Instance : new StringSelector<TEntity>(partitionKeySelector);
+
+        var entityConfiguration = new EntityConfiguration(typeof(TEntity), databaseName, containerName, idSelectorInstance, partitionKeySelectorInstance);
 
         EntityConfiguration.Add(entityConfiguration);
 

@@ -6,22 +6,24 @@ namespace CosmicConnector;
 
 public sealed class DocumentSession : IDocumentSession
 {
-    internal DocumentSession(DocumentStore documentStore, IdentityAccessor identityAccessor, IDatabaseFacade databaseFacade)
+    internal DocumentSession(DocumentStore documentStore, EntityConfigurationHolder entityConfiguration, IDatabaseFacade databaseFacade)
     {
         ArgumentNullException.ThrowIfNull(documentStore);
-        ArgumentNullException.ThrowIfNull(identityAccessor);
+        ArgumentNullException.ThrowIfNull(entityConfiguration);
 
         DocumentStore = documentStore;
         DatabaseFacade = databaseFacade;
+        EntityConfiguration = entityConfiguration;
 
-        IdentityMap = new IdentityMap(identityAccessor);
-        ChangeTracker = new ChangeTracker(identityAccessor);
+        IdentityMap = new IdentityMap(entityConfiguration);
+        ChangeTracker = new ChangeTracker(entityConfiguration);
     }
 
     public ChangeTracker ChangeTracker { get; }
     public IdentityMap IdentityMap { get; }
     public DocumentStore DocumentStore { get; }
     public IDatabaseFacade DatabaseFacade { get; }
+    public EntityConfigurationHolder EntityConfiguration { get; }
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
