@@ -3,20 +3,20 @@ using CosmicConnector.Query;
 namespace CosmicConnector;
 public sealed class DocumentStore : IDocumentStore
 {
-    public DocumentStore(IDatabaseFacade databaseFacade)
+    public DocumentStore(IDatabase database)
     {
-        DatabaseFacade = databaseFacade;
+        Database = database;
         EntityConfiguration = new();
-        databaseFacade.EntityConfiguration = EntityConfiguration;
+        database.EntityConfiguration = EntityConfiguration;
     }
 
     internal IdentityAccessor IdentityAccessor { get; } = new();
-    public IDatabaseFacade DatabaseFacade { get; }
+    public IDatabase Database { get; }
     public EntityConfigurationHolder EntityConfiguration { get; }
 
     public IDocumentSession CreateSession()
     {
-        return new DocumentSession(this, EntityConfiguration, DatabaseFacade);
+        return new DocumentSession(this, EntityConfiguration, Database);
     }
 
     /// <summary>

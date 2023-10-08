@@ -10,7 +10,7 @@ public class DocumentStoreTests
     [Fact]
     public void Can_Create_Session()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database);
 
         var session = documentStore.CreateSession();
@@ -21,7 +21,7 @@ public class DocumentStoreTests
     [Fact]
     public void Storing_Null_Entity_Throws()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -35,7 +35,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Finding_Entity_By_Id_Should_Return_Same_Instance()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database);
         documentStore.ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -53,7 +53,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Entity_Not_Found_Should_Return_Null()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database);
         documentStore.ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -67,7 +67,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Can_Store_Entities_Of_Different_Types()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>("db", "container", e => e.Id)
                             .ConfigureEntity<Reminder>("db", "container", e => e.Id);
@@ -90,7 +90,7 @@ public class DocumentStoreTests
     [Fact]
     public void Given_Unregistered_Entity_Type_Then_Store_Should_Throw()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database);
 
         var session = documentStore.CreateSession();
@@ -105,7 +105,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Given_Unregistered_Entity_Type_Then_Find_Should_Throw()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database);
 
         var session = documentStore.CreateSession();
@@ -118,7 +118,7 @@ public class DocumentStoreTests
     [Fact]
     public void Stored_Entity_Should_Be_In_Added_State()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -135,7 +135,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Call_To_SaveChanges_Should_Transition_Added_Entity_To_Unmodified_State()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -154,7 +154,7 @@ public class DocumentStoreTests
     [Fact]
     public void Updated_Entity_Should_Be_In_Modified_State()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -172,7 +172,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Removed_Entity_Should_Be_In_Deleted_State_And_Removed_From_Tracking()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -197,7 +197,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Removed_Entity_Should_Be_Removed_From_IdentityMap()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
                             .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
 
@@ -219,7 +219,7 @@ public class DocumentStoreTests
     {
         var entity = new ReminderList("id");
 
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
@@ -233,11 +233,11 @@ public class DocumentStoreTests
     }
 
     [Fact]
-    public async Task Call_To_SaveChanges_Should_Call_Database_Facade()
+    public async Task Call_To_SaveChanges_Should_Call_Database()
     {
         var entity = new ReminderList("id");
 
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
@@ -249,7 +249,7 @@ public class DocumentStoreTests
 
         await session.SaveChangesAsync();
 
-        database.SaveChangesWasCalled.Should().BeTrue(because: "we should have called the database facade's SaveChangesAsync method");
+        database.SaveChangesWasCalled.Should().BeTrue(because: "we should have called the database's SaveChangesAsync method");
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class DocumentStoreTests
     {
         var entity = new ReminderList("id");
 
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
@@ -276,7 +276,7 @@ public class DocumentStoreTests
     [Fact]
     public async void Query_Should_Attach_Entities_To_Change_Tracker()
     {
-        var database = new MockDatabaseFacade();
+        var database = new MockDatabase();
         database.Add("id1", new ReminderList("id1"));
         database.Add("id2", new ReminderList("id2"));
 
