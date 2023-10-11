@@ -1,9 +1,9 @@
-using CosmicConnector.Linq;
+using CosmoDust.Linq;
 using FluentAssertions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
-namespace CosmicConnector.Cosmos.Tests;
+namespace CosmoDust.Cosmos.Tests;
 
 public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {

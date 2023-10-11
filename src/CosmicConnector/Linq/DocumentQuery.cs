@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Linq.Expressions;
 
-namespace CosmicConnector.Linq;
+namespace CosmoDust.Linq;
 
 internal sealed class DocumentQuery<TEntity> : IQueryable<TEntity>
 {

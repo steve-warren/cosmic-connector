@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
-using CosmicConnector.Linq;
+using CosmoDust.Linq;
 
-namespace CosmicConnector;
+namespace CosmoDust;
 
 public sealed class DocumentSession : IDocumentSession
 {

@@ -1,6 +1,6 @@
 using Microsoft.Azure.Cosmos;
 
-namespace CosmicConnector.Cosmos;
+namespace CosmoDust.Cosmos;
 
 internal class DeleteItemOperation : ICosmosWriteOperation
 {

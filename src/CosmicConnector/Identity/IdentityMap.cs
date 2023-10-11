@@ -1,4 +1,4 @@
-namespace CosmicConnector;
+namespace CosmoDust;
 
 /// <summary>
 /// Represents a map of entities by their unique identifier and type.

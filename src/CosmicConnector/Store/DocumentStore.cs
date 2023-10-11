@@ -1,6 +1,6 @@
-using CosmicConnector.Query;
+using CosmoDust.Query;
 
-namespace CosmicConnector;
+namespace CosmoDust;
 public sealed class DocumentStore : IDocumentStore
 {
     public DocumentStore(IDatabase database)

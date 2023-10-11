@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.Azure.Cosmos;
 
-namespace CosmicConnector.Cosmos;
+namespace CosmoDust.Cosmos;
 
 internal class ReadItemOperation<TResult> : ICosmosReadOperation<TResult?>
 {

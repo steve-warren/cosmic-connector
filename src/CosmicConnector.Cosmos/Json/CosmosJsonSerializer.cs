@@ -2,7 +2,7 @@ using System.Text.Json;
 using Azure.Core.Serialization;
 using Microsoft.Azure.Cosmos;
 
-namespace CosmicConnector.Cosmos;
+namespace CosmoDust.Cosmos;
 
 public sealed class CosmosJsonSerializer : CosmosSerializer
 {

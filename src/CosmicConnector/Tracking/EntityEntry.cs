@@ -1,4 +1,4 @@
-namespace CosmicConnector;
+namespace CosmoDust;
 
 public sealed class EntityEntry
 {

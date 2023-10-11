@@ -1,3 +1,3 @@
 global using Xunit;
-global using CosmicConnector;
+global using CosmoDust;
 global using FluentAssertions;

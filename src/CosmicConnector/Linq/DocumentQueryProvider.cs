@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace CosmicConnector.Linq;
+namespace CosmoDust.Linq;
 
 internal sealed class DocumentQueryProvider<TEntity> : IQueryProvider
 {

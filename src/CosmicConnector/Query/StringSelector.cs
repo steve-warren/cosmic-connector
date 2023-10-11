@@ -1,4 +1,4 @@
-namespace CosmicConnector.Query;
+namespace CosmoDust.Query;
 
 internal class StringSelector<TEntity> : IStringSelector
 {

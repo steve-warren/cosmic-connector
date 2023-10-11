@@ -1,6 +1,6 @@
-using CosmicConnector.Linq;
+using CosmoDust.Linq;
 
-namespace CosmicConnector.Tests;
+namespace CosmoDust.Tests;
 
 public class DocumentStoreTests
 {

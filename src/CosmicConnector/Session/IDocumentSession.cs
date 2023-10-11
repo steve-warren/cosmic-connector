@@ -1,6 +1,6 @@
-using CosmicConnector.Linq;
+using CosmoDust.Linq;
 
-namespace CosmicConnector;
+namespace CosmoDust;
 
 public interface IDocumentSession
 {

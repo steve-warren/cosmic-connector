@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace CosmicConnector.Tests;
+namespace CosmoDust.Tests;
 
 public sealed class MockDatabase : IDatabase
 {

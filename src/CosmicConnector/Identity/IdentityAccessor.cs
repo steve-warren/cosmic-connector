@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace CosmicConnector;
+namespace CosmoDust;
 
 /// <summary>
 /// Provides a mechanism for accessing the ID of an entity of a specified type.

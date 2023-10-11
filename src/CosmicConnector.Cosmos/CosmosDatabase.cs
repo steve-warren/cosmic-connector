@@ -2,7 +2,7 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 
-namespace CosmicConnector.Cosmos;
+namespace CosmoDust.Cosmos;
 
 public sealed class CosmosDatabase : IDatabase
 {

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
-namespace CosmicConnector.Cosmos.Tests;
+namespace CosmoDust.Cosmos.Tests;
 
 public class CosmosTextFixture
 {

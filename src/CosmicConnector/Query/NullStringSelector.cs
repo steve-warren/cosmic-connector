@@ -1,4 +1,4 @@
-namespace CosmicConnector.Query;
+namespace CosmoDust.Query;
 
 internal sealed class NullStringSelector : IStringSelector
 {
