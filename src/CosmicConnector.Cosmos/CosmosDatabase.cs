@@ -9,13 +9,15 @@ public sealed class CosmosDatabase : IDatabase
     private static readonly CosmosLinqSerializerOptions s_linqSerializerOptions = new() { PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase };
     private static readonly QueryRequestOptions s_defaultQueryRequestOptions = new();
 
-    private readonly CosmosClient _client;
     private readonly Dictionary<Type, Container> _containers = new();
 
-    public CosmosDatabase(CosmosClient client)
+    public CosmosDatabase(Database database)
     {
-        _client = client;
+        Database = database;
     }
+
+    public string Name => Database.Id;
+    public Database Database { get; }
 
     public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
 
@@ -66,6 +68,34 @@ public sealed class CosmosDatabase : IDatabase
         }
     }
 
+    public async Task CommitTransactionAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken)
+    {
+        var containerAndPartitionKey = entries.GroupBy(e => (e.ContainerName, e.PartitionKey));
+
+        foreach (var entriesGrouping in containerAndPartitionKey)
+        {
+            var container = Database.GetContainer(entriesGrouping.Key.ContainerName);
+            var partitionKey = entriesGrouping.Key.PartitionKey;
+
+            var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
+
+            foreach (var entry in entriesGrouping)
+            {
+                _ = entry.State switch
+                {
+                    EntityState.Added => batch.CreateItem(entry.Entity),
+                    EntityState.Removed => batch.DeleteItem(entry.Id),
+                    EntityState.Modified => batch.ReplaceItem(entry.Id, entry.Entity),
+                    EntityState.Unchanged or
+                    EntityState.Detached => batch,
+                    _ => throw new NotImplementedException()
+                };
+            }
+
+            var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
     private ICosmosWriteOperation CreateOperation(EntityEntry entry)
     {
         var container = GetContainerFor(entry.EntityType);
@@ -86,7 +116,7 @@ public sealed class CosmosDatabase : IDatabase
 
         var entityConfiguration = GetConfigurationFor(entityType);
 
-        container = _client.GetContainer(entityConfiguration.DatabaseName, entityConfiguration.ContainerName);
+        container = Database.GetContainer(entityConfiguration.ContainerName);
 
         _containers.Add(entityType, container);
 

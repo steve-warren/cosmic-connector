@@ -37,8 +37,6 @@ public sealed class ChangeTracker
         var entry = CreateEntry(entity);
 
         entry.Add();
-
-        _entries.Add(entry);
     }
 
     /// <summary>
@@ -53,8 +51,6 @@ public sealed class ChangeTracker
         var entry = CreateEntry(entity);
 
         entry.Unchange();
-
-        _entries.Add(entry);
     }
 
     /// <summary>
@@ -112,12 +108,17 @@ public sealed class ChangeTracker
     {
         var config = EntityConfiguration.Get(entity.GetType()) ?? throw new InvalidOperationException($"No configuration has been registered for type {entity.GetType().FullName}.");
 
-        return new()
+        var entry = new EntityEntry
         {
             Id = config.IdSelector.GetString(entity),
+            ContainerName = config.ContainerName,
             PartitionKey = config.PartitionKeySelector.GetString(entity),
             Entity = entity,
             EntityType = entity.GetType()
         };
+
+        _entries.Add(entry);
+
+        return entry;
     }
 }

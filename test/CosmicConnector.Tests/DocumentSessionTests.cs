@@ -23,7 +23,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -37,7 +37,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database);
-        documentStore.ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+        documentStore.ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -55,7 +55,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database);
-        documentStore.ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+        documentStore.ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -69,8 +69,8 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id)
-                            .ConfigureEntity<Reminder>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id)
+                            .ConfigureEntity<Reminder>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -120,7 +120,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -137,7 +137,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                           .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                           .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -145,7 +145,7 @@ public class DocumentStoreTests
 
         session.Store(entity);
 
-        await session.SaveChangesAsync();
+        await session.CommitAsync();
 
         session.ChangeTracker.Entries.Should().HaveCount(1, because: "we should have one entity in the change tracker");
         session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state");
@@ -156,7 +156,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -174,7 +174,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -188,7 +188,7 @@ public class DocumentStoreTests
         session.ChangeTracker.Entries.Should().HaveCount(1, because: "we should have one entity in the change tracker");
         trackedEntity.State.Should().Be(EntityState.Removed, because: "we should have one entity in the change tracker in the modified state");
 
-        await session.SaveChangesAsync();
+        await session.CommitAsync();
 
         session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
         trackedEntity.State.Should().Be(EntityState.Detached, because: "we should have the entity in the detached state");
@@ -199,7 +199,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -208,7 +208,7 @@ public class DocumentStoreTests
         session.Store(entity);
         session.Remove(entity);
 
-        await session.SaveChangesAsync();
+        await session.CommitAsync();
 
         session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
         session.IdentityMap.Exists<ReminderList>("id").Should().BeFalse(because: "we should not have the entity in the identity map");
@@ -223,7 +223,7 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -241,15 +241,15 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
         _ = await session.FindAsync<ReminderList>("id");
 
-        await session.SaveChangesAsync();
+        await session.CommitAsync();
 
-        database.SaveChangesWasCalled.Should().BeTrue(because: "we should have called the database's SaveChangesAsync method");
+        database.CommitWasCalled.Should().BeTrue(because: "we should have called the database's CommitAsync method");
     }
 
     [Fact]
@@ -261,7 +261,7 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 
@@ -281,7 +281,7 @@ public class DocumentStoreTests
         database.Add("id2", new ReminderList("id2"));
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", "container", e => e.Id);
+                            .ConfigureEntity<ReminderList>("db", e => e.Id);
 
         var session = documentStore.CreateSession();
 

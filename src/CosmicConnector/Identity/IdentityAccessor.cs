@@ -17,10 +17,7 @@ public sealed class IdentityAccessor
     {
         var entityType = typeof(TEntity);
 
-        if (_accessors.ContainsKey(entityType))
-            return;
-
-        _accessors[entityType] = CreateAccessor(entityType);
+        _accessors.Add(entityType, CreateAccessor(entityType));
     }
 
     /// <summary>

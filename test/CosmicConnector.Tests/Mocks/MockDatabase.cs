@@ -6,8 +6,9 @@ public sealed class MockDatabase : IDatabase
 {
     private readonly Dictionary<(Type EntityType, string Id), object> _entities = new();
 
+    public string Name { get; private set; } = "MockDatabase";
     public int Count => _entities.Count;
-    public bool SaveChangesWasCalled { get; private set; }
+    public bool CommitWasCalled { get; private set; }
     public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
 
     public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default)
@@ -25,9 +26,14 @@ public sealed class MockDatabase : IDatabase
 
     public Task CommitAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
     {
-        SaveChangesWasCalled = true;
+        CommitWasCalled = true;
 
         return Task.CompletedTask;
+    }
+
+    public Task CommitTransactionAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 
     public IQueryable<TEntity> GetLinqQuery<TEntity>(string? partitionKey = null)

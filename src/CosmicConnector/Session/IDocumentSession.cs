@@ -12,5 +12,6 @@ public interface IDocumentSession
     void Remove<TEntity>(TEntity entity);
     void Update<TEntity>(TEntity entity);
     IQueryable<TEntity> Query<TEntity>(string? partitionKey = null);
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task CommitAsync(CancellationToken cancellationToken = default);
+    Task CommitTransactionAsync(CancellationToken cancellationToken = default);
 }

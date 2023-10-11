@@ -3,7 +3,7 @@ using Microsoft.Azure.Cosmos;
 
 namespace CosmicConnector.Cosmos;
 
-internal class ReadItemOperation<TEntity> : ICosmosReadOperation<TEntity>
+internal class ReadItemOperation<TResult> : ICosmosReadOperation<TResult?>
 {
     private readonly Container _container;
     private readonly string _id;
@@ -16,11 +16,11 @@ internal class ReadItemOperation<TEntity> : ICosmosReadOperation<TEntity>
         _partitionKey = partitionKey;
     }
 
-    public async Task<TEntity?> ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task<TResult?> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            var response = await _container.ReadItemAsync<TEntity>(_id, new PartitionKey(_partitionKey ?? _id), cancellationToken: cancellationToken);
+            var response = await _container.ReadItemAsync<TResult>(_id, new PartitionKey(_partitionKey ?? _id), cancellationToken: cancellationToken);
 
             return response.Resource;
         }
