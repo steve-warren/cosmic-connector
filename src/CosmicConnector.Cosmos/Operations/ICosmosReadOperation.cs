@@ -1,6 +1,6 @@
 namespace CosmicConnector.Cosmos;
 
-internal interface ICosmosReadOperation<TEntity>
+internal interface ICosmosReadOperation<TResult>
 {
-    Task<TEntity?> ExecuteAsync(CancellationToken cancellationToken = default);
+    Task<TResult> ExecuteAsync(CancellationToken cancellationToken = default);
 }

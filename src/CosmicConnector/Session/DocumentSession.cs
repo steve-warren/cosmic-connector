@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using CosmicConnector.Linq;
-using CosmicConnector.Query;
 
 namespace CosmicConnector;
 
@@ -35,10 +34,11 @@ public sealed class DocumentSession : IDocumentSession
 
         entity = await Database.FindAsync<TEntity>(id, partitionKey, cancellationToken);
 
-        IdentityMap.Attach(id, entity);
+        if (entity is null)
+            return default;
 
-        if (entity is not null)
-            ChangeTracker.RegisterUnchanged(entity);
+        IdentityMap.Attach(id, entity);
+        ChangeTracker.RegisterUnchanged(entity);
 
         return entity;
     }
@@ -95,9 +95,19 @@ public sealed class DocumentSession : IDocumentSession
         ChangeTracker.RegisterRemoved(entity);
     }
 
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async Task CommitAsync(CancellationToken cancellationToken = default)
     {
         await Database.CommitAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
+
+        foreach (var entry in ChangeTracker.RemovedEntries)
+            IdentityMap.Detatch(entry.EntityType, entry.Id);
+
+        ChangeTracker.Commit();
+    }
+
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        await Database.CommitTransactionAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
 
         foreach (var entry in ChangeTracker.RemovedEntries)
             IdentityMap.Detatch(entry.EntityType, entry.Id);
