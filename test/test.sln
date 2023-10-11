@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CosmoDust.Cosmos.Tests", "CosmicConnector.Cosmos.Tests\CosmoDust.Cosmos.Tests.csproj", "{F4AFB868-8EFB-422D-B8DA-1808B49D28BF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CosmoDust.Cosmos.Tests", "CosmoDust.Cosmos.Tests\CosmoDust.Cosmos.Tests.csproj", "{F4AFB868-8EFB-422D-B8DA-1808B49D28BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CosmoDust.Tests", "CosmicConnector.Tests\CosmoDust.Tests.csproj", "{92B7618C-4D52-454B-96F2-F21E81353B45}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CosmoDust.Tests", "CosmoDust.Tests\CosmoDust.Tests.csproj", "{92B7618C-4D52-454B-96F2-F21E81353B45}"
 EndProject
 Global
 	GlobalSection(SolutionProperties) = preSolution
