@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using CosmicConnector.Linq;
+using CosmoDust.Linq;
 
 namespace CosmoDust;
 
