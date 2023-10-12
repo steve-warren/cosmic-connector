@@ -5,7 +5,6 @@ namespace CosmoDust;
 public interface IDocumentSession
 {
     ChangeTracker ChangeTracker { get; }
-    IdentityMap IdentityMap { get; }
 
     ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = default, CancellationToken cancellationToken = default);
     void Store<TEntity>(TEntity entity);

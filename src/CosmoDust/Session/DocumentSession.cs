@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using CosmoDust.Linq;
 
@@ -14,12 +15,10 @@ public sealed class DocumentSession : IDocumentSession
         Database = database;
         EntityConfiguration = entityConfiguration;
 
-        IdentityMap = new IdentityMap(entityConfiguration);
         ChangeTracker = new ChangeTracker(entityConfiguration);
     }
 
     public ChangeTracker ChangeTracker { get; }
-    public IdentityMap IdentityMap { get; }
     public DocumentStore DocumentStore { get; }
     public IDatabase Database { get; }
     public EntityConfigurationHolder EntityConfiguration { get; }
@@ -29,7 +28,7 @@ public sealed class DocumentSession : IDocumentSession
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
-        if (IdentityMap.TryGet(id, out TEntity? entity))
+        if (ChangeTracker.TryGet(id, out TEntity? entity))
             return entity;
 
         entity = await Database.FindAsync<TEntity>(id, partitionKey, cancellationToken);
@@ -37,7 +36,6 @@ public sealed class DocumentSession : IDocumentSession
         if (entity is null)
             return default;
 
-        IdentityMap.Attach(id, entity);
         ChangeTracker.RegisterUnchanged(entity);
 
         return entity;
@@ -58,10 +56,8 @@ public sealed class DocumentSession : IDocumentSession
 
         await foreach (var entity in query.WithCancellation(cancellationToken))
         {
-            if (entity is null)
-                continue;
+            Debug.Assert(entity is not null, "The entity should not be null.");
 
-            IdentityMap.Attach(entity);
             ChangeTracker.RegisterUnchanged(entity);
 
             yield return entity;
@@ -73,7 +69,6 @@ public sealed class DocumentSession : IDocumentSession
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
 
-        IdentityMap.Attach(entity);
         ChangeTracker.RegisterAdded(entity);
     }
 
@@ -82,7 +77,7 @@ public sealed class DocumentSession : IDocumentSession
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
 
-        IdentityMap.EnsureExists(entity);
+        ChangeTracker.EnsureExists(entity);
         ChangeTracker.RegisterModified(entity);
     }
 
@@ -91,7 +86,7 @@ public sealed class DocumentSession : IDocumentSession
         DocumentStore.EnsureConfigured<TEntity>();
         ArgumentNullException.ThrowIfNull(entity);
 
-        IdentityMap.EnsureExists(entity);
+        ChangeTracker.EnsureExists(entity);
         ChangeTracker.RegisterRemoved(entity);
     }
 
@@ -99,18 +94,12 @@ public sealed class DocumentSession : IDocumentSession
     {
         await Database.CommitAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
 
-        foreach (var entry in ChangeTracker.RemovedEntries)
-            IdentityMap.Detatch(entry.EntityType, entry.Id);
-
         ChangeTracker.Commit();
     }
 
     public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
     {
         await Database.CommitTransactionAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
-
-        foreach (var entry in ChangeTracker.RemovedEntries)
-            IdentityMap.Detatch(entry.EntityType, entry.Id);
 
         ChangeTracker.Commit();
     }

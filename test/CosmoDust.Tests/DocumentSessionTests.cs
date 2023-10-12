@@ -211,7 +211,7 @@ public class DocumentStoreTests
         await session.CommitAsync();
 
         session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
-        session.IdentityMap.Exists<ReminderList>("id").Should().BeFalse(because: "we should not have the entity in the identity map");
+        session.ChangeTracker.Exists<ReminderList>("id").Should().BeFalse(because: "we should not have the entity in the identity map");
     }
 
     [Fact]
