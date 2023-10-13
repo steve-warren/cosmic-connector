@@ -2,4 +2,15 @@ using CosmoDust.Query;
 
 namespace CosmoDust;
 
-public record EntityConfiguration(Type EntityType, string ContainerName, IStringSelector IdSelector, IStringSelector PartitionKeySelector);
+public class EntityConfiguration
+{
+    public EntityConfiguration(Type entityType)
+    {
+        EntityType = entityType;
+    }
+
+    public Type EntityType { get; }
+    public string ContainerName { get; set; } = string.Empty;
+    public IStringSelector IdSelector { get; set; } = NullStringSelector.Instance;
+    public IStringSelector PartitionKeySelector { get; set; } = NullStringSelector.Instance;
+}

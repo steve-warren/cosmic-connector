@@ -20,9 +20,21 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
     public class BlogPost
     {
+        private int _likes = 0;
+
         public string Id { get; set; } = "";
         public string Title { get; set; } = "Test Post";
         public string PostId { get; set; } = "";
+
+        public int GetLikes()
+        {
+            return _likes;
+        }
+
+        public int Like()
+        {
+            return ++_likes;
+        }
     }
 
     public class BlogPostComment
@@ -45,7 +57,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Add_And_Find_Entity_In_Separate_Sessions()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("accountPlans", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<AccountPlan>()
+                       .HasId(e => e.Id)
+                       .ToContainer("accountPlans");
+            });
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -64,7 +81,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Add_Find_Delete_Entity_In_Separate_Sessions()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("accountPlans", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<AccountPlan>()
+                       .HasId(e => e.Id)
+                       .ToContainer("accountPlans");
+            });
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -92,7 +114,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Add_Find_Update_Entity_In_Separate_Session()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("accountPlans", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<AccountPlan>()
+                       .HasId(e => e.Id)
+                       .ToContainer("accountPlans");
+            });
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -124,7 +151,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_List()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("accountPlans", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<AccountPlan>()
+                       .HasId(e => e.Id)
+                       .ToContainer("accountPlans");
+            });
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -148,7 +180,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("accountPlans", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<AccountPlan>()
+                       .HasId(e => e.Id)
+                       .ToContainer("accountPlans");
+            });
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -177,7 +214,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<AccountPlan>("accountPlans", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<AccountPlan>()
+                       .HasId(e => e.Id)
+                       .ToContainer("accountPlans");
+            });
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -201,8 +243,18 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Transactional_Batch()
     {
         var store = new DocumentStore(_db)
-            .ConfigureEntity<BlogPost>("blogPosts", e => e.Id, e => e.PostId)
-            .ConfigureEntity<BlogPostComment>("blogPosts", e => e.Id, e => e.PostId);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<BlogPost>()
+                       .HasId(e => e.Id)
+                       .HasPartitionKey(e => e.PostId)
+                       .ToContainer("blogPosts");
+
+                builder.Entity<BlogPostComment>()
+                       .HasId(e => e.Id)
+                       .HasPartitionKey(e => e.PostId)
+                       .ToContainer("blogPosts");
+            });
 
         var session = store.CreateSession();
 
@@ -214,5 +266,41 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         session.Store(comment);
 
         await session.CommitTransactionAsync();
+    }
+
+    [Fact]
+    public async Task Backing_Field()
+    {
+        var store = new DocumentStore(_db)
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<BlogPost>()
+                       .HasId(e => e.Id)
+                       .HasPartitionKey(e => e.PostId)
+                       .HasField("_commentIdSeed")
+                       .ToContainer("blogPosts");
+            });
+
+        var writeSession = store.CreateSession();
+
+        var postId = Guid.NewGuid().ToString();
+        var post = new BlogPost { Id = postId, PostId = postId };
+
+        post.GetLikes().Should().Be(0, because: "the post should have zero likes");
+
+        post.Like();
+
+        post.GetLikes().Should().Be(1, because: "the post should have one like");
+
+        writeSession.Store(post);
+
+        await writeSession.CommitAsync();
+
+        var readSession = store.CreateSession();
+
+        var readPost = await readSession.FindAsync<BlogPost>(postId);
+
+        readPost.Should().NotBeNull(because: "we should be able to find the post we just created");
+        readPost!.GetLikes().Should().Be(1, because: "the post should have one like");
     }
 }

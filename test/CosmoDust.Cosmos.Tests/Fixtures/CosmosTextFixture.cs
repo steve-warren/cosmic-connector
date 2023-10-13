@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
@@ -19,13 +21,7 @@ public class CosmosTextFixture
 
         Client = new CosmosClient(Configuration["CosmosConnectionString"], new CosmosClientOptions()
         {
-            Serializer = new CosmosJsonSerializer(new JsonSerializerOptions()
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.Never,
-                WriteIndented = true,
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            })
+            Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier() })
         });
     }
 }

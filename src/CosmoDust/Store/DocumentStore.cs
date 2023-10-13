@@ -19,22 +19,19 @@ public sealed class DocumentStore : IDocumentStore
     }
 
     /// <summary>
-    /// Maps the entity with the specified database name, container name, and partition key selector.
+    /// Configures the entities in the document store using the provided <paramref name="builder"/> action.
     /// </summary>
-    /// <typeparam name="TEntity">The type of the entity to configure.</typeparam>
-    /// <param name="containerName">The name of the container.</param>
+    /// <param name="builder">The action used to configure the entities.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore ConfigureEntity<TEntity>(string containerName, Func<TEntity, string> idSelector, Func<TEntity, string>? partitionKeySelector = default)
+    public DocumentStore ConfigureModel(Action<ModelBuilder> builder)
     {
-        ArgumentException.ThrowIfNullOrEmpty(containerName);
+        ArgumentNullException.ThrowIfNull(builder);
 
-        var idSelectorInstance = new StringSelector<TEntity>(idSelector);
+        var modelBuilder = new ModelBuilder();
+        builder(modelBuilder);
 
-        var partitionKeySelectorInstance = partitionKeySelector is null ? NullStringSelector.Instance : new StringSelector<TEntity>(partitionKeySelector);
-
-        var entityConfiguration = new EntityConfiguration(typeof(TEntity), containerName, idSelectorInstance, partitionKeySelectorInstance);
-
-        EntityConfiguration.Add(entityConfiguration);
+        foreach (var configuration in modelBuilder.Build())
+            EntityConfiguration.Add(configuration);
 
         return this;
     }

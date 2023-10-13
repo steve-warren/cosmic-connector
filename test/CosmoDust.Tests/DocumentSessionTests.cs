@@ -23,7 +23,12 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -36,8 +41,13 @@ public class DocumentStoreTests
     public async Task Finding_Entity_By_Id_Should_Return_Same_Instance()
     {
         var database = new MockDatabase();
-        var documentStore = new DocumentStore(database);
-        documentStore.ConfigureEntity<ReminderList>("db", e => e.Id);
+        var documentStore = new DocumentStore(database)
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -54,8 +64,13 @@ public class DocumentStoreTests
     public async Task Entity_Not_Found_Should_Return_Null()
     {
         var database = new MockDatabase();
-        var documentStore = new DocumentStore(database);
-        documentStore.ConfigureEntity<ReminderList>("db", e => e.Id);
+        var documentStore = new DocumentStore(database)
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -69,8 +84,16 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id)
-                            .ConfigureEntity<Reminder>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+
+                builder.Entity<Reminder>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -120,7 +143,12 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -137,7 +165,12 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                           .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -156,7 +189,12 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -174,7 +212,12 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -199,7 +242,12 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -223,7 +271,12 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -241,7 +294,12 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -261,7 +319,12 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 
@@ -281,7 +344,12 @@ public class DocumentStoreTests
         database.Add("id2", new ReminderList("id2"));
 
         var documentStore = new DocumentStore(database)
-                            .ConfigureEntity<ReminderList>("db", e => e.Id);
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<ReminderList>()
+                       .HasId(e => e.Id)
+                       .ToContainer("db");
+            });
 
         var session = documentStore.CreateSession();
 

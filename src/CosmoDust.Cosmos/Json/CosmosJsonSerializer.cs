@@ -1,39 +1,54 @@
+using System.Reflection;
 using System.Text.Json;
-using Azure.Core.Serialization;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using CosmoDust.Cosmos.Memory;
 using Microsoft.Azure.Cosmos;
 
 namespace CosmoDust.Cosmos;
 
 public sealed class CosmosJsonSerializer : CosmosSerializer
 {
-    public CosmosJsonSerializer(JsonSerializerOptions options)
-    {
-        JsonObjectSerializer = new JsonObjectSerializer(options);
-    }
+    private readonly IMemoryStreamProvider _memoryStreamProvider;
+    private readonly JsonSerializerOptions _options;
+    private readonly List<IJsonTypeModifier> _jsonTypeModifiers = new();
 
-    public JsonObjectSerializer JsonObjectSerializer { get; }
+    public CosmosJsonSerializer(IEnumerable<IJsonTypeModifier> jsonTypeModifiers, IMemoryStreamProvider? memoryStreamProvider = default)
+    {
+        _memoryStreamProvider = memoryStreamProvider ?? DefaultMemoryStreamProvider.Instance;
+        _jsonTypeModifiers.AddRange(jsonTypeModifiers);
+
+        var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
+
+        foreach (var action in _jsonTypeModifiers.Select(m => (Action<JsonTypeInfo>) m.Serialize))
+            jsonTypeInfoResolver.Modifiers.Add(action);
+
+        _options = new JsonSerializerOptions()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            TypeInfoResolver = jsonTypeInfoResolver
+        };
+    }
 
     public override T FromStream<T>(Stream stream)
     {
         using (stream)
         {
-            if (stream.CanSeek && stream.Length == 0)
+            if (stream.Length == 0)
                 return default!;
 
-            if (typeof(Stream).IsAssignableFrom(typeof(T)))
-                return (T) (object) stream;
-
-            return (T) JsonObjectSerializer.Deserialize(stream, typeof(T), default)!;
+            return JsonSerializer.Deserialize<T>(stream, _options)!;
         }
     }
 
     public override Stream ToStream<T>(T input)
     {
-        var stream = new MemoryStream();
+        var stream = _memoryStreamProvider.GetMemoryStream(tag: "CosmosJsonSerializer")!;
 
         try
         {
-            JsonObjectSerializer.Serialize(stream, input, typeof(T), default);
+            JsonSerializer.Serialize(stream, input, typeof(T), _options);
 
             stream.Position = 0;
 
