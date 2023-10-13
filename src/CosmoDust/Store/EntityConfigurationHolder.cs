@@ -12,5 +12,13 @@ public class EntityConfigurationHolder
         return null;
     }
 
-    public void Add(EntityConfiguration mapping) => _mappings.Add(mapping.EntityType, mapping);
+    public void Add(EntityConfiguration mapping)
+    {
+        _mappings.Add(mapping.EntityType, mapping);
+    }
+
+    public void Clear()
+    {
+        _mappings.Clear();
+    }
 }

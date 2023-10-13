@@ -9,9 +9,8 @@ public sealed class MockDatabase : IDatabase
     public string Name { get; private set; } = "MockDatabase";
     public int Count => _entities.Count;
     public bool CommitWasCalled { get; private set; }
-    public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
 
-    public ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default)
+    public ValueTask<TEntity?> FindAsync<TEntity>(string containerName, string id, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
         if (_entities.TryGetValue((typeof(TEntity), id), out var entity))
             return new ValueTask<TEntity?>((TEntity?) entity);
@@ -36,7 +35,7 @@ public sealed class MockDatabase : IDatabase
         throw new NotImplementedException();
     }
 
-    public IQueryable<TEntity> GetLinqQuery<TEntity>(string? partitionKey = null)
+    public IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string? partitionKey = null)
     {
         return _entities.Values.OfType<TEntity>().AsQueryable();
     }

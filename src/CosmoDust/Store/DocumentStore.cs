@@ -3,11 +3,12 @@ using CosmoDust.Query;
 namespace CosmoDust;
 public sealed class DocumentStore : IDocumentStore
 {
-    public DocumentStore(IDatabase database)
+    public DocumentStore(IDatabase database, EntityConfigurationHolder? entityConfiguration = default)
     {
+        ArgumentNullException.ThrowIfNull(database);
+
         Database = database;
-        EntityConfiguration = new();
-        database.EntityConfiguration = EntityConfiguration;
+        EntityConfiguration = entityConfiguration ?? new EntityConfigurationHolder();
     }
 
     public IDatabase Database { get; }
@@ -19,22 +20,21 @@ public sealed class DocumentStore : IDocumentStore
     }
 
     /// <summary>
-    /// Maps the entity with the specified database name, container name, and partition key selector.
+    /// Configures the entities in the document store using the provided <paramref name="builder"/> action.
     /// </summary>
-    /// <typeparam name="TEntity">The type of the entity to configure.</typeparam>
-    /// <param name="containerName">The name of the container.</param>
+    /// <param name="builder">The action used to configure the entities.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore ConfigureEntity<TEntity>(string containerName, Func<TEntity, string> idSelector, Func<TEntity, string>? partitionKeySelector = default)
+    public DocumentStore ConfigureModel(Action<ModelBuilder> builder)
     {
-        ArgumentException.ThrowIfNullOrEmpty(containerName);
+        ArgumentNullException.ThrowIfNull(builder);
 
-        var idSelectorInstance = new StringSelector<TEntity>(idSelector);
+        var modelBuilder = new ModelBuilder();
+        builder(modelBuilder);
 
-        var partitionKeySelectorInstance = partitionKeySelector is null ? NullStringSelector.Instance : new StringSelector<TEntity>(partitionKeySelector);
+        EntityConfiguration.Clear();
 
-        var entityConfiguration = new EntityConfiguration(typeof(TEntity), containerName, idSelectorInstance, partitionKeySelectorInstance);
-
-        EntityConfiguration.Add(entityConfiguration);
+        foreach (var configuration in modelBuilder.Build())
+            EntityConfiguration.Add(configuration);
 
         return this;
     }
@@ -43,5 +43,11 @@ public sealed class DocumentStore : IDocumentStore
     {
         _ = EntityConfiguration.Get(typeof(TEntity)) ??
             throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
+    }
+
+    internal EntityConfiguration GetConfiguration(Type type)
+    {
+        return EntityConfiguration.Get(type) ??
+            throw new InvalidOperationException($"No configuration has been registered for type {type.FullName}.");
     }
 }

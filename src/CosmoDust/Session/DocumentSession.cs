@@ -25,13 +25,13 @@ public sealed class DocumentSession : IDocumentSession
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
-        DocumentStore.EnsureConfigured<TEntity>();
+        var configuration = DocumentStore.GetConfiguration(typeof(TEntity));
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
         if (ChangeTracker.TryGet(id, out TEntity? entity))
             return entity;
 
-        entity = await Database.FindAsync<TEntity>(id, partitionKey, cancellationToken);
+        entity = await Database.FindAsync<TEntity>(configuration.ContainerName, id, partitionKey, cancellationToken);
 
         if (entity is null)
             return default;
@@ -43,8 +43,8 @@ public sealed class DocumentSession : IDocumentSession
 
     public IQueryable<TEntity> Query<TEntity>(string? partitionKey = null)
     {
-        DocumentStore.EnsureConfigured<TEntity>();
-        return new DocumentQuery<TEntity>(this, Database.GetLinqQuery<TEntity>(partitionKey));
+        var config = DocumentStore.GetConfiguration(typeof(TEntity));
+        return new DocumentQuery<TEntity>(this, Database.GetLinqQuery<TEntity>(config.ContainerName, partitionKey));
     }
 
     public async IAsyncEnumerable<TEntity> GetAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable, [EnumeratorCancellation] CancellationToken cancellationToken = default)
