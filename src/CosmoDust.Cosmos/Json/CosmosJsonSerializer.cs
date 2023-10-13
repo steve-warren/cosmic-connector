@@ -20,7 +20,7 @@ public sealed class CosmosJsonSerializer : CosmosSerializer
 
         var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
-        foreach (var action in _jsonTypeModifiers.Select(m => (Action<JsonTypeInfo>) m.Serialize))
+        foreach (var action in _jsonTypeModifiers.Select(m => (Action<JsonTypeInfo>) m.Modify))
             jsonTypeInfoResolver.Modifiers.Add(action);
 
         _options = new JsonSerializerOptions()

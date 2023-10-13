@@ -45,18 +45,18 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     }
 
     private readonly CosmosDatabase _db;
+    private readonly EntityConfigurationHolder _entityConfiguration;
 
     public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
-        var client = configurationTextFixture.Client;
-        var db = client.GetDatabase("reminderdb");
-        _db = new CosmosDatabase(db);
+        _db = configurationTextFixture.Database;
+        _entityConfiguration = configurationTextFixture.EntityConfiguration;
     }
 
     [Fact]
     public async Task Can_Add_And_Find_Entity_In_Separate_Sessions()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<AccountPlan>()
@@ -80,7 +80,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Add_Find_Delete_Entity_In_Separate_Sessions()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<AccountPlan>()
@@ -113,7 +113,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Add_Find_Update_Entity_In_Separate_Session()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<AccountPlan>()
@@ -150,7 +150,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_List()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<AccountPlan>()
@@ -179,7 +179,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<AccountPlan>()
@@ -213,7 +213,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<AccountPlan>()
@@ -242,7 +242,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Transactional_Batch()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<BlogPost>()
@@ -271,13 +271,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Backing_Field()
     {
-        var store = new DocumentStore(_db)
+        var store = new DocumentStore(_db,  _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<BlogPost>()
                        .HasId(e => e.Id)
                        .HasPartitionKey(e => e.PostId)
-                       .HasField("_commentIdSeed")
+                       .HasField("_likes")
                        .ToContainer("blogPosts");
             });
 

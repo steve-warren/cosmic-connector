@@ -11,6 +11,8 @@ public class CosmosTextFixture
 {
     public IConfiguration Configuration { get; }
     public CosmosClient Client { get; }
+    public CosmosDatabase Database { get; }
+    public EntityConfigurationHolder EntityConfiguration { get; }
 
     public CosmosTextFixture()
     {
@@ -19,9 +21,14 @@ public class CosmosTextFixture
             .AddEnvironmentVariables()     // CI/CD
             .Build();
 
+        EntityConfiguration = new EntityConfigurationHolder();
+
         Client = new CosmosClient(Configuration["CosmosConnectionString"], new CosmosClientOptions()
         {
-            Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier() })
+            Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(EntityConfiguration) })
         });
+
+        var db = Client.GetDatabase("reminderdb");
+        Database = new CosmosDatabase(db);
     }
 }

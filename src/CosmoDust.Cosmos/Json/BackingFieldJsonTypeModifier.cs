@@ -3,21 +3,30 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace CosmoDust.Cosmos;
 
-public class BackingFieldJsonTypeModifier : IJsonTypeModifier
+public sealed class BackingFieldJsonTypeModifier : IJsonTypeModifier
 {
-    public void Serialize(JsonTypeInfo jsonTypeInfo)
+    private readonly EntityConfigurationHolder _entityConfigurationHolder;
+
+    public BackingFieldJsonTypeModifier(EntityConfigurationHolder entityConfigurationHolder)
+    {
+        _entityConfigurationHolder = entityConfigurationHolder;
+    }
+
+    public void Modify(JsonTypeInfo jsonTypeInfo)
     {
         if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object)
             return;
 
-        // return if we are not serializing private fields
+        var entityConfiguration = _entityConfigurationHolder.Get(jsonTypeInfo.Type);
 
-        // todo: do we need to cache this?
-        foreach (var field in jsonTypeInfo.Type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
+        if (entityConfiguration is null || entityConfiguration.Fields.Count == 0)
+            return;
+
+        foreach (var field in entityConfiguration.Fields)
         {
-            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(field.FieldType, field.Name);
-            jsonPropertyInfo.Get = field.GetValue;
-            jsonPropertyInfo.Set = field.SetValue;
+            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(field.FieldType, field.FieldName);
+            jsonPropertyInfo.Get = field.Getter;
+            jsonPropertyInfo.Set = field.Setter;
 
             jsonTypeInfo.Properties.Add(jsonPropertyInfo);
         }

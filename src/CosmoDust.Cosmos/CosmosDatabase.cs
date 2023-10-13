@@ -9,7 +9,7 @@ public sealed class CosmosDatabase : IDatabase
     private static readonly CosmosLinqSerializerOptions s_linqSerializerOptions = new() { PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase };
     private static readonly QueryRequestOptions s_defaultQueryRequestOptions = new();
 
-    private readonly Dictionary<Type, Container> _containers = new();
+    private readonly Dictionary<string, Container> _containers = new();
 
     public CosmosDatabase(Database database)
     {
@@ -19,11 +19,9 @@ public sealed class CosmosDatabase : IDatabase
     public string Name => Database.Id;
     public Database Database { get; }
 
-    public EntityConfigurationHolder EntityConfiguration { get; set; } = new();
-
-    public async ValueTask<TEntity?> FindAsync<TEntity>(string id, string? partitionKey = null, CancellationToken cancellationToken = default)
+    public async ValueTask<TEntity?> FindAsync<TEntity>(string containerName, string id, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
-        var container = GetContainerFor(typeof(TEntity));
+        var container = GetContainerFor(containerName);
 
         var operation = new ReadItemOperation<TEntity>(container, id, partitionKey);
 
@@ -32,9 +30,9 @@ public sealed class CosmosDatabase : IDatabase
         return entity;
     }
 
-    public IQueryable<TEntity> GetLinqQuery<TEntity>(string? partitionKey = null)
+    public IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string? partitionKey = null)
     {
-        var container = GetContainerFor(typeof(TEntity));
+        var container = GetContainerFor(containerName);
 
         var queryRequestOptions = partitionKey is null ? s_defaultQueryRequestOptions : new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKey) };
 
@@ -98,7 +96,7 @@ public sealed class CosmosDatabase : IDatabase
 
     private ICosmosWriteOperation CreateOperation(EntityEntry entry)
     {
-        var container = GetContainerFor(entry.EntityType);
+        var container = GetContainerFor(entry.ContainerName);
 
         return entry.State switch
         {
@@ -109,19 +107,13 @@ public sealed class CosmosDatabase : IDatabase
         };
     }
 
-    private Container GetContainerFor(Type entityType)
+    private Container GetContainerFor(string containerName)
     {
-        if (_containers.TryGetValue(entityType, out var container))
+        if (_containers.TryGetValue(containerName, out var container))
             return container;
 
-        var entityConfiguration = GetConfigurationFor(entityType);
-
-        container = Database.GetContainer(entityConfiguration.ContainerName);
-
-        _containers.Add(entityType, container);
+        container = Database.GetContainer(containerName);
 
         return container;
     }
-
-    private EntityConfiguration GetConfigurationFor(Type entityType) => EntityConfiguration.Get(entityType) ?? throw new InvalidOperationException("No configuration found for the given entity type.");
 }

@@ -4,5 +4,5 @@ namespace CosmoDust.Cosmos;
 
 public interface IJsonTypeModifier
 {
-    void Serialize(JsonTypeInfo jsonTypeInfo);
+    void Modify(JsonTypeInfo jsonTypeInfo);
 }

@@ -3,11 +3,12 @@ using CosmoDust.Query;
 namespace CosmoDust;
 public sealed class DocumentStore : IDocumentStore
 {
-    public DocumentStore(IDatabase database)
+    public DocumentStore(IDatabase database, EntityConfigurationHolder? entityConfiguration = default)
     {
+        ArgumentNullException.ThrowIfNull(database);
+
         Database = database;
-        EntityConfiguration = new();
-        database.EntityConfiguration = EntityConfiguration;
+        EntityConfiguration = entityConfiguration ?? new EntityConfigurationHolder();
     }
 
     public IDatabase Database { get; }
@@ -30,6 +31,8 @@ public sealed class DocumentStore : IDocumentStore
         var modelBuilder = new ModelBuilder();
         builder(modelBuilder);
 
+        EntityConfiguration.Clear();
+
         foreach (var configuration in modelBuilder.Build())
             EntityConfiguration.Add(configuration);
 
@@ -40,5 +43,11 @@ public sealed class DocumentStore : IDocumentStore
     {
         _ = EntityConfiguration.Get(typeof(TEntity)) ??
             throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
+    }
+
+    internal EntityConfiguration GetConfiguration(Type type)
+    {
+        return EntityConfiguration.Get(type) ??
+            throw new InvalidOperationException($"No configuration has been registered for type {type.FullName}.");
     }
 }
