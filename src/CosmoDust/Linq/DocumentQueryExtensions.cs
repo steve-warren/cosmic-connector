@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace CosmoDust.Linq;
+namespace Cosmodust.Linq;
 
 public static class DocumentQueryExtensions
 {

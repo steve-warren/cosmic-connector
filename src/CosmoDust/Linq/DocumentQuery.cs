@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
-namespace CosmoDust.Linq;
+namespace Cosmodust.Linq;
 
 public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
 {

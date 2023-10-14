@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
-using CosmoDust.Linq;
+using Cosmodust.Linq;
 
-namespace CosmoDust.Tests;
+namespace Cosmodust.Tests;
 
 public sealed class MockDatabase : IDatabase
 {

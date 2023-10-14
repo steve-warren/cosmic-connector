@@ -1,7 +1,7 @@
 using System.Reflection;
-using CosmoDust.Query;
+using Cosmodust.Query;
 
-namespace CosmoDust;
+namespace Cosmodust;
 
 public class EntityConfiguration
 {

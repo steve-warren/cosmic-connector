@@ -1,9 +1,9 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
-using CosmoDust.Linq;
+using Cosmodust.Linq;
 
-namespace CosmoDust.Cosmos;
+namespace Cosmodust.Cosmos;
 
 public sealed class CosmosDatabase : IDatabase
 {

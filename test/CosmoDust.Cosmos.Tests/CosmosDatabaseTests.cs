@@ -1,11 +1,11 @@
-using CosmoDust.Cosmos.Tests.Domain.Accounts;
-using CosmoDust.Cosmos.Tests.Domain.Blogs;
-using CosmoDust.Linq;
+using Cosmodust.Cosmos.Tests.Domain.Accounts;
+using Cosmodust.Cosmos.Tests.Domain.Blogs;
+using Cosmodust.Linq;
 using FluentAssertions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
-namespace CosmoDust.Cosmos.Tests;
+namespace Cosmodust.Cosmos.Tests;
 
 public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {

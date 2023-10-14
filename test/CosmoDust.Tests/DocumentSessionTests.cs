@@ -1,6 +1,6 @@
-using CosmoDust.Linq;
+using Cosmodust.Linq;
 
-namespace CosmoDust.Tests;
+namespace Cosmodust.Tests;
 
 public class DocumentStoreTests
 {

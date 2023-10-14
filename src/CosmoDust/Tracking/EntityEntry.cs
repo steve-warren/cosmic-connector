@@ -1,4 +1,4 @@
-namespace CosmoDust;
+namespace Cosmodust;
 
 public sealed class EntityEntry
 {

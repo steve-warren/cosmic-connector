@@ -1,4 +1,4 @@
-namespace CosmoDust;
+namespace Cosmodust;
 
 /// <summary>
 /// A class that allows building entity configurations for a data model.

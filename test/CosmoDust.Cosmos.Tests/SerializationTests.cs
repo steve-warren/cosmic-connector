@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using FluentAssertions;
 
-namespace CosmoDust.Cosmos.Tests;
+namespace Cosmodust.Cosmos.Tests;
 
 public class SerializationTests
 {

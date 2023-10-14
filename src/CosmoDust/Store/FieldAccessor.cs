@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace CosmoDust;
+namespace Cosmodust;
 
 public record FieldAccessor(string FieldName, Type FieldType, Func<object, object?> Getter, Action<object, object?> Setter)
 {

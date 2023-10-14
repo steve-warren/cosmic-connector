@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using CosmoDust.Query;
+using Cosmodust.Query;
 
-namespace CosmoDust;
+namespace Cosmodust;
 
 /// <summary>
 /// A builder class for creating entity configurations for a specific entity type.

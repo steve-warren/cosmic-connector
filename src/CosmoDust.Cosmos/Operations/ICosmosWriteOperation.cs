@@ -1,4 +1,4 @@
-namespace CosmoDust.Cosmos;
+namespace Cosmodust.Cosmos;
 
 internal interface ICosmosWriteOperation
 {
