@@ -44,15 +44,16 @@ public sealed class DocumentSession : IDocumentSession
     public IQueryable<TEntity> Query<TEntity>(string? partitionKey = null)
     {
         var config = DocumentStore.GetConfiguration(typeof(TEntity));
-        return new DocumentQuery<TEntity>(this, Database.GetLinqQuery<TEntity>(config.ContainerName, partitionKey));
+        var queryable = Database.GetLinqQuery<TEntity>(config.ContainerName, partitionKey);
+
+        return new CosmodustLinqQuery<TEntity>(Database, ChangeTracker, queryable);
     }
 
-    public async IAsyncEnumerable<TEntity> GetAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    internal async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> cosmodustLinqQuery, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        DocumentStore.EnsureConfigured<TEntity>();
-        ArgumentNullException.ThrowIfNull(queryable);
+        ArgumentNullException.ThrowIfNull(cosmodustLinqQuery);
 
-        var query = Database.GetAsyncEnumerable(queryable, cancellationToken);
+        var query = Database.ToAsyncEnumerable(cosmodustLinqQuery, cancellationToken);
 
         await foreach (var entity in query.WithCancellation(cancellationToken))
         {

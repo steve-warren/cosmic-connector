@@ -311,7 +311,7 @@ public class DocumentStoreTests
     }
 
     [Fact]
-    public void Can_Query_Entity_By_Id_Using_Linq_Expression()
+    public async Task Can_Query_Entity_By_Id_Using_Linq_Expression()
     {
         var entity = new ReminderList("id");
 
@@ -328,9 +328,9 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        var result = session.Query<ReminderList>()
+        var result = await session.Query<ReminderList>()
                                   .Where(x => x.Id == "id")
-                                  .ToList();
+                                  .ToListAsync();
 
         result.Should().HaveCount(1, because: "we should have one entity in the result set");
         result[0].Should().BeEquivalentTo(entity, because: "we should get the same entity instance back");

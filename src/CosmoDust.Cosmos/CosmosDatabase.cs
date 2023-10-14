@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
+using CosmoDust.Linq;
 
 namespace CosmoDust.Cosmos;
 
@@ -41,9 +42,9 @@ public sealed class CosmosDatabase : IDatabase
         return query;
     }
 
-    public async IAsyncEnumerable<TEntity> GetAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> cosmodustLinqQuery, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        using var feed = queryable.ToFeedIterator();
+        using var feed = cosmodustLinqQuery.OriginalLinqQuery.ToFeedIterator();
 
         while (feed.HasMoreResults)
         {

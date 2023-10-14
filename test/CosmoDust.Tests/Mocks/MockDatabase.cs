@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using CosmoDust.Linq;
 
 namespace CosmoDust.Tests;
 
@@ -40,9 +41,9 @@ public sealed class MockDatabase : IDatabase
         return _entities.Values.OfType<TEntity>().AsQueryable();
     }
 
-    public async IAsyncEnumerable<TEntity> GetAsyncEnumerable<TEntity>(IQueryable<TEntity> queryable, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> cosmodustLinqQuery, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        foreach (var entity in queryable)
+        foreach (var entity in cosmodustLinqQuery.OriginalLinqQuery)
         {
             await Task.Yield();
             yield return entity;
