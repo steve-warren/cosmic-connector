@@ -23,7 +23,7 @@ public class CosmosTextFixture
 
         EntityConfiguration = new EntityConfigurationHolder();
 
-        Client = new CosmosClient(Configuration["ConnectionStrings__CosmosDB"], new CosmosClientOptions()
+        Client = new CosmosClient(Configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
         {
             Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(EntityConfiguration) })
         });

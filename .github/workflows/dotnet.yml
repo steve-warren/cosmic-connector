@@ -27,4 +27,4 @@ jobs:
     - name: run tests
       run: dotnet test --no-build --verbosity normal
       env:
-        ConnectionStrings__CosmosDB: ${{ secrets.CONNECTIONSTRINGS__COSMOSDB }}
+        COSMOSDB_CONNECTIONSTRING: ${{ secrets.COSMOSDB_CONNECTIONSTRING }}
