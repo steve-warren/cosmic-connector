@@ -219,7 +219,6 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Backing_Field()
     {
         var store = GetBlogDocumentStore();
-
         var writeSession = store.CreateSession();
 
         var postId = DateTime.Now.ToFileTime().ToString();
