@@ -19,10 +19,12 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies
+        dotnet-version: 7.x
+    - name: restore dependencies
       run: dotnet restore
-    - name: Build
+    - name: build
       run: dotnet build --no-restore
-    - name: Test
+    - name: run tests
       run: dotnet test --no-build --verbosity normal
+      env:
+        ConnectionStrings__CosmosDB: ${{ secrets.CONNECTIONSTRINGS__COSMOSDB }}
