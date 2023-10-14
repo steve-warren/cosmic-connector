@@ -32,11 +32,11 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
     public IQueryProvider Provider { get; }
     internal IDatabase Database { get; }
     internal ChangeTracker ChangeTracker { get; }
-    public IQueryable<TEntity> OriginalLinqQuery { get; }
+    internal IQueryable<TEntity> OriginalLinqQuery { get; }
 
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var query = Database.ToAsyncEnumerable(this, cancellationToken);
+        var query = Database.ToAsyncEnumerable(OriginalLinqQuery, cancellationToken);
 
         await foreach (var entity in query.WithCancellation(cancellationToken))
         {

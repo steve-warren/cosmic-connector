@@ -13,7 +13,6 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     private readonly EntityConfigurationHolder _entityConfiguration;
     private readonly Func<DocumentStore> _accountPlanStoreFactory;
 
-
     public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
         _db = configurationTextFixture.Database;

@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using CosmoDust.Linq;
 
 namespace CosmoDust;
@@ -47,22 +45,6 @@ public sealed class DocumentSession : IDocumentSession
         var queryable = Database.GetLinqQuery<TEntity>(config.ContainerName, partitionKey);
 
         return new CosmodustLinqQuery<TEntity>(Database, ChangeTracker, queryable);
-    }
-
-    internal async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> cosmodustLinqQuery, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(cosmodustLinqQuery);
-
-        var query = Database.ToAsyncEnumerable(cosmodustLinqQuery, cancellationToken);
-
-        await foreach (var entity in query.WithCancellation(cancellationToken))
-        {
-            Debug.Assert(entity is not null, "The entity should not be null.");
-
-            ChangeTracker.RegisterUnchanged(entity);
-
-            yield return entity;
-        }
     }
 
     public void Store<TEntity>(TEntity entity)

@@ -41,9 +41,9 @@ public sealed class MockDatabase : IDatabase
         return _entities.Values.OfType<TEntity>().AsQueryable();
     }
 
-    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> cosmodustLinqQuery, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(IQueryable<TEntity> query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        foreach (var entity in cosmodustLinqQuery.OriginalLinqQuery)
+        foreach (var entity in query)
         {
             await Task.Yield();
             yield return entity;

@@ -42,10 +42,10 @@ public sealed class CosmosDatabase : IDatabase
         return query;
     }
 
-    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> cosmodustLinqQuery, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(IQueryable<TEntity> query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        using var feed = cosmodustLinqQuery.OriginalLinqQuery.ToFeedIterator();
-
+        using var feed = query.ToFeedIterator();
+ 
         while (feed.HasMoreResults)
         {
             var response = await feed.ReadNextAsync(cancellationToken);
