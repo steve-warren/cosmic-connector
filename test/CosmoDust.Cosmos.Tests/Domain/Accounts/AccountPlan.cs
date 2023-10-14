@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace CosmoDust.Cosmos.Tests.Domain.Accounts;
+namespace Cosmodust.Cosmos.Tests.Domain.Accounts;
 
 public class AccountPlan
 {

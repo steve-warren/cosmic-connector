@@ -1,4 +1,4 @@
-namespace CosmoDust;
+namespace Cosmodust;
 
 public enum EntityState
 {

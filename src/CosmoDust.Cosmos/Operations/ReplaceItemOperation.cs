@@ -1,6 +1,6 @@
 using Microsoft.Azure.Cosmos;
 
-namespace CosmoDust.Cosmos;
+namespace Cosmodust.Cosmos;
 
 internal class ReplaceItemOperation : ICosmosWriteOperation
 {

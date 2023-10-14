@@ -1,6 +1,6 @@
-using CosmoDust.Linq;
+using Cosmodust.Linq;
 
-namespace CosmoDust;
+namespace Cosmodust;
 
 public sealed class DocumentSession : IDocumentSession
 {

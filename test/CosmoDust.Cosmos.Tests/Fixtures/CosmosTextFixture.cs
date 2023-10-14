@@ -5,7 +5,7 @@ using System.Text.Json.Serialization.Metadata;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
-namespace CosmoDust.Cosmos.Tests;
+namespace Cosmodust.Cosmos.Tests;
 
 public class CosmosTextFixture
 {

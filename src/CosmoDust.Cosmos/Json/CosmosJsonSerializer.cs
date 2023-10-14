@@ -2,10 +2,10 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using CosmoDust.Cosmos.Memory;
+using Cosmodust.Cosmos.Memory;
 using Microsoft.Azure.Cosmos;
 
-namespace CosmoDust.Cosmos;
+namespace Cosmodust.Cosmos;
 
 public sealed class CosmosJsonSerializer : CosmosSerializer
 {

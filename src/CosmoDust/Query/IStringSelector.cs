@@ -1,4 +1,4 @@
-namespace CosmoDust.Query;
+namespace Cosmodust.Query;
 
 public interface IStringSelector
 {

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace CosmoDust.Cosmos.Memory;
+namespace Cosmodust.Cosmos.Memory;
 
 /// <summary>
 /// Provides a default implementation of the <see cref="IMemoryStreamProvider"/> interface.

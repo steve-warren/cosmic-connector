@@ -1,6 +1,6 @@
-using CosmoDust.Query;
+using Cosmodust.Query;
 
-namespace CosmoDust;
+namespace Cosmodust;
 public sealed class DocumentStore : IDocumentStore
 {
     public DocumentStore(IDatabase database, EntityConfigurationHolder? entityConfiguration = default)

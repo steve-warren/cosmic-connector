@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace CosmoDust.Linq;
+namespace Cosmodust.Linq;
 
 internal sealed class CosmodustLinqQueryProvider : IQueryProvider
 {

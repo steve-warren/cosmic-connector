@@ -1,4 +1,4 @@
-namespace CosmoDust.Cosmos.Tests.Domain.Blogs;
+namespace Cosmodust.Cosmos.Tests.Domain.Blogs;
 
 public class BlogPost
 {
