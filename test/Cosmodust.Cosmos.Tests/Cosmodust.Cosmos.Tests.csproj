@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CosmoDust.Cosmos\CosmoDust.Cosmos.csproj" />
+    <ProjectReference Include="..\..\src\Cosmodust.Cosmos\Cosmodust.Cosmos.csproj" />
   </ItemGroup>
 
 </Project>
