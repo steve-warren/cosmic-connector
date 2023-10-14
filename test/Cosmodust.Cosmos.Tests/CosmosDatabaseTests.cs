@@ -11,31 +11,48 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {
     private readonly CosmosDatabase _db;
     private readonly EntityConfigurationHolder _entityConfiguration;
-    private readonly Func<DocumentStore> _accountPlanStoreFactory;
+    private DocumentStore? _blogDocumentStore;
+    private DocumentStore? _accountPlanDocumentStore;
 
     public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
         _db = configurationTextFixture.Database;
         _entityConfiguration = configurationTextFixture.EntityConfiguration;
+    }
 
-        _accountPlanStoreFactory = () =>
-        {
-            var store = new DocumentStore(_db,  _entityConfiguration)
-                .ConfigureModel(builder =>
-                {
-                    builder.Entity<AccountPlan>()
-                        .HasId(e => e.Id)
-                        .ToContainer("accountPlans");
-                });
+    private DocumentStore GetAccountPlanDocumentStore()
+    {
+        return _accountPlanDocumentStore ??= new DocumentStore(_db,  _entityConfiguration)
+            .ConfigureModel(builder =>
+            {
+                builder.Entity<AccountPlan>()
+                    .HasId(e => e.Id)
+                    .ToContainer("accountPlans");
+            });
+    }
 
-            return store;
-        };
+    private DocumentStore GetBlogDocumentStore()
+    {
+        return _blogDocumentStore ??= new DocumentStore(_db, _entityConfiguration)
+                    .ConfigureModel(builder =>
+                    {
+                        builder.Entity<BlogPost>()
+                            .HasId(e => e.Id)
+                            .HasPartitionKey(e => e.PostId)
+                            .HasField("_likes")
+                            .ToContainer("blogPosts");
+
+                        builder.Entity<BlogPostComment>()
+                            .HasId(e => e.Id)
+                            .HasPartitionKey(e => e.PostId)
+                            .ToContainer("blogPosts");
+                    });
     }
 
     [Fact]
     public async Task Can_Add_And_Find_Entity_In_Separate_Sessions()
     {
-        var store = _accountPlanStoreFactory();
+        var store = GetAccountPlanDocumentStore();
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -53,7 +70,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Add_Find_Delete_Entity_In_Separate_Sessions()
     {
-        var store = _accountPlanStoreFactory();
+        var store = GetAccountPlanDocumentStore();
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -80,7 +97,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Add_Find_Update_Entity_In_Separate_Session()
     {
-        var store = _accountPlanStoreFactory();
+        var store = GetAccountPlanDocumentStore();
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -111,7 +128,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_List()
     {
-        var store = _accountPlanStoreFactory();
+        var store = GetAccountPlanDocumentStore();
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -134,7 +151,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
-        var store = _accountPlanStoreFactory();
+        var store = GetAccountPlanDocumentStore();
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -162,7 +179,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
-        var store = _accountPlanStoreFactory();
+        var store = GetAccountPlanDocumentStore();
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -185,20 +202,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Transactional_Batch()
     {
-        var store = new DocumentStore(_db, _entityConfiguration)
-            .ConfigureModel(builder =>
-            {
-                builder.Entity<BlogPost>()
-                       .HasId(e => e.Id)
-                       .HasPartitionKey(e => e.PostId)
-                       .ToContainer("blogPosts");
-
-                builder.Entity<BlogPostComment>()
-                       .HasId(e => e.Id)
-                       .HasPartitionKey(e => e.PostId)
-                       .ToContainer("blogPosts");
-            });
-
+        var store = GetBlogDocumentStore();
         var session = store.CreateSession();
 
         var postId = Guid.NewGuid().ToString();
@@ -214,19 +218,11 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Backing_Field()
     {
-        var store = new DocumentStore(_db, _entityConfiguration)
-            .ConfigureModel(builder =>
-            {
-                builder.Entity<BlogPost>()
-                       .HasId(e => e.Id)
-                       .HasPartitionKey(e => e.PostId)
-                       .HasField("_likes")
-                       .ToContainer("blogPosts");
-            });
+        var store = GetBlogDocumentStore();
 
         var writeSession = store.CreateSession();
 
-        var postId = Guid.NewGuid().ToString();
+        var postId = DateTime.Now.ToFileTime().ToString();
         var post = new BlogPost { Id = postId, PostId = postId };
 
         post.Like();
