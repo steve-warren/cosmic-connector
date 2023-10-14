@@ -7,6 +7,7 @@ public class BlogPost
     public string Id { get; set; } = "";
     public string Title { get; set; } = "Test Post";
     public string PostId { get; set; } = "";
+    public DateTimeOffset PublishedOn { get; set; }
 
     public int GetLikes()
     {
@@ -16,5 +17,10 @@ public class BlogPost
     public int Like()
     {
         return ++_likes;
+    }
+
+    public void PublishOn(DateTimeOffset date)
+    {
+        PublishedOn = date;
     }
 }

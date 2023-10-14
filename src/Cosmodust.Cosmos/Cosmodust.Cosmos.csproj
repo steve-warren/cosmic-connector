@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CosmoDust\CosmoDust.csproj" />
+    <ProjectReference Include="..\Cosmodust\Cosmodust.csproj" />
   </ItemGroup>
 
 </Project>

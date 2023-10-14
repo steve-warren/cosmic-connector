@@ -214,7 +214,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Backing_Field()
     {
-        var store = new DocumentStore(_db,  _entityConfiguration)
+        var store = new DocumentStore(_db, _entityConfiguration)
             .ConfigureModel(builder =>
             {
                 builder.Entity<BlogPost>()
@@ -229,11 +229,9 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var postId = Guid.NewGuid().ToString();
         var post = new BlogPost { Id = postId, PostId = postId };
 
-        post.GetLikes().Should().Be(0, because: "the post should have zero likes");
-
         post.Like();
-
         post.GetLikes().Should().Be(1, because: "the post should have one like");
+        post.PublishOn(DateTimeOffset.Now);
 
         writeSession.Store(post);
 

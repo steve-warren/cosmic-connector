@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CosmoDust\CosmoDust.csproj" />
+    <ProjectReference Include="..\..\src\Cosmodust\Cosmodust.csproj" />
   </ItemGroup>
 
 </Project>
