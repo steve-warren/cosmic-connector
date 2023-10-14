@@ -5,15 +5,15 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9EE42C0F-0A3B-4A76-9987-1DBCACB20C3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cosmodust", "src\cosmodust\cosmodust.csproj", "{3426E4F8-8FDE-434A-B57B-BCB53AA5A7B3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust", "src\Cosmodust\Cosmodust.csproj", "{3426E4F8-8FDE-434A-B57B-BCB53AA5A7B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cosmodust.cosmos", "src\cosmodust.cosmos\cosmodust.cosmos.csproj", "{06ABC51C-A2B2-4FBC-88B3-19701A163D80}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Cosmos", "src\Cosmodust.Cosmos\Cosmodust.Cosmos.csproj", "{06ABC51C-A2B2-4FBC-88B3-19701A163D80}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{1D2C0AA6-C6D0-4995-904A-A6000EA07BE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cosmodust.cosmos.tests", "test\cosmodust.cosmos.tests\cosmodust.cosmos.tests.csproj", "{F5AD1901-115B-4036-A164-9DBBF0CD663E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Cosmos.Tests", "test\Cosmodust.Cosmos.Tests\Cosmodust.Cosmos.Tests.csproj", "{F5AD1901-115B-4036-A164-9DBBF0CD663E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cosmodust.tests", "test\cosmodust.tests\cosmodust.tests.csproj", "{63C7F215-E7F9-404F-9234-0E6E3FED27D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Tests", "test\Cosmodust.Tests\Cosmodust.Tests.csproj", "{63C7F215-E7F9-404F-9234-0E6E3FED27D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
