@@ -11,9 +11,17 @@ public class CreateTodoListEndpoint : ControllerBase
     public record CreateTodoListRequest(string Name, string OwnerId);
 
     [HttpPost]
-    public IActionResult CreateTodoList([FromBody] CreateTodoListRequest request)
+    public async Task<IActionResult> CreateTodoList(
+        [FromServices] IDocumentSession session,
+        [FromBody] CreateTodoListRequest request)
     {
-        var list = new TodoList(request.Name, Ksuid.NewKsuid("l_"), request.OwnerId);
+        var list = new TodoList(name: request.Name,
+                                id: Ksuid.NewKsuid("l_"),
+                                ownerId: request.OwnerId);
+
+        session.Store(list);
+
+        await session.CommitAsync();
 
         return Ok(list);
     }

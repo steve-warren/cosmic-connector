@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Cosmodust.Samples.TodoApp</RootNamespace>
+    <UserSecretsId>ffbb614e-9418-4e96-ab40-6da58b95e9be</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

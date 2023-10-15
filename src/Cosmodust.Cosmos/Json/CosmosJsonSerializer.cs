@@ -27,7 +27,8 @@ public sealed class CosmosJsonSerializer : CosmosSerializer
         {
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            TypeInfoResolver = jsonTypeInfoResolver
+            TypeInfoResolver = jsonTypeInfoResolver,
+            IncludeFields = true
         };
     }
 
