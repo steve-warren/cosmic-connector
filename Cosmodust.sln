@@ -11,9 +11,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Cosmos", "src\Cos
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{1D2C0AA6-C6D0-4995-904A-A6000EA07BE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Cosmos.Tests", "test\Cosmodust.Cosmos.Tests\Cosmodust.Cosmos.Tests.csproj", "{F5AD1901-115B-4036-A164-9DBBF0CD663E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Cosmos.Tests", "tests\Cosmodust.Cosmos.Tests\Cosmodust.Cosmos.Tests.csproj", "{F5AD1901-115B-4036-A164-9DBBF0CD663E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Tests", "test\Cosmodust.Tests\Cosmodust.Tests.csproj", "{63C7F215-E7F9-404F-9234-0E6E3FED27D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cosmodust.Tests", "tests\Cosmodust.Tests\Cosmodust.Tests.csproj", "{63C7F215-E7F9-404F-9234-0E6E3FED27D6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{A85016A7-10D5-4039-816E-168C6F4E5218}"
 EndProject
