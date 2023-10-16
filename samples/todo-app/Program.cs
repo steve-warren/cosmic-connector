@@ -10,7 +10,11 @@ builder.Services.AddSingleton(sp =>
 {
     return new CosmosClient(sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDB"], new CosmosClientOptions()
     {
-        Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()) })
+        Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[]
+            {
+                new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
+                new TypeMetadataJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>())
+            })
     });
 });
 

@@ -2,7 +2,13 @@ namespace Cosmodust.Samples.TodoApp.Domain;
 
 public class TodoItem
 {
-    public TodoItem(string name, string listId, string ownerId, TodoItemPriority priority, string id, string notes, DateTimeOffset? reminder)
+    public TodoItem(string name,
+                    string listId,
+                    string ownerId,
+                    TodoItemPriority priority,
+                    string id,
+                    string notes,
+                    DateTimeOffset? reminder)
     {
         Name = name;
         ListId = listId;
@@ -18,8 +24,8 @@ public class TodoItem
     public string Id { get; private set; }
     public string ListId { get; private set; }
     public string OwnerId { get; private set; }
-    public string Name { get; private set; } = "";
-    public string Notes { get; private set; } = "";
+    public string Name { get; private set; }
+    public string Notes { get; private set; }
     public DateTimeOffset? Reminder { get; private set; }
     public TodoItemPriority Priority { get; private set; } = TodoItemPriority.None;
     public TodoItemCompletedState State { get; private set; }

@@ -2,6 +2,7 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Cosmodust.Linq;
+using System.Diagnostics;
 
 namespace Cosmodust.Cosmos;
 
@@ -92,6 +93,8 @@ public sealed class CosmosDatabase : IDatabase
             }
 
             var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+            Debug.WriteLine("Request charge: {0}", response.RequestCharge);
         }
     }
 

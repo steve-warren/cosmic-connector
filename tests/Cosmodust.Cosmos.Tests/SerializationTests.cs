@@ -9,31 +9,31 @@ public class SerializationTests
 {
     public class BackingFieldEntity
     {
-        private readonly string _firstName;
-        private readonly string _lastName;
-
         public BackingFieldEntity(string firstName, string lastName)
         {
-            _firstName = firstName;
-            _lastName = lastName;
+            FirstName = firstName;
+            LastName = lastName;
         }
+
+        public string FirstName { get; private set; }
+        public string LastName { get; private set; }
 
         public override string ToString()
         {
-            return $"{_firstName} {_lastName}";
+            return $"{FirstName} {LastName}";
         }
     }
 
     [Fact]
     public void Foo()
     {
-        // var entity = new BackingFieldEntity(firstName: "Michael", lastName: "Scott");
+        var entity = new BackingFieldEntity(firstName: "Michael", lastName: "Scott");
 
-        // var serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(new EntityConfigurationHolder()) });
-        // using var jsonStream = serializer.ToStream(entity);
-        // var reader = new StreamReader(jsonStream);
-        // var json = reader.ReadToEnd();
+        var serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(new EntityConfigurationHolder()) });
+        using var jsonStream = serializer.ToStream(entity);
+        var reader = new StreamReader(jsonStream);
+        var json = reader.ReadToEnd();
 
-        // json.Should().Be("""{"_firstName":"Michael","_lastName":"Scott"}""", because: "we should be able to serialize private fields");
+        json.Should().Be("""{"firstName":"Michael","lastName":"Scott"}""", because: "we should be able to serialize private fields");
     }
 }
