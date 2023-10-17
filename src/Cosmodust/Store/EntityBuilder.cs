@@ -55,6 +55,24 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return this;
     }
 
+    public EntityBuilder<TEntity> HasProperty(Expression<Func<TEntity, object>> propertySelector)
+    {
+        var accessor = PropertyAccessor.Create(propertySelector);
+
+        _entityConfiguration.Properties.Add(accessor);
+
+        return this;
+    }
+
+    public EntityBuilder<TEntity> HasProperty(string name)
+    {
+        var accessor = PropertyAccessor.Create(name, typeof(TEntity));
+
+        _entityConfiguration.Properties.Add(accessor);
+
+        return this;
+    }
+
     /// <summary>
     /// Sets the name of the container where the entity will be stored.
     /// </summary>

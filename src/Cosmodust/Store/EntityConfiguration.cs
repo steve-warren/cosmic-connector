@@ -15,4 +15,5 @@ public class EntityConfiguration
     public IStringSelector IdSelector { get; set; } = NullStringSelector.Instance;
     public IStringSelector PartitionKeySelector { get; set; } = NullStringSelector.Instance;
     public HashSet<FieldAccessor> Fields { get; set; } = new();
+    public HashSet<PropertyAccessor> Properties { get; set; } = new();
 }

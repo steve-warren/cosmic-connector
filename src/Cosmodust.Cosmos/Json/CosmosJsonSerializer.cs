@@ -1,6 +1,4 @@
-using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Memory;
 using Microsoft.Azure.Cosmos;
@@ -27,7 +25,8 @@ public sealed class CosmosJsonSerializer : CosmosSerializer
         {
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            TypeInfoResolver = jsonTypeInfoResolver
+            TypeInfoResolver = jsonTypeInfoResolver,
+            IncludeFields = true
         };
     }
 
