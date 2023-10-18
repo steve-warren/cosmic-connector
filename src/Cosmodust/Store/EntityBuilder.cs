@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using Cosmodust.Query;
 
 namespace Cosmodust;
@@ -10,12 +9,9 @@ namespace Cosmodust;
 /// <typeparam name="TEntity">The type of entity to configure.</typeparam>
 public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 {
-    private readonly EntityConfiguration _entityConfiguration;
-
-    public EntityBuilder()
-    {
-        _entityConfiguration = new EntityConfiguration(typeof(TEntity));
-    }
+    private EntityConfiguration _entityConfiguration = new(typeof(TEntity));
+    private readonly HashSet<FieldAccessor> _fields = new();
+    private readonly HashSet<PropertyAccessor> _properties = new();
 
     /// <summary>
     /// Configures the entity to use the specified function to extract the ID value.
@@ -24,7 +20,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <returns>The entity builder instance.</returns>
     public EntityBuilder<TEntity> HasId(Func<TEntity, string> idSelector)
     {
-        _entityConfiguration.IdSelector = new StringSelector<TEntity>(idSelector);
+        _entityConfiguration = _entityConfiguration with { IdSelector = new StringSelector<TEntity>(idSelector) };
 
         return this;
     }
@@ -36,7 +32,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <returns>The entity builder instance.</returns>
     public EntityBuilder<TEntity> HasPartitionKey(Func<TEntity, string> partitionKeySelector)
     {
-        _entityConfiguration.PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector);
+        _entityConfiguration = _entityConfiguration with { PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector) };
 
         return this;
     }
@@ -50,7 +46,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     {
         var accessor = FieldAccessor.Create(name, typeof(TEntity));
 
-        _entityConfiguration.Fields.Add(accessor);
+        _fields.Add(accessor);
 
         return this;
     }
@@ -59,7 +55,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     {
         var accessor = PropertyAccessor.Create(propertySelector);
 
-        _entityConfiguration.Properties.Add(accessor);
+        _properties.Add(accessor);
 
         return this;
     }
@@ -68,7 +64,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     {
         var accessor = PropertyAccessor.Create(name, typeof(TEntity));
 
-        _entityConfiguration.Properties.Add(accessor);
+        _properties.Add(accessor);
 
         return this;
     }
@@ -79,8 +75,15 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <param name="containerName">The name of the container.</param>
     public void ToContainer(string containerName)
     {
-        _entityConfiguration.ContainerName = containerName;
+        _entityConfiguration = _entityConfiguration with { ContainerName = containerName };
     }
 
-    EntityConfiguration IEntityBuilder.Build() => _entityConfiguration;
+    EntityConfiguration IEntityBuilder.Build()
+    {
+        return _entityConfiguration = _entityConfiguration with
+        {
+            Fields = _fields,
+            Properties = _properties
+        };
+    }
 }
