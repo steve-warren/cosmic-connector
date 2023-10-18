@@ -1,8 +1,15 @@
+using System.Collections.ObjectModel;
+
 namespace Cosmodust;
 
 public class EntityConfigurationHolder
 {
-    private readonly Dictionary<Type, EntityConfiguration> _mappings = new();
+    private IDictionary<Type, EntityConfiguration> _mappings;
+
+    public EntityConfigurationHolder()
+    {
+        _mappings = new Dictionary<Type, EntityConfiguration>();
+    }
 
     public EntityConfiguration? Get(Type entityType)
     {
@@ -20,5 +27,10 @@ public class EntityConfigurationHolder
     public void Clear()
     {
         _mappings.Clear();
+    }
+
+    public void Configure()
+    {
+        _mappings = _mappings.AsReadOnly();
     }
 }
