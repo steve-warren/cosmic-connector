@@ -31,10 +31,11 @@ public sealed class DocumentStore : IDocumentStore
         var modelBuilder = new ModelBuilder();
         builder(modelBuilder);
 
-        EntityConfiguration.Clear();
-
         foreach (var configuration in modelBuilder.Build())
             EntityConfiguration.Add(configuration);
+
+        // marks the entity configuration object as read-only
+        EntityConfiguration.Configure();
 
         return this;
     }

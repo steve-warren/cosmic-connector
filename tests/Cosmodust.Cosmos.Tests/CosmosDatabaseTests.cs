@@ -1,3 +1,4 @@
+using System.Configuration.Internal;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Linq;
@@ -9,33 +10,29 @@ namespace Cosmodust.Cosmos.Tests;
 
 public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {
-    private readonly CosmosDatabase _db;
-    private readonly EntityConfigurationHolder _entityConfiguration;
-    private DocumentStore? _blogDocumentStore;
-    private DocumentStore? _accountPlanDocumentStore;
+    private readonly IConfiguration _configuration;
+    private readonly IDocumentStore _documentStore;
 
     public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
-        _db = configurationTextFixture.Database;
-        _entityConfiguration = configurationTextFixture.EntityConfiguration;
-    }
+        _configuration = configurationTextFixture.Configuration;
 
-    private DocumentStore GetAccountPlanDocumentStore()
-    {
-        return _accountPlanDocumentStore ??= new DocumentStore(_db,  _entityConfiguration)
-            .ConfigureModel(builder =>
-            {
-                builder.Entity<AccountPlan>()
-                    .HasId(e => e.Id)
-                    .ToContainer("accountPlans");
-            });
-    }
+        var entityConfiguration = new EntityConfigurationHolder();
 
-    private DocumentStore GetBlogDocumentStore()
-    {
-        return _blogDocumentStore ??= new DocumentStore(_db, _entityConfiguration)
+        var cosmosClient = new CosmosClient(_configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
+        {
+            Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(entityConfiguration) })
+        });
+
+        var db = cosmosClient.GetDatabase("reminderdb");
+
+        _documentStore = new DocumentStore(new CosmosDatabase(db), entityConfiguration)
                     .ConfigureModel(builder =>
                     {
+                        builder.Entity<AccountPlan>()
+                            .HasId(e => e.Id)
+                            .ToContainer("accountPlans");
+
                         builder.Entity<BlogPost>()
                             .HasId(e => e.Id)
                             .HasPartitionKey(e => e.PostId)
@@ -52,7 +49,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Add_And_Find_Entity_In_Separate_Sessions()
     {
-        var store = GetAccountPlanDocumentStore();
+        var store = _documentStore;
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -70,7 +67,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Add_Find_Delete_Entity_In_Separate_Sessions()
     {
-        var store = GetAccountPlanDocumentStore();
+        var store = _documentStore;
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -97,7 +94,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Add_Find_Update_Entity_In_Separate_Session()
     {
-        var store = GetAccountPlanDocumentStore();
+        var store = _documentStore;
 
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
@@ -128,7 +125,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_List()
     {
-        var store = GetAccountPlanDocumentStore();
+        var store = _documentStore;
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -151,7 +148,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
-        var store = GetAccountPlanDocumentStore();
+        var store = _documentStore;
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -179,7 +176,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
-        var store = GetAccountPlanDocumentStore();
+        var store = _documentStore;
 
         var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
 
@@ -202,7 +199,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Transactional_Batch()
     {
-        var store = GetBlogDocumentStore();
+        var store = _documentStore;
         var session = store.CreateSession();
 
         var postId = Guid.NewGuid().ToString();
@@ -218,7 +215,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Backing_Field()
     {
-        var store = GetBlogDocumentStore();
+        var store = _documentStore;
 
         var writeSession = store.CreateSession();
 
