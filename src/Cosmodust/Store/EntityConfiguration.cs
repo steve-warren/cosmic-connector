@@ -3,17 +3,11 @@ using Cosmodust.Query;
 
 namespace Cosmodust;
 
-public class EntityConfiguration
+public record EntityConfiguration(Type EntityType)
 {
-    public EntityConfiguration(Type entityType)
-    {
-        EntityType = entityType;
-    }
-
-    public Type EntityType { get; }
-    public string ContainerName { get; set; } = string.Empty;
-    public IStringSelector IdSelector { get; set; } = NullStringSelector.Instance;
-    public IStringSelector PartitionKeySelector { get; set; } = NullStringSelector.Instance;
-    public HashSet<FieldAccessor> Fields { get; set; } = new();
-    public HashSet<PropertyAccessor> Properties { get; set; } = new();
+    public string ContainerName { get; init; } = string.Empty;
+    public IStringSelector IdSelector { get; init; } = NullStringSelector.Instance;
+    public IStringSelector PartitionKeySelector { get; init; } = NullStringSelector.Instance;
+    public IReadOnlyCollection<FieldAccessor> Fields { get; init; } = Array.Empty<FieldAccessor>();
+    public IReadOnlyCollection<PropertyAccessor> Properties { get; init; } = Array.Empty<PropertyAccessor>();
 }

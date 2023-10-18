@@ -24,11 +24,6 @@ public class EntityConfigurationHolder
         _mappings.Add(mapping.EntityType, mapping);
     }
 
-    public void Clear()
-    {
-        _mappings.Clear();
-    }
-
     public void Configure()
     {
         _mappings = _mappings.AsReadOnly();
