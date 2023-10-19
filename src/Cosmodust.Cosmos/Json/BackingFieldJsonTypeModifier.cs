@@ -1,8 +1,7 @@
-using System.Reflection;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Store;
 
-namespace Cosmodust.Cosmos;
+namespace Cosmodust.Cosmos.Json;
 
 public sealed class BackingFieldJsonTypeModifier : IJsonTypeModifier
 {

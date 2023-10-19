@@ -3,7 +3,7 @@ using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Memory;
 using Microsoft.Azure.Cosmos;
 
-namespace Cosmodust.Cosmos;
+namespace Cosmodust.Cosmos.Json;
 
 public sealed class CosmosJsonSerializer : CosmosSerializer
 {
@@ -21,7 +21,7 @@ public sealed class CosmosJsonSerializer : CosmosSerializer
         foreach (var action in _jsonTypeModifiers.Select(m => (Action<JsonTypeInfo>) m.Modify))
             jsonTypeInfoResolver.Modifiers.Add(action);
 
-        _options = new JsonSerializerOptions()
+        _options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -32,12 +32,7 @@ public sealed class CosmosJsonSerializer : CosmosSerializer
     public override T FromStream<T>(Stream stream)
     {
         using (stream)
-        {
-            if (stream.Length == 0)
-                return default!;
-
-            return JsonSerializer.Deserialize<T>(stream, _options)!;
-        }
+            return stream.Length == 0 ? default! : JsonSerializer.Deserialize<T>(stream, _options)!;
     }
 
     public override Stream ToStream<T>(T input)

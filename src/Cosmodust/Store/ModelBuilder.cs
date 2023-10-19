@@ -1,4 +1,4 @@
-namespace Cosmodust;
+namespace Cosmodust.Store;
 
 /// <summary>
 /// A class that allows building entity configurations for a data model.

@@ -1,6 +1,8 @@
 using Cosmodust.Linq;
+using Cosmodust.Store;
+using Cosmodust.Tracking;
 
-namespace Cosmodust;
+namespace Cosmodust.Session;
 
 public sealed class DocumentSession : IDocumentSession
 {

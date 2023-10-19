@@ -2,6 +2,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Cosmodust.Tracking;
 
 namespace Cosmodust.Linq;
 
@@ -38,7 +39,7 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
     {
         var query = Database.ToAsyncEnumerable(OriginalLinqQuery, cancellationToken);
 
-        await foreach (var entity in query.WithCancellation(cancellationToken))
+        await foreach (var entity in query)
         {
             Debug.Assert(entity is not null, "The entity should not be null.");
 

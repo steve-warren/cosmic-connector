@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Cosmos.Json;
+using Cosmodust.Store;
 using FluentAssertions;
 
 namespace Cosmodust.Cosmos.Tests;

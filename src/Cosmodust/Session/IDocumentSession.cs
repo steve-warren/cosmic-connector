@@ -1,6 +1,6 @@
-using Cosmodust.Linq;
+using Cosmodust.Tracking;
 
-namespace Cosmodust;
+namespace Cosmodust.Session;
 
 public interface IDocumentSession
 {

@@ -1,4 +1,4 @@
-namespace Cosmodust;
+namespace Cosmodust.Store;
 
 internal interface IEntityBuilder
 {

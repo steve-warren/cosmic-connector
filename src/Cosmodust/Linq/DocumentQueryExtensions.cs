@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 namespace Cosmodust.Linq;
 
 public static class DocumentQueryExtensions
@@ -7,8 +5,7 @@ public static class DocumentQueryExtensions
     public static async Task<List<TEntity>> ToListAsync<TEntity>(this IQueryable<TEntity> queryable, CancellationToken cancellationToken = default)
     {
         var documentQuery = GetDocumentQuery(queryable);
-        var iterator = documentQuery.ToAsyncEnumerable(cancellationToken)
-                                    .WithCancellation(cancellationToken);
+        var iterator = documentQuery.ToAsyncEnumerable(cancellationToken);
 
         var list = new List<TEntity>();
 
@@ -28,8 +25,7 @@ public static class DocumentQueryExtensions
     {
         var documentQuery = GetDocumentQuery(queryable.Take(1));
 
-        var iterator = documentQuery.ToAsyncEnumerable(cancellationToken)
-                                    .WithCancellation(cancellationToken);
+        var iterator = documentQuery.ToAsyncEnumerable(cancellationToken);
 
         await foreach (var entity in iterator)
             return entity;

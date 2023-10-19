@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Store;
 
-namespace Cosmodust.Cosmos;
+namespace Cosmodust.Cosmos.Json;
 
 public sealed class TypeMetadataJsonTypeModifier : IJsonTypeModifier
 {
@@ -9,7 +10,7 @@ public sealed class TypeMetadataJsonTypeModifier : IJsonTypeModifier
         _entityConfigurationHolder = entityConfigurationHolder;
     }
 
-    private static readonly Func<object, object?> s_typeFunc = (object obj) => obj?.GetType().Name ?? "Unknown";
+    private static readonly Func<object, object?> s_typeFunc = obj => obj.GetType().Name;
     private readonly EntityConfigurationHolder _entityConfigurationHolder;
 
     public void Modify(JsonTypeInfo jsonTypeInfo)

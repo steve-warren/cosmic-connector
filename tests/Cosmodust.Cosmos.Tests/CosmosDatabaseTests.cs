@@ -1,7 +1,9 @@
 using System.Configuration.Internal;
+using Cosmodust.Cosmos.Json;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Linq;
+using Cosmodust.Store;
 using FluentAssertions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;

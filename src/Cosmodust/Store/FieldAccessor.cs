@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Cosmodust;
+namespace Cosmodust.Store;
 
 public record FieldAccessor(string FieldName, Type FieldType, Func<object, object?> Getter, Action<object, object?> Setter)
 {
@@ -12,7 +12,7 @@ public record FieldAccessor(string FieldName, Type FieldType, Func<object, objec
         return Create(fieldInfo);
     }
 
-    public static FieldAccessor Create(FieldInfo fieldInfo)
+    private static FieldAccessor Create(FieldInfo fieldInfo)
     {
         var instance = Expression.Parameter(typeof(object), "instance");
         var value = Expression.Parameter(typeof(object), "value");

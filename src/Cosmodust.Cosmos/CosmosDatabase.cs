@@ -1,8 +1,9 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
-using Cosmodust.Linq;
 using System.Diagnostics;
+using Cosmodust.Cosmos.Operations;
+using Cosmodust.Tracking;
+using Microsoft.Azure.Cosmos.Linq;
 
 namespace Cosmodust.Cosmos;
 
@@ -12,14 +13,14 @@ public sealed class CosmosDatabase : IDatabase
     private static readonly QueryRequestOptions s_defaultQueryRequestOptions = new();
 
     private readonly Dictionary<string, Container> _containers = new();
+    private readonly Database _database;
 
     public CosmosDatabase(Database database)
     {
-        Database = database;
+        _database = database;
     }
 
-    public string Name => Database.Id;
-    public Database Database { get; }
+    public string Name => _database.Id;
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(string containerName, string id, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
@@ -74,7 +75,7 @@ public sealed class CosmosDatabase : IDatabase
 
         foreach (var entriesGrouping in containerAndPartitionKey)
         {
-            var container = Database.GetContainer(entriesGrouping.Key.ContainerName);
+            var container = _database.GetContainer(entriesGrouping.Key.ContainerName);
             var partitionKey = entriesGrouping.Key.PartitionKey;
 
             var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
@@ -116,7 +117,9 @@ public sealed class CosmosDatabase : IDatabase
         if (_containers.TryGetValue(containerName, out var container))
             return container;
 
-        container = Database.GetContainer(containerName);
+        container = _database.GetContainer(containerName);
+
+        _containers.Add(key: containerName, value: container);
 
         return container;
     }

@@ -1,30 +1,30 @@
-namespace Cosmodust;
+using Cosmodust.Store;
+
+namespace Cosmodust.Tracking;
 
 public sealed class ChangeTracker
 {
     private readonly List<EntityEntry> _entries = new();
     private readonly Dictionary<(Type Type, string Id), object?> _entities = new();
+    private readonly EntityConfigurationHolder _entityConfiguration;
 
     public ChangeTracker(EntityConfigurationHolder entityConfiguration)
     {
         ArgumentNullException.ThrowIfNull(entityConfiguration);
-
-        EntityConfiguration = entityConfiguration;
+        _entityConfiguration = entityConfiguration;
     }
 
-    public EntityConfigurationHolder EntityConfiguration { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
     public IEnumerable<EntityEntry> PendingChanges =>
         _entries.Where(x => x.State != EntityState.Unchanged);
 
-    public EntityEntry? FindEntry(object entity) =>
+    private EntityEntry? FindEntry(object entity) =>
         _entries.FirstOrDefault(x => x.Entity == entity);
 
     /// <summary>
     /// Registers an entity as added in the change tracker.
     /// </summary>
-    /// <param name="id">The ID of the entity.</param>
     /// <param name="entity">The entity to register.</param>
     public void RegisterAdded(object entity)
     {
@@ -38,7 +38,6 @@ public sealed class ChangeTracker
     /// <summary>
     /// Registers an entity as unchanged in the change tracker.
     /// </summary>
-    /// <param name="id">The ID of the entity.</param>
     /// <param name="entity">The entity to register.</param>
     public void RegisterUnchanged(object entity)
     {
@@ -110,7 +109,7 @@ public sealed class ChangeTracker
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var config = EntityConfiguration.Get(typeof(TEntity)) ?? throw new InvalidOperationException($"No ID accessor has been registered for type {typeof(TEntity).FullName}.");
+        var config = _entityConfiguration.Get(typeof(TEntity)) ?? throw new InvalidOperationException($"No ID accessor has been registered for type {typeof(TEntity).FullName}.");
 
         return config.IdSelector.GetString(entity);
     }
@@ -151,7 +150,7 @@ public sealed class ChangeTracker
 
         var entityType = entity.GetType();
 
-        var config = EntityConfiguration.Get(entityType) ?? throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
+        var config = _entityConfiguration.Get(entityType) ?? throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
         var id = config.IdSelector.GetString(entity);
 
         if (_entities.ContainsKey((Type: entityType, Id: id)))

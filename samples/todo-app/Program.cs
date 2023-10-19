@@ -1,6 +1,8 @@
 using Cosmodust;
 using Cosmodust.Cosmos;
+using Cosmodust.Cosmos.Json;
 using Cosmodust.Samples.TodoApp.Domain;
+using Cosmodust.Store;
 using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +15,7 @@ builder.Services.AddSingleton(sp =>
         Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[]
             {
                 new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
+                new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
                 new TypeMetadataJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>())
             })
     });

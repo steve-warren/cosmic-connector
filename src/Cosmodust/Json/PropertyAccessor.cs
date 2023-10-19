@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Cosmodust;
+namespace Cosmodust.Json;
 
 public record PropertyAccessor(string PropertyName, Type PropertyType, Func<object, object?> Getter, Action<object, object?> Setter)
 {
@@ -20,7 +20,7 @@ public record PropertyAccessor(string PropertyName, Type PropertyType, Func<obje
         return Create(propertyInfo);
     }
 
-    public static PropertyAccessor Create(PropertyInfo propertyInfo)
+    private static PropertyAccessor Create(PropertyInfo propertyInfo)
     {
         if ((propertyInfo.CanWrite & propertyInfo.CanRead) == false)
             throw new InvalidOperationException("The property must have a getter and a setter.");
