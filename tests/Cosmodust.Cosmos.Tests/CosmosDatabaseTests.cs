@@ -23,7 +23,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var cosmosClient = new CosmosClient(_configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
         {
-            Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(entityConfiguration) })
+            Serializer = new CosmosJsonSerializer(
+                new IJsonTypeModifier[]
+                {
+                    new BackingFieldJsonTypeModifier(entityConfiguration),
+                    new PropertyJsonTypeModifier(entityConfiguration),
+                    new TypeMetadataJsonTypeModifier(),
+                })
         });
 
         var db = cosmosClient.GetDatabase("reminderdb");
@@ -121,22 +127,30 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_List()
     {
-        var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
+        var postId = Guid.NewGuid().ToString();
+        var post = new BlogPost { Id = postId, PostId = postId };
 
+        var comments = new[]
+        {
+            new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 1" },
+            new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
+        };
+        
         var writeSession = _store.CreateSession();
 
-        foreach (var entity in entities)
-            writeSession.Store(entity);
-
-        await writeSession.CommitAsync();
+        writeSession.Store(post);
+        writeSession.Store(comments[0]);
+        writeSession.Store(comments[1]);
+        
+        await writeSession.CommitTransactionAsync();
 
         var readSession = _store.CreateSession();
-        var readEntities = await readSession.Query<AccountPlan>()
-                                .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
-                                .ToListAsync();
+        var readEntities = await readSession.Query<BlogPostComment>(partitionKey: postId)
+            .Where(comment => comment.PostId == postId)
+            .ToListAsync();
 
         readEntities.Should().HaveCount(2, because: "we should have found the two entities we just created");
-        readEntities.Should().BeEquivalentTo(entities, because: "we should be able to query the entities we just created");
+        readEntities.Should().BeEquivalentTo(comments, because: "we should be able to query the entities we just created");
     }
 
     [Fact]

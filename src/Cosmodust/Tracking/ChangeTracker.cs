@@ -5,15 +5,15 @@ namespace Cosmodust.Tracking;
 public sealed class ChangeTracker
 {
     private readonly List<EntityEntry> _entries = new();
-    private readonly Dictionary<(Type Type, string Id), object?> _entities = new();
-    private readonly EntityConfigurationHolder _entityConfiguration;
+    private readonly Dictionary<(Type Type, string Id), object?> _entityByTypeId = new();
 
     public ChangeTracker(EntityConfigurationHolder entityConfiguration)
     {
         ArgumentNullException.ThrowIfNull(entityConfiguration);
-        _entityConfiguration = entityConfiguration;
+        EntityConfiguration = entityConfiguration;
     }
 
+    public EntityConfigurationHolder EntityConfiguration { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
     public IEnumerable<EntityEntry> PendingChanges =>
@@ -69,7 +69,8 @@ public sealed class ChangeTracker
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var entry = FindEntry(entity) ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
+        var entry = FindEntry(entity)
+                    ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
 
         entry.Remove();
     }
@@ -83,7 +84,7 @@ public sealed class ChangeTracker
     /// <returns><c>true</c> if the identity map contains an entity with the specified ID; otherwise, <c>false</c>.</returns>
     public bool TryGet<TEntity>(string id, out TEntity? entity)
     {
-        if (_entities.TryGetValue((Type: typeof(TEntity), Id: id), out var value))
+        if (_entityByTypeId.TryGetValue((Type: typeof(TEntity), Id: id), out var value))
         {
             entity = (TEntity?) value;
             return true;
@@ -93,7 +94,8 @@ public sealed class ChangeTracker
         return false;
     }
 
-    public bool Exists<TEntity>(string id) => _entities.ContainsKey((Type: typeof(TEntity), Id: id));
+    public bool Exists<TEntity>(string id) =>
+        _entityByTypeId.ContainsKey((Type: typeof(TEntity), Id: id));
 
     public void EnsureExists<TEntity>(TEntity entity)
     {
@@ -101,7 +103,7 @@ public sealed class ChangeTracker
 
         var id = GetId(entity);
 
-        if (!_entities.TryGetValue((Type: typeof(TEntity), Id: id), out _))
+        if (!_entityByTypeId.TryGetValue((Type: typeof(TEntity), Id: id), out _))
             throw new InvalidOperationException($"The entity of type '{typeof(TEntity).Name}' with ID '{id}' does not exist in the identity map.");
     }
 
@@ -109,13 +111,16 @@ public sealed class ChangeTracker
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var config = _entityConfiguration.Get(typeof(TEntity)) ?? throw new InvalidOperationException($"No ID accessor has been registered for type {typeof(TEntity).FullName}.");
+        var config =
+            EntityConfiguration.Get(typeof(TEntity))
+            ?? throw new InvalidOperationException($"No ID accessor has been registered for type {typeof(TEntity).FullName}.");
 
         return config.IdSelector.GetString(entity);
     }
 
     /// <summary>
-    /// Commits all changes made to the tracked entities by removing all entities marked as removed and unchanging all entities marked as added or modified.
+    /// Commits all changes made to the tracked entities by removing all entities
+    /// marked as removed and unchanging all entities marked as added or modified.
     /// </summary>
     public void Commit()
     {
@@ -133,11 +138,12 @@ public sealed class ChangeTracker
                 case EntityState.Removed:
                     entry.Detach();
                     _entries.RemoveAt(i);
-                    _entities.Remove((Type: entry.EntityType, entry.Id));
+                    _entityByTypeId.Remove((Type: entry.EntityType, entry.Id));
                     i--;
                     break;
                 case EntityState.Unchanged:
                     break;
+                case EntityState.Detached:
                 default:
                     throw new InvalidOperationException($"Unknown entity state: {entry.State}");
             }
@@ -150,10 +156,11 @@ public sealed class ChangeTracker
 
         var entityType = entity.GetType();
 
-        var config = _entityConfiguration.Get(entityType) ?? throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
+        var config = EntityConfiguration.Get(entityType)
+                     ?? throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
         var id = config.IdSelector.GetString(entity);
 
-        if (_entities.ContainsKey((Type: entityType, Id: id)))
+        if (_entityByTypeId.ContainsKey((Type: entityType, Id: id)))
             throw new InvalidOperationException($"An entity of type '{entityType.Name}' with ID '{id}' has already been loaded into the session.");
 
         var entry = new EntityEntry
@@ -166,7 +173,7 @@ public sealed class ChangeTracker
         };
 
         _entries.Add(entry);
-        _entities.Add((Type: entry.EntityType, entry.Id), entity);
+        _entityByTypeId.Add((Type: entry.EntityType, entry.Id), entity);
 
         return entry;
     }
