@@ -1,31 +1,18 @@
-using System.Collections.ObjectModel;
-
-namespace Cosmodust;
+namespace Cosmodust.Store;
 
 public class EntityConfigurationHolder
 {
-    private IDictionary<Type, EntityConfiguration> _mappings;
+    private IDictionary<Type, EntityConfiguration> _mappings =
+        new Dictionary<Type, EntityConfiguration>();
 
-    public EntityConfigurationHolder()
-    {
-        _mappings = new Dictionary<Type, EntityConfiguration>();
-    }
+    public EntityConfiguration? Get(Type entityType) =>
+        _mappings.TryGetValue(entityType, out var mapping)
+            ? mapping
+            : null;
 
-    public EntityConfiguration? Get(Type entityType)
-    {
-        if (_mappings.TryGetValue(entityType, out var mapping))
-            return mapping;
-
-        return null;
-    }
-
-    public void Add(EntityConfiguration mapping)
-    {
+    public void Add(EntityConfiguration mapping) =>
         _mappings.Add(mapping.EntityType, mapping);
-    }
 
-    public void Configure()
-    {
+    public void Configure() =>
         _mappings = _mappings.AsReadOnly();
-    }
 }

@@ -1,4 +1,4 @@
-namespace Cosmodust;
+namespace Cosmodust.Tracking;
 
 public sealed class EntityEntry
 {

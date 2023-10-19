@@ -1,4 +1,5 @@
 using Cosmodust.Samples.TodoApp.Domain;
+using Cosmodust.Session;
 using KsuidDotNet;
 using Microsoft.AspNetCore.Mvc;
 

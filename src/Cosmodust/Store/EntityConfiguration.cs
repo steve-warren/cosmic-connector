@@ -1,7 +1,7 @@
-using System.Reflection;
+using Cosmodust.Json;
 using Cosmodust.Query;
 
-namespace Cosmodust;
+namespace Cosmodust.Store;
 
 public record EntityConfiguration(Type EntityType)
 {
