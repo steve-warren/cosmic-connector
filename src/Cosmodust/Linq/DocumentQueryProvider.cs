@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Cosmodust.Store;
 using Cosmodust.Tracking;
 
 namespace Cosmodust.Linq;
@@ -7,15 +8,24 @@ internal sealed class CosmodustLinqQueryProvider : IQueryProvider
 {
     private readonly IQueryProvider _cosmosLinqQueryProvider;
 
-    public CosmodustLinqQueryProvider(IDatabase database, ChangeTracker changeTracker, IQueryProvider cosmosLinqQueryProvider)
+    public CosmodustLinqQueryProvider(
+        IDatabase database,
+        EntityConfiguration entityConfiguration,
+        ChangeTracker changeTracker,
+        string? partitionKey,
+        IQueryProvider cosmosLinqQueryProvider)
     {
         Database = database;
+        EntityConfiguration = entityConfiguration;
         ChangeTracker = changeTracker;
+        PartitionKey = partitionKey;
         _cosmosLinqQueryProvider = cosmosLinqQueryProvider;
     }
 
     public IDatabase Database { get; }
     public ChangeTracker ChangeTracker { get; }
+    public EntityConfiguration EntityConfiguration { get; }
+    public string? PartitionKey { get; }
 
     public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {

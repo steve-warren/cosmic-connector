@@ -1,4 +1,5 @@
 using Cosmodust.Session;
+using Cosmodust.Tracking;
 
 namespace Cosmodust.Store;
 
@@ -9,7 +10,8 @@ public sealed class DocumentStore : IDocumentStore
         ArgumentNullException.ThrowIfNull(database);
 
         Database = database;
-        EntityConfiguration = entityConfiguration ?? new EntityConfigurationHolder();
+        EntityConfiguration = entityConfiguration
+                              ?? new EntityConfigurationHolder();
     }
 
     public IDatabase Database { get; }
@@ -17,7 +19,7 @@ public sealed class DocumentStore : IDocumentStore
 
     public IDocumentSession CreateSession()
     {
-        return new DocumentSession(this, EntityConfiguration, Database);
+        return new DocumentSession(this, new ChangeTracker(EntityConfiguration), Database);
     }
 
     /// <summary>
@@ -41,15 +43,7 @@ public sealed class DocumentStore : IDocumentStore
         return this;
     }
 
-    internal void EnsureConfigured<TEntity>()
-    {
-        _ = EntityConfiguration.Get(typeof(TEntity)) ??
+    internal EntityConfiguration GetConfiguration<TEntity>() =>
+        EntityConfiguration.Get(typeof(TEntity)) ??
             throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
-    }
-
-    internal EntityConfiguration GetConfiguration(Type type)
-    {
-        return EntityConfiguration.Get(type) ??
-            throw new InvalidOperationException($"No configuration has been registered for type {type.FullName}.");
-    }
 }

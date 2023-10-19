@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Cosmodust.Linq;
 using Cosmodust.Tracking;
 
 namespace Cosmodust.Tests;
@@ -36,14 +37,19 @@ public sealed class MockDatabase : IDatabase
         throw new NotImplementedException();
     }
 
+    public IQueryable<TEntity> CreateLinqQuery<TEntity>(string containerName)
+    {
+        return _entities.Values.OfType<TEntity>().AsQueryable();
+    }
+
     public IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string? partitionKey = null)
     {
         return _entities.Values.OfType<TEntity>().AsQueryable();
     }
 
-    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(IQueryable<TEntity> query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        foreach (var entity in query)
+        foreach (var entity in query.CosmosLinqQuery)
         {
             await Task.Yield();
             yield return entity;

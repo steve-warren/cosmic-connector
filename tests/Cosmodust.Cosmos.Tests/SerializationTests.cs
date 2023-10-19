@@ -11,31 +11,79 @@ public class SerializationTests
 {
     public class BackingFieldEntity
     {
+        private string _firstName;
+        private string _lastName;
+        
         public BackingFieldEntity(string firstName, string lastName)
         {
-            FirstName = firstName;
-            LastName = lastName;
+            _firstName = firstName;
+            _lastName = lastName;
         }
-
-        public string FirstName { get; private set; }
-        public string LastName { get; private set; }
 
         public override string ToString()
         {
-            return $"{FirstName} {LastName}";
+            return $"{_firstName} {_lastName}";
         }
     }
 
     [Fact]
-    public void Foo()
+    public void Should_Serialize_Private_Mutable_Fields()
     {
+        using var stream = new MemoryStream();
         var entity = new BackingFieldEntity(firstName: "Michael", lastName: "Scott");
+        var configuration = new EntityConfigurationHolder();
+        configuration.Add(new EntityConfiguration(typeof(BackingFieldEntity))
+        {
+            Fields = new[]
+            {
+                FieldAccessor.Create("_firstName", typeof(BackingFieldEntity)),
+                FieldAccessor.Create("_lastName", typeof(BackingFieldEntity)), 
+            }
+        });
+        
+        JsonSerializer.Serialize(stream, entity, typeof(BackingFieldEntity),
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+                {
+                    Modifiers = { new BackingFieldJsonTypeModifier(configuration).Modify }
+                }
+            });
 
-        var serializer = new CosmosJsonSerializer(new IJsonTypeModifier[] { new BackingFieldJsonTypeModifier(new EntityConfigurationHolder()) });
-        using var jsonStream = serializer.ToStream(entity);
-        var reader = new StreamReader(jsonStream);
-        var json = reader.ReadToEnd();
+        stream.Position = 0;
 
-        json.Should().Be("""{"firstName":"Michael","lastName":"Scott"}""", because: "we should be able to serialize private fields");
+        var reader = new StreamReader(stream);
+        var json = reader.ReadLine();
+
+        json.Should().Be("""{"_firstName":"Michael","_lastName":"Scott"}""", because: "we should be able to serialize private fields");
+    }
+
+    public record EmptyType();
+    
+    [Fact]
+    public void Should_Serialize_Object_Type_To_Json()
+    {
+        using var stream = new MemoryStream();
+        var entity = new EmptyType();
+        
+        JsonSerializer.Serialize(stream, entity, typeof(EmptyType),
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+                {
+                    Modifiers = { new TypeMetadataJsonTypeModifier().Modify }
+                }
+            });
+
+        stream.Position = 0;
+
+        var reader = new StreamReader(stream);
+        var json = reader.ReadLine();
+
+        json.Should().Be("""{"__type":"EmptyType"}""", because: "we should be able to serialize the object's type.");
     }
 }

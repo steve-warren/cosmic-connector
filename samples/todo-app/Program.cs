@@ -16,7 +16,7 @@ builder.Services.AddSingleton(sp =>
             {
                 new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
                 new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                new TypeMetadataJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>())
+                new TypeMetadataJsonTypeModifier()
             })
     });
 });

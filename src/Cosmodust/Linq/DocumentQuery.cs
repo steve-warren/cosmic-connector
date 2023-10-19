@@ -2,42 +2,56 @@ using System.Collections;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Cosmodust.Store;
 using Cosmodust.Tracking;
 
 namespace Cosmodust.Linq;
 
 public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
 {
-    public CosmodustLinqQuery(IDatabase database, ChangeTracker changeTracker, IQueryable<TEntity> originalLinqQuery)
+    public CosmodustLinqQuery(
+        IDatabase database,
+        ChangeTracker changeTracker,
+        EntityConfiguration entityConfiguration,
+        string? partitionKey,
+        IQueryable<TEntity> cosmosLinqQuery)
     {
         Database = database;
         ChangeTracker = changeTracker;
-        OriginalLinqQuery = originalLinqQuery;
-        ElementType = originalLinqQuery.ElementType;
-        Expression = originalLinqQuery.Expression;
-        Provider = new CosmodustLinqQueryProvider(database, changeTracker, originalLinqQuery.Provider);
+        EntityConfiguration = entityConfiguration;
+        PartitionKey = partitionKey;
+        CosmosLinqQuery = cosmosLinqQuery;
+        ElementType = cosmosLinqQuery.ElementType;
+        Expression = cosmosLinqQuery.Expression;
+        Provider = new CosmodustLinqQueryProvider(database, entityConfiguration, changeTracker, partitionKey, cosmosLinqQuery.Provider);
     }
 
-    internal CosmodustLinqQuery(IQueryable<TEntity> originalLinqQuery, CosmodustLinqQueryProvider cosmodustLinqQueryProvider)
+    internal CosmodustLinqQuery(
+        IQueryable<TEntity> cosmosLinqQuery,
+        CosmodustLinqQueryProvider cosmodustLinqQueryProvider)
     {
-        OriginalLinqQuery = originalLinqQuery;
+        CosmosLinqQuery = cosmosLinqQuery;
         Database = cosmodustLinqQueryProvider.Database;
+        EntityConfiguration = cosmodustLinqQueryProvider.EntityConfiguration;
         ChangeTracker = cosmodustLinqQueryProvider.ChangeTracker;
-        ElementType = originalLinqQuery.ElementType;
-        Expression = originalLinqQuery.Expression;
+        PartitionKey = cosmodustLinqQueryProvider.PartitionKey;
+        ElementType = cosmosLinqQuery.ElementType;
+        Expression = cosmosLinqQuery.Expression;
         Provider = cosmodustLinqQueryProvider;
     }
-
+    
     public Type ElementType { get; }
     public Expression Expression { get; }
     public IQueryProvider Provider { get; }
-    internal IDatabase Database { get; }
-    internal ChangeTracker ChangeTracker { get; }
-    internal IQueryable<TEntity> OriginalLinqQuery { get; }
+    public IDatabase Database { get; }
+    public ChangeTracker ChangeTracker { get; }
+    public IQueryable<TEntity> CosmosLinqQuery { get; }
+    public EntityConfiguration EntityConfiguration { get; }
+    public string? PartitionKey { get; }
 
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var query = Database.ToAsyncEnumerable(OriginalLinqQuery, cancellationToken);
+        var query = Database.ToAsyncEnumerable(this, cancellationToken);
 
         await foreach (var entity in query)
         {
