@@ -25,7 +25,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -44,7 +44,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -67,7 +67,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -86,7 +86,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -145,7 +145,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -167,7 +167,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -191,7 +191,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -214,7 +214,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -244,7 +244,7 @@ public class DocumentStoreTests
     {
         var database = new MockDatabase();
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -273,7 +273,7 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -296,7 +296,7 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -321,7 +321,7 @@ public class DocumentStoreTests
         database.Add("id", entity);
 
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)
@@ -346,7 +346,7 @@ public class DocumentStoreTests
         database.Add("id2", new ReminderList("id2"));
 
         var documentStore = new DocumentStore(database)
-            .ConfigureModel(builder =>
+            .BuildModel(builder =>
             {
                 builder.Entity<ReminderList>()
                        .HasId(e => e.Id)

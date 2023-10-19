@@ -16,6 +16,7 @@ public class TodoList
     public string OwnerId { get; private set; }
     public string ListId { get; private set; }
     public string Name { get; private set; }
+    public int Count => Items.Count;
     private List<string> Items { get; init; } = new();
     public ArchiveState ArchiveState { get; private set; }
 
@@ -24,13 +25,13 @@ public class TodoList
         Name = newName;
     }
 
-    public void AddItem(string itemId)
+    public void AddItem(TodoItem item)
     {
-        if (Items.Contains(itemId))
+        if (Items.Contains(item.Id))
             throw new InvalidOperationException(
                 "Attempting to add item to list when it already exists.");
 
-        Items.Insert(index: 0, itemId);
+        Items.Insert(index: 0, item.Id);
     }
 
     public void ArrangeItem(string itemId, int position)

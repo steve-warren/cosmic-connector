@@ -9,14 +9,21 @@ namespace Cosmodust.Samples.TodoApp.Endpoints;
 [Route("api/todo/lists/{listId}/items")]
 public class CreateTodoItemEndpoint : ControllerBase
 {
-    public record CreateTodoItemRequest(string Name, [FromRoute] string ListId, string Priority, string Notes, DateTimeOffset? Reminder);
+    public record CreateTodoItemRequest(
+        string Name,
+        [FromRoute]
+        string ListId,
+        string Priority,
+        string Notes,
+        string OwnerId,
+        DateTimeOffset? Reminder);
 
     [HttpPost]
     public async Task<IActionResult> CreateTodoItem(
         [FromServices] IDocumentSession session,
         [FromBody] CreateTodoItemRequest request)
     {
-        var list = await session.FindAsync<TodoList>(request.ListId, partitionKey: request.ListId);
+        var list = await session.FindAsync<TodoList>(request.ListId, partitionKey: request.OwnerId);
 
         if (list is null)
             return NotFound();
@@ -29,7 +36,7 @@ public class CreateTodoItemEndpoint : ControllerBase
                                 notes: request.Notes,
                                 reminder: request.Reminder);
 
-        list.AddItem(item.Id);
+        list.AddItem(item);
 
         session.Update(list);
         session.Store(item);

@@ -28,17 +28,22 @@ builder.Services.AddSingleton(sp =>
 
     var store = new DocumentStore(database, sp.GetRequiredService<EntityConfigurationHolder>());
 
-    store.ConfigureModel(modelBuilder =>
+    store.BuildModel(modelBuilder =>
     {
-        modelBuilder.Entity<TodoList>()
+        modelBuilder.Entity<Account>()
             .HasId(e => e.Id)
             .HasPartitionKey(e => e.Id)
+            .ToContainer("todo");
+
+        modelBuilder.Entity<TodoList>()
+            .HasId(e => e.Id)
+            .HasPartitionKey(e => e.OwnerId)
             .HasProperty("Items")
             .ToContainer("todo");
 
         modelBuilder.Entity<TodoItem>()
             .HasId(e => e.Id)
-            .HasPartitionKey(e => e.ListId)
+            .HasPartitionKey(e => e.OwnerId)
             .ToContainer("todo");
     });
 
