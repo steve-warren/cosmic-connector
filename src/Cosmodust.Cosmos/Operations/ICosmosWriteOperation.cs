@@ -1,6 +1,8 @@
+using Microsoft.Azure.Cosmos;
+
 namespace Cosmodust.Cosmos.Operations;
 
 internal interface ICosmosWriteOperation
 {
-    Task ExecuteAsync(CancellationToken cancellationToken = default);
+    Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default);
 }

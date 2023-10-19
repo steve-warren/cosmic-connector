@@ -15,7 +15,7 @@ internal class DeleteItemOperation : ICosmosWriteOperation
         _partitionKey = string.IsNullOrEmpty(partitionKey) ? id : partitionKey;
     }
 
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         return _container.DeleteItemAsync<object>(_id, new PartitionKey(_partitionKey), cancellationToken: cancellationToken);
     }

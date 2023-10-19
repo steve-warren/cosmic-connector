@@ -35,7 +35,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var db = cosmosClient.GetDatabase("reminderdb");
 
         _store = new DocumentStore(new CosmosDatabase(db), entityConfiguration)
-                    .ConfigureModel(builder =>
+                    .BuildModel(builder =>
                     {
                         builder.Entity<AccountPlan>()
                             .HasId(e => e.Id)

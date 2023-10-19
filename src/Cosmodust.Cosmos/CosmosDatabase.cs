@@ -91,7 +91,9 @@ public sealed class CosmosDatabase : IDatabase
                 continue;
 
             var operation = CreateOperation(entry);
-            await operation.ExecuteAsync(cancellationToken);
+            var response = await operation.ExecuteAsync(cancellationToken);
+
+            Debug.WriteLine(response.StatusCode);
         }
     }
 

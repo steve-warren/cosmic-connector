@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using Microsoft.Azure.Cosmos;
 
@@ -22,11 +23,14 @@ internal class ReadItemOperation<TResult> : ICosmosReadOperation<TResult?>
         {
             var response = await _container.ReadItemAsync<TResult>(_id, new PartitionKey(_partitionKey ?? _id), cancellationToken: cancellationToken);
 
+            Debug.WriteLine(response.StatusCode);
+
             return response.Resource;
         }
 
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
+            Debug.WriteLine(ex.StatusCode);
             return default;
         }
     }

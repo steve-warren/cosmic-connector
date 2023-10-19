@@ -17,7 +17,7 @@ internal class ReplaceItemOperation : ICosmosWriteOperation
         _partitionKey = string.IsNullOrEmpty(partitionKey) ? id : partitionKey;
     }
 
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         return _container.ReplaceItemAsync(_entity, _id, new PartitionKey(_partitionKey), cancellationToken: cancellationToken);
     }

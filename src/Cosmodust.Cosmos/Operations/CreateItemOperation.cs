@@ -13,7 +13,7 @@ internal class CreateItemOperation : ICosmosWriteOperation
         _entity = entity;
     }
 
-    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         return _container.CreateItemAsync(_entity, cancellationToken: cancellationToken);
     }

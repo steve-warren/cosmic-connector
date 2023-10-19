@@ -27,7 +27,7 @@ public sealed class DocumentStore : IDocumentStore
     /// </summary>
     /// <param name="builder">The action used to configure the entities.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore ConfigureModel(Action<ModelBuilder> builder)
+    public DocumentStore BuildModel(Action<ModelBuilder> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 

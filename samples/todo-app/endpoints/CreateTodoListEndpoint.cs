@@ -16,13 +16,20 @@ public class CreateTodoListEndpoint : ControllerBase
         [FromServices] IDocumentSession session,
         [FromBody] CreateTodoListRequest request)
     {
+        var account = await session.FindAsync<Account>(request.OwnerId);
+
+        if (account is null)
+            return NotFound();
+
+        account.AddList();
         var list = new TodoList(name: request.Name,
                                 id: Ksuid.NewKsuid("l_"),
-                                ownerId: request.OwnerId);
+                                ownerId: account.Id);
 
+        session.Update(account);
         session.Store(list);
 
-        await session.CommitAsync();
+        await session.CommitTransactionAsync();
 
         return Ok(list);
     }
