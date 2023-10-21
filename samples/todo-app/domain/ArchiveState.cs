@@ -18,4 +18,7 @@ public record ArchiveState
     private ArchiveState() { }
 
     public string Name { get; init; } = "";
+
+    public override string ToString() =>
+        Name;
 }

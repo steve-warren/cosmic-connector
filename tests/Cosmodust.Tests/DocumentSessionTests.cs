@@ -27,7 +27,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -46,7 +46,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -69,7 +69,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -88,11 +88,11 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
 
-                builder.Entity<Reminder>()
+                builder.HasEntity<Reminder>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -147,7 +147,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -169,7 +169,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -193,7 +193,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -216,7 +216,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -246,7 +246,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -275,7 +275,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -298,7 +298,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -323,7 +323,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });
@@ -348,7 +348,7 @@ public class DocumentStoreTests
         var documentStore = new DocumentStore(database)
             .BuildModel(builder =>
             {
-                builder.Entity<ReminderList>()
+                builder.HasEntity<ReminderList>()
                        .HasId(e => e.Id)
                        .ToContainer("db");
             });

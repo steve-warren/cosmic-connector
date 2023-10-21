@@ -34,6 +34,9 @@ public class TodoList
         Items.Insert(index: 0, item.Id);
     }
 
+    public void RemoveItem(TodoItem item)
+        => Items.Remove(item.Id);
+
     public void ArrangeItem(string itemId, int position)
     {
         var currentIndex = Items.IndexOf(itemId);

@@ -18,4 +18,7 @@ public record TodoItemCompletedState
     private TodoItemCompletedState() { }
 
     public string Name { get; init; } = "";
+    
+    public override string ToString() =>
+        Name;
 }

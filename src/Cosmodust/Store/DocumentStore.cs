@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Cosmodust.Session;
 using Cosmodust.Tracking;
 
@@ -5,11 +6,17 @@ namespace Cosmodust.Store;
 
 public sealed class DocumentStore : IDocumentStore
 {
-    public DocumentStore(IDatabase database, EntityConfigurationHolder? entityConfiguration = default)
+    private readonly JsonSerializerOptions _options;
+
+    public DocumentStore(
+        IDatabase database,
+        JsonSerializerOptions? options = default,
+        EntityConfigurationHolder? entityConfiguration = default)
     {
         ArgumentNullException.ThrowIfNull(database);
 
         Database = database;
+        _options = options ?? new JsonSerializerOptions();
         EntityConfiguration = entityConfiguration
                               ?? new EntityConfigurationHolder();
     }
@@ -31,7 +38,7 @@ public sealed class DocumentStore : IDocumentStore
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var modelBuilder = new ModelBuilder();
+        var modelBuilder = new ModelBuilder(_options);
         builder(modelBuilder);
 
         foreach (var configuration in modelBuilder.Build())

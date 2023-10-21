@@ -22,4 +22,7 @@ public record TodoItemPriority
     private TodoItemPriority() { }
 
     public string Name { get; init; } = "";
+    
+    public override string ToString() =>
+        Name;
 }

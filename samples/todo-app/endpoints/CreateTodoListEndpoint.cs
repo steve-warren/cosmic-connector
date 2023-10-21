@@ -6,12 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace Cosmodust.Samples.TodoApp.Endpoints;
 
 [ApiController]
-[Route("api/todo/lists")]
 public class CreateTodoListEndpoint : ControllerBase
 {
     public record CreateTodoListRequest(string Name, string OwnerId);
 
-    [HttpPost]
+    [HttpPost("api/todo/lists")]
     public async Task<IActionResult> CreateTodoList(
         [FromServices] IDocumentSession session,
         [FromBody] CreateTodoListRequest request)

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Memory;
 using Microsoft.Azure.Cosmos;
 
@@ -7,26 +6,13 @@ namespace Cosmodust.Cosmos.Json;
 
 public sealed class CosmosJsonSerializer : CosmosSerializer
 {
-    private readonly IMemoryStreamProvider _memoryStreamProvider;
     private readonly JsonSerializerOptions _options;
-    private readonly List<IJsonTypeModifier> _jsonTypeModifiers = new();
+    private readonly IMemoryStreamProvider _memoryStreamProvider;
 
-    public CosmosJsonSerializer(IEnumerable<IJsonTypeModifier> jsonTypeModifiers, IMemoryStreamProvider? memoryStreamProvider = default)
+    public CosmosJsonSerializer(JsonSerializerOptions options, IMemoryStreamProvider? memoryStreamProvider = default)
     {
+        _options = options;
         _memoryStreamProvider = memoryStreamProvider ?? DefaultMemoryStreamProvider.Instance;
-        _jsonTypeModifiers.AddRange(jsonTypeModifiers);
-
-        var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
-
-        foreach (var action in _jsonTypeModifiers.Select(m => (Action<JsonTypeInfo>) m.Modify))
-            jsonTypeInfoResolver.Modifiers.Add(action);
-
-        _options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            TypeInfoResolver = jsonTypeInfoResolver
-        };
     }
 
     public override T FromStream<T>(Stream stream)

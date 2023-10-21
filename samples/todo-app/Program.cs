@@ -1,6 +1,8 @@
-using Cosmodust;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos;
 using Cosmodust.Cosmos.Json;
+using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Store;
 using Microsoft.Azure.Cosmos;
@@ -10,41 +12,62 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(new EntityConfigurationHolder());
 builder.Services.AddSingleton(sp =>
 {
-    return new CosmosClient(sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDB"], new CosmosClientOptions()
+    var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
+
+    foreach (var action in new IJsonTypeModifier[]
+             {
+                 new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
+                 new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
+                 new TypeMetadataJsonTypeModifier()
+             })
     {
-        Serializer = new CosmosJsonSerializer(new IJsonTypeModifier[]
-            {
-                new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                new TypeMetadataJsonTypeModifier()
-            })
-    });
+        jsonTypeInfoResolver.Modifiers.Add(action.Modify);
+    }
+
+    return new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        TypeInfoResolver = jsonTypeInfoResolver
+    };
 });
+
+builder.Services.AddSingleton(sp => new CosmosClient(sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDB"], new CosmosClientOptions()
+{
+    Serializer = new CosmosJsonSerializer(sp.GetRequiredService<JsonSerializerOptions>())
+}));
 
 builder.Services.AddSingleton(sp =>
 {
     var client = sp.GetRequiredService<CosmosClient>();
     var database = new CosmosDatabase(client.GetDatabase("reminderdb"));
 
-    var store = new DocumentStore(database, sp.GetRequiredService<EntityConfigurationHolder>());
+    var store = new DocumentStore(
+        database,
+        sp.GetRequiredService<JsonSerializerOptions>(),
+        sp.GetRequiredService<EntityConfigurationHolder>());
 
     store.BuildModel(modelBuilder =>
     {
-        modelBuilder.Entity<Account>()
+        modelBuilder.HasEntity<Account>()
             .HasId(e => e.Id)
             .HasPartitionKey(e => e.Id)
             .ToContainer("todo");
 
-        modelBuilder.Entity<TodoList>()
+        modelBuilder.HasEntity<TodoList>()
             .HasId(e => e.Id)
             .HasPartitionKey(e => e.OwnerId)
             .HasProperty("Items")
             .ToContainer("todo");
 
-        modelBuilder.Entity<TodoItem>()
+        modelBuilder.HasEntity<TodoItem>()
             .HasId(e => e.Id)
             .HasPartitionKey(e => e.OwnerId)
             .ToContainer("todo");
+
+        modelBuilder.HasValueObject<ArchiveState>()
+            .HasValueObject<TodoItemCompletedState>()
+            .HasValueObject<TodoItemPriority>();
     });
 
     return store;

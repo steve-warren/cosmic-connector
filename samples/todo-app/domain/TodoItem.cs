@@ -27,7 +27,7 @@ public class TodoItem
     public string Name { get; private set; }
     public string Notes { get; private set; }
     public DateTimeOffset? Reminder { get; private set; }
-    public TodoItemPriority Priority { get; private set; } = TodoItemPriority.None;
+    public TodoItemPriority Priority { get; private set; }
     public TodoItemCompletedState State { get; private set; }
     public ArchiveState ArchiveState { get; private set; }
 

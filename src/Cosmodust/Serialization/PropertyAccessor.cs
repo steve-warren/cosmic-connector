@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Cosmodust.Json;
+namespace Cosmodust.Serialization;
 
 public record PropertyAccessor(string PropertyName, Type PropertyType, Func<object, object?> Getter, Action<object, object?> Setter)
 {

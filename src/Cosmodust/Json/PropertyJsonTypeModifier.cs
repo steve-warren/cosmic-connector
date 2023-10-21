@@ -1,13 +1,14 @@
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Json;
 using Cosmodust.Store;
 
 namespace Cosmodust.Cosmos.Json;
 
-public sealed class BackingFieldJsonTypeModifier : IJsonTypeModifier
+public sealed class PropertyJsonTypeModifier : IJsonTypeModifier
 {
     private readonly EntityConfigurationHolder _entityConfigurationHolder;
 
-    public BackingFieldJsonTypeModifier(EntityConfigurationHolder entityConfigurationHolder)
+    public PropertyJsonTypeModifier(EntityConfigurationHolder entityConfigurationHolder)
     {
         _entityConfigurationHolder = entityConfigurationHolder;
     }
@@ -22,11 +23,11 @@ public sealed class BackingFieldJsonTypeModifier : IJsonTypeModifier
         if (entityConfiguration is null)
             return;
 
-        foreach (var field in entityConfiguration.Fields)
+        foreach (var property in entityConfiguration.Properties)
         {
-            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(field.FieldType, field.FieldName);
-            jsonPropertyInfo.Get = field.Getter;
-            jsonPropertyInfo.Set = field.Setter;
+            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(property.PropertyType, property.PropertyName);
+            jsonPropertyInfo.Get = property.Getter;
+            jsonPropertyInfo.Set = property.Setter;
 
             jsonTypeInfo.Properties.Add(jsonPropertyInfo);
         }
