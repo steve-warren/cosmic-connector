@@ -62,7 +62,7 @@ public sealed class CosmosDatabase : IDatabase
         CosmodustLinqQuery<TEntity> query,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var originalQueryDefinition = query.CosmosLinqQuery.ToQueryDefinition();
+        var originalQueryDefinition = query.DatabaseLinqQuery.ToQueryDefinition();
         var typedQuerySql = originalQueryDefinition.QueryText + " AND root.__type = @type";
         var typedQueryDefinition = new QueryDefinition(query: typedQuerySql);
         typedQueryDefinition.WithParameter("@type", typeof(TEntity).Name);

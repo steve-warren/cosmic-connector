@@ -14,29 +14,29 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
         ChangeTracker changeTracker,
         EntityConfiguration entityConfiguration,
         string? partitionKey,
-        IQueryable<TEntity> cosmosLinqQuery)
+        IQueryable<TEntity> databaseLinqQuery)
     {
         Database = database;
         ChangeTracker = changeTracker;
         EntityConfiguration = entityConfiguration;
         PartitionKey = partitionKey;
-        CosmosLinqQuery = cosmosLinqQuery;
-        ElementType = cosmosLinqQuery.ElementType;
-        Expression = cosmosLinqQuery.Expression;
-        Provider = new CosmodustLinqQueryProvider(database, entityConfiguration, changeTracker, partitionKey, cosmosLinqQuery.Provider);
+        DatabaseLinqQuery = databaseLinqQuery;
+        ElementType = databaseLinqQuery.ElementType;
+        Expression = databaseLinqQuery.Expression;
+        Provider = new CosmodustLinqQueryProvider(database, entityConfiguration, changeTracker, partitionKey, databaseLinqQuery.Provider);
     }
 
     internal CosmodustLinqQuery(
-        IQueryable<TEntity> cosmosLinqQuery,
+        IQueryable<TEntity> databaseLinqQuery,
         CosmodustLinqQueryProvider cosmodustLinqQueryProvider)
     {
-        CosmosLinqQuery = cosmosLinqQuery;
+        DatabaseLinqQuery = databaseLinqQuery;
         Database = cosmodustLinqQueryProvider.Database;
         EntityConfiguration = cosmodustLinqQueryProvider.EntityConfiguration;
         ChangeTracker = cosmodustLinqQueryProvider.ChangeTracker;
         PartitionKey = cosmodustLinqQueryProvider.PartitionKey;
-        ElementType = cosmosLinqQuery.ElementType;
-        Expression = cosmosLinqQuery.Expression;
+        ElementType = databaseLinqQuery.ElementType;
+        Expression = databaseLinqQuery.Expression;
         Provider = cosmodustLinqQueryProvider;
     }
     
@@ -45,7 +45,7 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
     public IQueryProvider Provider { get; }
     public IDatabase Database { get; }
     public ChangeTracker ChangeTracker { get; }
-    public IQueryable<TEntity> CosmosLinqQuery { get; }
+    public IQueryable<TEntity> DatabaseLinqQuery { get; }
     public EntityConfiguration EntityConfiguration { get; }
     public string? PartitionKey { get; }
 

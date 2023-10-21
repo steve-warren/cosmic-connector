@@ -4,6 +4,8 @@ namespace Cosmodust.Cosmos.Operations;
 
 internal class ReplaceItemOperation : ICosmosWriteOperation
 {
+    private static readonly ItemRequestOptions s_defaultItemRequestOptions = new ItemRequestOptions
+        { EnableContentResponseOnWrite = false };
     private readonly Container _container;
     private readonly object _entity;
     private readonly string _id;
@@ -19,6 +21,11 @@ internal class ReplaceItemOperation : ICosmosWriteOperation
 
     public Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return _container.ReplaceItemAsync(_entity, _id, new PartitionKey(_partitionKey), cancellationToken: cancellationToken);
+        return _container.ReplaceItemAsync(
+            _entity,
+            _id,
+            new PartitionKey(_partitionKey),
+            requestOptions: s_defaultItemRequestOptions,
+            cancellationToken: cancellationToken);
     }
 }

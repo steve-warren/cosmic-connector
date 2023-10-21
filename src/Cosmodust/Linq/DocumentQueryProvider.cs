@@ -6,20 +6,20 @@ namespace Cosmodust.Linq;
 
 internal sealed class CosmodustLinqQueryProvider : IQueryProvider
 {
-    private readonly IQueryProvider _cosmosLinqQueryProvider;
+    private readonly IQueryProvider _databaseLinqQueryProvider;
 
     public CosmodustLinqQueryProvider(
         IDatabase database,
         EntityConfiguration entityConfiguration,
         ChangeTracker changeTracker,
         string? partitionKey,
-        IQueryProvider cosmosLinqQueryProvider)
+        IQueryProvider databaseLinqQueryProvider)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
         ChangeTracker = changeTracker;
         PartitionKey = partitionKey;
-        _cosmosLinqQueryProvider = cosmosLinqQueryProvider;
+        _databaseLinqQueryProvider = databaseLinqQueryProvider;
     }
 
     public IDatabase Database { get; }
@@ -29,7 +29,7 @@ internal sealed class CosmodustLinqQueryProvider : IQueryProvider
 
     public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {
-        var cosmosLinqQuery = _cosmosLinqQueryProvider.CreateQuery<TElement>(expression);
+        var cosmosLinqQuery = _databaseLinqQueryProvider.CreateQuery<TElement>(expression);
         var query = new CosmodustLinqQuery<TElement>(cosmosLinqQuery, this);
 
         return query;
