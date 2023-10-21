@@ -14,4 +14,7 @@ public class Account
 
     public void AddList() =>
         NumberOfLists++;
+
+    public void RemoveList() =>
+        NumberOfLists--;
 }

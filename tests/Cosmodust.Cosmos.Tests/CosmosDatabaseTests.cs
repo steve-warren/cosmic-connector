@@ -1,7 +1,10 @@
 using System.Configuration.Internal;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Json;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
+using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Store;
 using FluentAssertions;
@@ -21,33 +24,46 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var entityConfiguration = new EntityConfigurationHolder();
 
+        var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
+
+        foreach (var action in new IJsonTypeModifier[]
+                 {
+                     new BackingFieldJsonTypeModifier(entityConfiguration),
+                     new PropertyJsonTypeModifier(entityConfiguration),
+                     new TypeMetadataJsonTypeModifier()
+                 })
+        {
+            jsonTypeInfoResolver.Modifiers.Add(action.Modify);
+        }
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            TypeInfoResolver = jsonTypeInfoResolver
+        };
+
         var cosmosClient = new CosmosClient(_configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
         {
-            Serializer = new CosmosJsonSerializer(
-                new IJsonTypeModifier[]
-                {
-                    new BackingFieldJsonTypeModifier(entityConfiguration),
-                    new PropertyJsonTypeModifier(entityConfiguration),
-                    new TypeMetadataJsonTypeModifier(),
-                })
+            Serializer = new CosmosJsonSerializer(options)
         });
 
         var db = cosmosClient.GetDatabase("reminderdb");
 
-        _store = new DocumentStore(new CosmosDatabase(db), entityConfiguration)
+        _store = new DocumentStore(new CosmosDatabase(db), options, entityConfiguration)
                     .BuildModel(builder =>
                     {
-                        builder.Entity<AccountPlan>()
+                        builder.HasEntity<AccountPlan>()
                             .HasId(e => e.Id)
                             .ToContainer("accountPlans");
 
-                        builder.Entity<BlogPost>()
+                        builder.HasEntity<BlogPost>()
                             .HasId(e => e.Id)
                             .HasPartitionKey(e => e.PostId)
                             .HasField("_likes")
                             .ToContainer("blogPosts");
 
-                        builder.Entity<BlogPostComment>()
+                        builder.HasEntity<BlogPostComment>()
                             .HasId(e => e.Id)
                             .HasPartitionKey(e => e.PostId)
                             .ToContainer("blogPosts");

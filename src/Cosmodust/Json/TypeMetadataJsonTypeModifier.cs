@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization.Metadata;
-using Cosmodust.Store;
 
-namespace Cosmodust.Cosmos.Json;
+namespace Cosmodust.Json;
 
 public sealed class TypeMetadataJsonTypeModifier : IJsonTypeModifier
 {

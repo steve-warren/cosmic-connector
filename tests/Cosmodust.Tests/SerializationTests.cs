@@ -1,11 +1,11 @@
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Json;
+using Cosmodust.Json;
+using Cosmodust.Serialization;
 using Cosmodust.Store;
-using FluentAssertions;
 
-namespace Cosmodust.Cosmos.Tests;
+namespace Cosmodust.Tests;
 
 public class SerializationTests
 {
@@ -61,13 +61,13 @@ public class SerializationTests
     }
 
     public record EmptyType();
-    
+
     [Fact]
     public void Should_Serialize_Object_Type_To_Json()
     {
         using var stream = new MemoryStream();
         var entity = new EmptyType();
-        
+
         JsonSerializer.Serialize(stream, entity, typeof(EmptyType),
             new JsonSerializerOptions
             {
@@ -85,5 +85,83 @@ public class SerializationTests
         var json = reader.ReadLine();
 
         json.Should().Be("""{"__type":"EmptyType"}""", because: "we should be able to serialize the object's type.");
+    }
+
+    public record ArchiveState
+    {
+        public static readonly ArchiveState NotArchived = new() { Name = nameof(NotArchived) };
+        public static readonly ArchiveState Archived = new() { Name = nameof(Archived) };
+
+        public static ArchiveState Parse(string name)
+        {
+            return name switch
+            {
+                nameof(NotArchived) => NotArchived,
+                nameof(Archived) => Archived,
+                _ => throw new ArgumentException("invalid state", nameof(name))
+            };
+        }
+
+        private ArchiveState() { }
+
+        public string Name { get; private init; } = "";
+
+        public override string ToString() =>
+            Name;
+    }
+
+    public class FooEntity
+    {
+        public string Id { get; set; } = "123";
+        public ArchiveState State { get; set; } = ArchiveState.Archived;
+    }
+
+    [Fact]
+    public void Can_Serialize_ValueObject()
+    {
+        using var stream = new MemoryStream();
+        var entity = new FooEntity();
+
+        var options =
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters =
+                {
+                    new ValueObjectJsonConverter<ArchiveState>()
+                }
+            };
+
+        JsonSerializer.Serialize(stream, entity, typeof(FooEntity), options);
+
+        stream.Position = 0;
+
+        var reader = new StreamReader(stream);
+        var json = reader.ReadLine();
+
+        json.Should().Be("""{"id":"123","state":"Archived"}""", because: "we should be able to serialize the value type.");
+    }
+    
+    [Fact]
+    public void Can_Deserialize_ValueObject()
+    {
+        var options =
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters =
+                {
+                    new ValueObjectJsonConverter<ArchiveState>()
+                }
+            };
+
+        var entity = new FooEntity();
+
+        var json = """{"id":"123","state":"Archived"}""";
+        var deserializedEntity = JsonSerializer.Deserialize<FooEntity>(json, options);
+
+        deserializedEntity.Should().BeEquivalentTo(entity, because: "we should be able to deserialize the value type.");
     }
 }
