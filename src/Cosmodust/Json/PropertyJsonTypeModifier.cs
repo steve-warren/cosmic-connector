@@ -1,8 +1,7 @@
 using System.Text.Json.Serialization.Metadata;
-using Cosmodust.Json;
 using Cosmodust.Store;
 
-namespace Cosmodust.Cosmos.Json;
+namespace Cosmodust.Json;
 
 public sealed class PropertyJsonTypeModifier : IJsonTypeModifier
 {

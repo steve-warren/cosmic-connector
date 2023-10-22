@@ -1,4 +1,4 @@
-namespace Cosmodust.Query;
+namespace Cosmodust.Store;
 
 internal class StringSelector<TEntity> : IStringSelector
 {
