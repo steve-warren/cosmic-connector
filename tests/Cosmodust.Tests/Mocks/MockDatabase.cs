@@ -49,7 +49,7 @@ public sealed class MockDatabase : IDatabase
 
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        foreach (var entity in query.CosmosLinqQuery)
+        foreach (var entity in query.DatabaseLinqQuery)
         {
             await Task.Yield();
             yield return entity;

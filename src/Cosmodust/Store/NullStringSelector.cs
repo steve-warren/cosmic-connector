@@ -1,4 +1,4 @@
-namespace Cosmodust.Query;
+namespace Cosmodust.Store;
 
 internal sealed class NullStringSelector : IStringSelector
 {
