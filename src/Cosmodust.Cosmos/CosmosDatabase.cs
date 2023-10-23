@@ -3,6 +3,7 @@ using Microsoft.Azure.Cosmos;
 using System.Diagnostics;
 using Cosmodust.Cosmos.Operations;
 using Cosmodust.Linq;
+using Cosmodust.Query;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos.Linq;
 
@@ -27,7 +28,7 @@ public sealed class CosmosDatabase : IDatabase
     public async ValueTask<TEntity?> FindAsync<TEntity>(
         string containerName,
         string id,
-        string? partitionKey = null,
+        string partitionKey,
         CancellationToken cancellationToken = default)
     {
         var container = GetContainerFor(containerName);
@@ -81,7 +82,41 @@ public sealed class CosmosDatabase : IDatabase
  
         while (feed.HasMoreResults)
         {
-            var response = await feed.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+            var response = await feed
+                .ReadNextAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            foreach (var entity in response)
+                yield return entity;
+        }
+    }
+
+    public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(
+        SqlQuery<TEntity> query,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var queryDefinition = new QueryDefinition(query.Sql);
+
+        foreach (var parameter in query.Parameters)
+            queryDefinition.WithParameter(name: parameter.Name, value: parameter.Value);
+
+        var container = GetContainerFor(query.EntityConfiguration.ContainerName);
+
+        var queryRequestOptions =
+            query.PartitionKey is null
+                ? s_defaultQueryRequestOptions
+                : new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
+
+        using var feed = container.GetItemQueryIterator<TEntity>(
+            queryDefinition,
+            continuationToken: null,
+            queryRequestOptions);
+
+        while (feed.HasMoreResults)
+        {
+            var response = await feed
+                .ReadNextAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             foreach (var entity in response)
                 yield return entity;

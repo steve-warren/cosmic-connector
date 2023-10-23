@@ -1,4 +1,5 @@
 using Cosmodust.Linq;
+using Cosmodust.Query;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 
@@ -21,7 +22,7 @@ public sealed class DocumentSession : IDocumentSession
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(
         string id,
-        string? partitionKey = null,
+        string partitionKey,
         CancellationToken cancellationToken = default)
     {
         var configuration = DocumentStore.GetConfiguration<TEntity>();
@@ -40,12 +41,29 @@ public sealed class DocumentSession : IDocumentSession
         return entity;
     }
 
-    public IQueryable<TEntity> Query<TEntity>(string? partitionKey = null)
+    public IQueryable<TEntity> Query<TEntity>(string partitionKey)
+    {
+        var entityConfiguration = DocumentStore.GetConfiguration<TEntity>();
+        var queryable = Database.CreateLinqQuery<TEntity>(entityConfiguration.ContainerName);
+
+        return new CosmodustLinqQuery<TEntity>(
+            Database,
+            ChangeTracker,
+            entityConfiguration,
+            partitionKey,
+            queryable);
+    }
+
+    public SqlQuery<TEntity> Query<TEntity>(string sql, string partitionKey)
     {
         var config = DocumentStore.GetConfiguration<TEntity>();
-        var queryable = Database.CreateLinqQuery<TEntity>(config.ContainerName);
 
-        return new CosmodustLinqQuery<TEntity>(Database, ChangeTracker, config, partitionKey, queryable);
+        return new SqlQuery<TEntity>(
+            database: Database,
+            changeTracker: ChangeTracker,
+            entityConfiguration: config,
+            sql: sql,
+            partitionKey: partitionKey);
     }
 
     public void Store<TEntity>(TEntity entity)

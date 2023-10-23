@@ -32,10 +32,18 @@ builder.Services.AddSingleton(sp =>
     };
 });
 
-builder.Services.AddSingleton(sp => new CosmosClient(sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDB"], new CosmosClientOptions()
+builder.Services.AddSingleton(sp =>
 {
-    Serializer = new CosmosJsonSerializer(sp.GetRequiredService<JsonSerializerOptions>())
-}));
+    var client = new CosmosClient(
+        sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDB"],
+        new CosmosClientOptions
+        {
+            ConnectionMode = ConnectionMode.Direct,
+            Serializer = new CosmosJsonSerializer(sp.GetRequiredService<JsonSerializerOptions>())
+        });
+
+    return client;
+});
 
 builder.Services.AddSingleton(sp =>
 {

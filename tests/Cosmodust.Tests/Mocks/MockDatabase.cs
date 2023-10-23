@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Cosmodust.Linq;
+using Cosmodust.Query;
 using Cosmodust.Tracking;
 
 namespace Cosmodust.Tests;
@@ -12,7 +13,7 @@ public sealed class MockDatabase : IDatabase
     public int Count => _entities.Count;
     public bool CommitWasCalled { get; private set; }
 
-    public ValueTask<TEntity?> FindAsync<TEntity>(string containerName, string id, string? partitionKey = null, CancellationToken cancellationToken = default)
+    public ValueTask<TEntity?> FindAsync<TEntity>(string containerName, string id, string partitionKey, CancellationToken cancellationToken = default)
     {
         if (_entities.TryGetValue((typeof(TEntity), id), out var entity))
             return new ValueTask<TEntity?>((TEntity?) entity);
@@ -54,5 +55,10 @@ public sealed class MockDatabase : IDatabase
             await Task.Yield();
             yield return entity;
         }
+    }
+
+    public IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(SqlQuery<TEntity> query, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -81,7 +81,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         await writeSession.CommitAsync();
 
         var readSession = _store.CreateSession();
-        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id);
+        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         readEntity.Should().BeEquivalentTo(entity, because: "we should be able to find the entity we just created");
     }
@@ -97,7 +97,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         await writeSession.CommitAsync();
 
         var deleteSession = _store.CreateSession();
-        var deleteEntity = await deleteSession.FindAsync<AccountPlan>(entity.Id);
+        var deleteEntity = await deleteSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         deleteEntity.Should().NotBeNull(because: "we should be able to find the entity we just created");
         deleteEntity.Should().BeEquivalentTo(entity, because: "we should be able to find the entity we just created");
@@ -106,7 +106,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         await deleteSession.CommitAsync();
 
         var readSession = _store.CreateSession();
-        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id);
+        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         readEntity.Should().BeNull(because: "we should not be able to find the entity we just deleted");
     }
@@ -122,7 +122,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         await writeSession.CommitAsync();
 
         var updateSession = _store.CreateSession();
-        var updatedEntity = await updateSession.FindAsync<AccountPlan>(entity.Id);
+        var updatedEntity = await updateSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         updatedEntity.Should().NotBeSameAs(entity, because: "the entity should be a different instance since it is from a different session");
         updatedEntity.Should().NotBeNull(because: "we should be able to find the entity we just created");
@@ -133,7 +133,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         await updateSession.CommitAsync();
 
         var readSession = _store.CreateSession();
-        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id);
+        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         readEntity.Should().NotBeSameAs(updatedEntity, because: "the entity should be a different instance since it is from a different session");
         readEntity.Should().NotBeNull(because: "we should be able to find the entity we just updated");
@@ -182,7 +182,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         await writeSession.CommitAsync();
 
         var readSession = _store.CreateSession();
-        var readEntities = readSession.Query<AccountPlan>()
+        var readEntities = readSession.Query<AccountPlan>("")
                            .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
                            .ToAsyncEnumerable();
 
@@ -208,7 +208,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         await writeSession.CommitAsync();
 
         var readSession = _store.CreateSession();
-        var readEntity = await readSession.Query<AccountPlan>()
+        var readEntity = await readSession.Query<AccountPlan>("")
                              .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
                              .FirstOrDefaultAsync();
 
@@ -249,7 +249,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var readSession = _store.CreateSession();
 
-        var readPost = await readSession.FindAsync<BlogPost>(postId);
+        var readPost = await readSession.FindAsync<BlogPost>(postId, postId);
 
         readPost.Should().NotBeNull(because: "we should be able to find the post we just created");
         readPost!.GetLikes().Should().Be(1, because: "the post should have one like");
