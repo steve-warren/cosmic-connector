@@ -172,48 +172,64 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
-        var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
+        var postId = Guid.NewGuid().ToString();
+        var post = new BlogPost { Id = postId, PostId = postId };
 
+        var comments = new[]
+        {
+            new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 1" },
+            new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
+        };
+        
         var writeSession = _store.CreateSession();
 
-        foreach (var entity in entities)
-            writeSession.Store(entity);
-
-        await writeSession.CommitAsync();
+        writeSession.Store(post);
+        writeSession.Store(comments[0]);
+        writeSession.Store(comments[1]);
+        
+        await writeSession.CommitTransactionAsync();
 
         var readSession = _store.CreateSession();
-        var readEntities = readSession.Query<AccountPlan>("")
-                           .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
+        var readEntities = readSession.Query<BlogPostComment>(postId)
+                           .Where(c => c.PostId == postId)
                            .ToAsyncEnumerable();
 
-        var list = new List<AccountPlan>();
+        var list = new List<BlogPostComment>();
 
         await foreach (var entity in readEntities)
             list.Add(entity);
 
         list.Should().HaveCount(2, because: "we should have found the two entities we just created");
-        list.Should().BeEquivalentTo(entities, because: "we should be able to query the entities we just created");
+        list.Should().BeEquivalentTo(comments, because: "we should be able to query the entities we just created");
     }
 
     [Fact]
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
-        var entities = new[] { new AccountPlan(Guid.NewGuid().ToString()), new AccountPlan(Guid.NewGuid().ToString()) };
+        var postId = Guid.NewGuid().ToString();
+        var post = new BlogPost { Id = postId, PostId = postId };
 
+        var comments = new[]
+        {
+            new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 1" },
+            new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
+        };
+        
         var writeSession = _store.CreateSession();
 
-        foreach (var entity in entities)
-            writeSession.Store(entity);
-
-        await writeSession.CommitAsync();
+        writeSession.Store(post);
+        writeSession.Store(comments[0]);
+        writeSession.Store(comments[1]);
+        
+        await writeSession.CommitTransactionAsync();
 
         var readSession = _store.CreateSession();
-        var readEntity = await readSession.Query<AccountPlan>("")
-                             .Where(p => p.Id == entities[0].Id || p.Id == entities[1].Id)
-                             .FirstOrDefaultAsync();
+        var readEntity = await readSession.Query<BlogPostComment>(postId)
+            .Where(c => c.PostId == postId)
+            .FirstOrDefaultAsync();
 
         readEntity.Should().NotBeNull(because: "we should have found the entity we just created");
-        readEntity.Should().BeEquivalentTo(entities[0], because: "we should be able to query the entities we just created");
+        readEntity.Should().BeEquivalentTo(comments[0], because: "we should be able to query the entities we just created");
     }
 
     [Fact]
