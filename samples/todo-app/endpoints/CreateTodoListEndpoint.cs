@@ -15,7 +15,9 @@ public class CreateTodoListEndpoint : ControllerBase
         [FromServices] IDocumentSession session,
         [FromBody] CreateTodoListRequest request)
     {
-        var account = await session.FindAsync<Account>(request.OwnerId);
+        var account = await session.FindAsync<Account>(
+            id: request.OwnerId,
+            partitionKey: request.OwnerId);
 
         if (account is null)
             return NotFound();

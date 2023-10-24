@@ -57,7 +57,7 @@ public class DocumentStoreTests
 
         session.Store(entity);
 
-        var storedEntity = await session.FindAsync<ReminderList>("id");
+        var storedEntity = await session.FindAsync<ReminderList>("id", "id");
 
         storedEntity.Should().BeSameAs(entity, because: "we should get the same entity instance back");
     }
@@ -76,7 +76,7 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        var storedEntity = await session.FindAsync<ReminderList>("id");
+        var storedEntity = await session.FindAsync<ReminderList>("id", "id");
 
         storedEntity.Should().BeNull(because: "we should not find an entity with the specified ID");
     }
@@ -105,8 +105,8 @@ public class DocumentStoreTests
         session.Store(entity1);
         session.Store(entity2);
 
-        var storedEntity1 = await session.FindAsync<ReminderList>("id1");
-        var storedEntity2 = await session.FindAsync<Reminder>("id2");
+        var storedEntity1 = await session.FindAsync<ReminderList>("id1", "id1");
+        var storedEntity2 = await session.FindAsync<Reminder>("id2", "id1");
 
         storedEntity1.Should().BeSameAs(entity1, because: "we should get the same entity instance back");
         storedEntity2.Should().BeSameAs(entity2, because: "we should get the same entity instance back");
@@ -135,7 +135,7 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        Func<Task> action = async () => await session.FindAsync<ReminderList>("id");
+        Func<Task> action = async () => await session.FindAsync<ReminderList>("id", "id");
 
         await action.Should().ThrowAsync<InvalidOperationException>(because: "we should not be able to find an entity that has not been configured");
     }
@@ -282,7 +282,7 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        _ = await session.FindAsync<ReminderList>("id");
+        _ = await session.FindAsync<ReminderList>("id", "id");
 
         session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state after finding it");
     }
@@ -305,7 +305,7 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        _ = await session.FindAsync<ReminderList>("id");
+        _ = await session.FindAsync<ReminderList>("id", "id");
 
         await session.CommitAsync();
 
@@ -330,7 +330,7 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        var result = await session.Query<ReminderList>()
+        var result = await session.Query<ReminderList>("id")
                                   .Where(x => x.Id == "id")
                                   .ToListAsync();
 
@@ -355,7 +355,7 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        await session.Query<ReminderList>()
+        await session.Query<ReminderList>("id")
                     .Where(x => x.Id == "id1" || x.Id == "id2")
                     .ToListAsync();
 
