@@ -177,8 +177,8 @@ public class SerializationTests
         var cache = new SqlParameterCache();
         var parameters = cache.ExtractParametersFromObject(type).ToList();
 
-        parameters[0].Should().Be((nameof(type.Id), type.Id), because: "the id property name and value must match.");
-        parameters[1].Should().Be((nameof(type.NumberOfItems), type.NumberOfItems), because: "the id property name and value must match.");
-        parameters[2].Should().Be((nameof(type.TimeStamp), type.TimeStamp), because: "the id property name and value must match.");
+        parameters[0].Should().Be(("@" + nameof(type.Id), type.Id), because: "the id property name and value must match.");
+        parameters[1].Should().Be(("@" + nameof(type.NumberOfItems), type.NumberOfItems), because: "the id property name and value must match.");
+        parameters[2].Should().Be(("@" + nameof(type.TimeStamp), type.TimeStamp), because: "the id property name and value must match.");
     }
 }
