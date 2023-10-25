@@ -119,9 +119,7 @@ public sealed class CosmosDatabase : IDatabase
         var container = GetContainerFor(query.EntityConfiguration.ContainerName);
 
         var queryRequestOptions =
-            query.PartitionKey is null
-                ? s_defaultQueryRequestOptions
-                : new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
+            new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
 
         using var feed = container.GetItemQueryIterator<TEntity>(
             queryDefinition,

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -9,12 +10,12 @@ namespace Cosmodust.Serialization;
 /// </summary>
 public sealed class SqlParameterCache
 {
-    private readonly ConcurrentDictionary<Type, Dictionary<string, Func<object, object?>>> _typeCache;
+    private readonly ConcurrentDictionary<Type, ReadOnlyDictionary<string, Func<object, object?>>> _typeCache;
 
-    public SqlParameterCache(ConcurrentDictionary<Type, Dictionary<string, Func<object, object?>>>? typeCache = default)
+    public SqlParameterCache(ConcurrentDictionary<Type, ReadOnlyDictionary<string, Func<object, object?>>>? typeCache = default)
     {
         _typeCache = typeCache ??
-                     new ConcurrentDictionary<Type, Dictionary<string, Func<object, object?>>>();
+                     new ConcurrentDictionary<Type, ReadOnlyDictionary<string, Func<object, object?>>>();
     }
 
     /// <summary>
@@ -34,12 +35,12 @@ public sealed class SqlParameterCache
             yield return (Name: getter.Key, Value: getter.Value(parameters));
     }
 
-    private Dictionary<string, Func<object, object?>> GetOrAdd(Type type) =>
+    private ReadOnlyDictionary<string, Func<object, object?>> GetOrAdd(Type type) =>
         _typeCache.GetOrAdd(
             key: type,
             value: BuildPropertyGetterLambdas(type));
 
-    private static Dictionary<string, Func<object, object?>> BuildPropertyGetterLambdas(Type type)
+    private static ReadOnlyDictionary<string, Func<object, object?>> BuildPropertyGetterLambdas(Type type)
     {
         var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
         var getters = new Dictionary<string, Func<object, object?>>();
@@ -57,6 +58,6 @@ public sealed class SqlParameterCache
             getters.Add($"@{property.Name}", compiledLambda);
         }
 
-        return getters;
+        return getters.AsReadOnly();
     }
 }
