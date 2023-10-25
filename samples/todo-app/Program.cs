@@ -4,6 +4,7 @@ using Cosmodust.Cosmos;
 using Cosmodust.Cosmos.Json;
 using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
+using Cosmodust.Samples.TodoApp.Infra;
 using Cosmodust.Store;
 using Microsoft.Azure.Cosmos;
 
@@ -86,6 +87,11 @@ builder.Services.AddScoped(sp =>
     var store = sp.GetRequiredService<DocumentStore>();
     return store.CreateSession();
 });
+
+builder.Services.AddScoped<ITodoListRepository, CosmodustTodoListRepository>();
+builder.Services.AddScoped<IAccountRepository, CosmodustAccountRepository>();
+builder.Services.AddScoped<ITodoItemRepository, CosmodustTodoItemRepository>();
+builder.Services.AddScoped<IUnitOfWork, CosmodustUnitOfWork>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

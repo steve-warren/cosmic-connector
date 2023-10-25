@@ -1,5 +1,4 @@
 using Cosmodust.Samples.TodoApp.Domain;
-using Cosmodust.Session;
 using KsuidDotNet;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,25 +11,26 @@ public class CreateTodoListEndpoint : ControllerBase
 
     [HttpPost("api/todo/lists")]
     public async Task<IActionResult> CreateTodoList(
-        [FromServices] IDocumentSession session,
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromServices] IAccountRepository accounts,
+        [FromServices] ITodoListRepository todoLists,
         [FromBody] CreateTodoListRequest request)
     {
-        var account = await session.FindAsync<Account>(
-            id: request.OwnerId,
-            partitionKey: request.OwnerId);
+        var account = await accounts.FindAsync(id: request.OwnerId);
 
         if (account is null)
             return NotFound();
 
         account.AddList();
+        accounts.Update(account);
+
         var list = new TodoList(name: request.Name,
                                 id: Ksuid.NewKsuid("l_"),
                                 ownerId: account.Id);
 
-        session.Update(account);
-        session.Store(list);
+        todoLists.Add(list);
 
-        await session.CommitTransactionAsync();
+        await unitOfWork.SaveChangesAsTransactionAsync();
 
         return Ok(list);
     }

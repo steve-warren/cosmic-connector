@@ -5,7 +5,7 @@ namespace Cosmodust.Tracking;
 public sealed class ChangeTracker
 {
     private readonly List<EntityEntry> _entries = new();
-    private readonly Dictionary<(Type Type, string Id), object?> _entityByTypeId = new();
+    private readonly Dictionary<(Type Type, string Id), object> _entityByTypeId = new();
 
     public ChangeTracker(EntityConfigurationHolder entityConfiguration)
     {
@@ -46,6 +46,21 @@ public sealed class ChangeTracker
         var entry = CreateEntry(entity);
 
         entry.Unchange();
+    }
+
+    public object GetOrRegisterUnchanged(object entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        var config = EntityConfiguration.Get(entity.GetType());
+        var id = config.IdSelector.GetString(entity);
+        
+        if (_entityByTypeId.TryGetValue((Type: entity.GetType(), Id: id), out var trackedEntity))
+            return trackedEntity;
+
+        RegisterUnchanged(entity);
+
+        return entity;
     }
 
     /// <summary>
