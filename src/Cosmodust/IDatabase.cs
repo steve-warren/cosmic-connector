@@ -13,7 +13,7 @@ public interface IDatabase
         string id,
         string partitionKey,
         CancellationToken cancellationToken = default);
-    IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string? partitionKey = null);
+    IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string partitionKey);
     IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(CosmodustLinqQuery<TEntity> query,
         CancellationToken cancellationToken = default);
 

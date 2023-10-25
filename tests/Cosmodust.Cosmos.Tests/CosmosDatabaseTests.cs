@@ -6,6 +6,7 @@ using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Json;
 using Cosmodust.Linq;
+using Cosmodust.Query;
 using Cosmodust.Store;
 using FluentAssertions;
 using Microsoft.Azure.Cosmos;
@@ -214,13 +215,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 1" },
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
         };
-        
+
         var writeSession = _store.CreateSession();
 
         writeSession.Store(post);
         writeSession.Store(comments[0]);
         writeSession.Store(comments[1]);
-        
+
         await writeSession.CommitTransactionAsync();
 
         var readSession = _store.CreateSession();
@@ -269,5 +270,34 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         readPost.Should().NotBeNull(because: "we should be able to find the post we just created");
         readPost!.GetLikes().Should().Be(1, because: "the post should have one like");
+    }
+
+    [Fact]
+    public async Task Can_Query_Using_Raw_Sql_With_Parameters()
+    {
+        var writeSession = _store.CreateSession();
+
+        var postId = Guid.NewGuid().ToString();
+        var blogPost = new BlogPost
+        {
+            Id = postId,
+            PostId = postId,
+            Title = "🦖Rawr SQL!",
+            PublishedOn = new DateTimeOffset(new DateTime(2000, 1, 1), TimeSpan.FromHours(-5))
+        };
+
+        writeSession.Store(blogPost);
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var query = readSession.Query<BlogPost>(
+            partitionKey: postId,
+            sql: "select * from c where c.id = @id",
+            parameters: new { id = postId });
+
+        var result = await query.FirstOrDefaultAsync();
+
+        result.Should().BeEquivalentTo(expectation: blogPost, because: "the query should return an object by its id.");
     }
 }

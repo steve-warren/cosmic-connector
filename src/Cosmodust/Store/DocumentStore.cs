@@ -1,32 +1,43 @@
 using System.Text.Json;
+using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Tracking;
 
 namespace Cosmodust.Store;
 
+/// <summary>
+/// Represents a document store that provides access to a database and allows for creating document sessions.
+/// </summary>
 public sealed class DocumentStore : IDocumentStore
 {
+    private readonly IDatabase _database;
     private readonly JsonSerializerOptions _options;
+    private readonly EntityConfigurationHolder _entityConfiguration;
+    private readonly SqlParameterCache _sqlParameterCache;
 
     public DocumentStore(
         IDatabase database,
         JsonSerializerOptions? options = default,
-        EntityConfigurationHolder? entityConfiguration = default)
+        EntityConfigurationHolder? entityConfiguration = default,
+        SqlParameterCache? sqlParameterCache = default)
     {
         ArgumentNullException.ThrowIfNull(database);
 
-        Database = database;
+        _database = database;
         _options = options ?? new JsonSerializerOptions();
-        EntityConfiguration = entityConfiguration
+        _entityConfiguration = entityConfiguration
                               ?? new EntityConfigurationHolder();
+        _sqlParameterCache = sqlParameterCache
+                          ?? new SqlParameterCache();
     }
-
-    public IDatabase Database { get; }
-    public EntityConfigurationHolder EntityConfiguration { get; }
 
     public IDocumentSession CreateSession()
     {
-        return new DocumentSession(this, new ChangeTracker(EntityConfiguration), Database);
+        return new DocumentSession(
+            new ChangeTracker(_entityConfiguration),
+            _database,
+            _entityConfiguration,
+            _sqlParameterCache);
     }
 
     /// <summary>
@@ -42,15 +53,11 @@ public sealed class DocumentStore : IDocumentStore
         builder(modelBuilder);
 
         foreach (var configuration in modelBuilder.Build())
-            EntityConfiguration.Add(configuration);
+            _entityConfiguration.Add(configuration);
 
         // marks the entity configuration object as read-only
-        EntityConfiguration.Configure();
+        _entityConfiguration.Configure();
 
         return this;
     }
-
-    internal EntityConfiguration GetConfiguration<TEntity>() =>
-        EntityConfiguration.Get(typeof(TEntity)) ??
-            throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
 }
