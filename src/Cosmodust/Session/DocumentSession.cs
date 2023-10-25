@@ -1,5 +1,6 @@
 using Cosmodust.Linq;
 using Cosmodust.Query;
+using Cosmodust.Serialization;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 
@@ -7,31 +8,39 @@ namespace Cosmodust.Session;
 
 public sealed class DocumentSession : IDocumentSession
 {
-    internal DocumentSession(DocumentStore documentStore, ChangeTracker changeTracker, IDatabase database)
+    internal DocumentSession(
+        ChangeTracker changeTracker,
+        IDatabase database,
+        EntityConfigurationHolder entityConfiguration,
+        SqlParameterCache sqlParameterCache)
     {
-        ArgumentNullException.ThrowIfNull(documentStore);
-
-        DocumentStore = documentStore;
         Database = database;
         ChangeTracker = changeTracker;
+        EntityConfiguration = entityConfiguration;
+        SqlParameterCache = sqlParameterCache;
     }
 
     public ChangeTracker ChangeTracker { get; }
-    public DocumentStore DocumentStore { get; }
     public IDatabase Database { get; }
+    public EntityConfigurationHolder EntityConfiguration { get; }
+    public SqlParameterCache SqlParameterCache { get; }
 
     public async ValueTask<TEntity?> FindAsync<TEntity>(
         string id,
         string partitionKey,
         CancellationToken cancellationToken = default)
     {
-        var configuration = DocumentStore.GetConfiguration<TEntity>();
+        var configuration = GetConfiguration<TEntity>();
         ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
         if (ChangeTracker.TryGet(id, out TEntity? entity))
             return entity;
 
-        entity = await Database.FindAsync<TEntity>(configuration.ContainerName, id, partitionKey, cancellationToken);
+        entity = await Database.FindAsync<TEntity>(
+            configuration.ContainerName,
+            id,
+            partitionKey,
+            cancellationToken);
 
         if (entity is null)
             return default;
@@ -43,7 +52,7 @@ public sealed class DocumentSession : IDocumentSession
 
     public IQueryable<TEntity> Query<TEntity>(string partitionKey)
     {
-        var entityConfiguration = DocumentStore.GetConfiguration<TEntity>();
+        var entityConfiguration = GetConfiguration<TEntity>();
         var queryable = Database.CreateLinqQuery<TEntity>(entityConfiguration.ContainerName);
 
         return new CosmodustLinqQuery<TEntity>(
@@ -54,16 +63,20 @@ public sealed class DocumentSession : IDocumentSession
             queryable);
     }
 
-    public SqlQuery<TEntity> Query<TEntity>(string sql, string partitionKey)
+    public SqlQuery<TEntity> Query<TEntity>(
+        string partitionKey,
+        string sql,
+        object? parameters = null)
     {
-        var config = DocumentStore.GetConfiguration<TEntity>();
+        var config = GetConfiguration<TEntity>();
 
         return new SqlQuery<TEntity>(
             database: Database,
             changeTracker: ChangeTracker,
             entityConfiguration: config,
             sql: sql,
-            partitionKey: partitionKey);
+            partitionKey: partitionKey,
+            parameters: SqlParameterCache.ExtractParametersFromObject(parameters));
     }
 
     public void Store<TEntity>(TEntity entity)
@@ -95,4 +108,8 @@ public sealed class DocumentSession : IDocumentSession
         await Database.CommitTransactionAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
         ChangeTracker.Commit();
     }
+
+    private EntityConfiguration GetConfiguration<TEntity>() =>
+        EntityConfiguration.Get(typeof(TEntity)) ??
+        throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
 }

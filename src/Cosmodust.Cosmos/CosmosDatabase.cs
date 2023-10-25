@@ -9,6 +9,9 @@ using Microsoft.Azure.Cosmos.Linq;
 
 namespace Cosmodust.Cosmos;
 
+/// <summary>
+/// Represents a Cosmos DB database.
+/// </summary>
 public sealed class CosmosDatabase : IDatabase
 {
     private static readonly QueryRequestOptions s_defaultQueryRequestOptions = new();
@@ -25,6 +28,15 @@ public sealed class CosmosDatabase : IDatabase
 
     public string Name => _database.Id;
 
+    /// <summary>
+    /// Finds an entity of type <typeparamref name="TEntity"/> in the specified container with the given ID and partition key.
+    /// </summary>
+    /// <typeparam name="TEntity">The type of entity to find.</typeparam>
+    /// <param name="containerName">The name of the container to search for the entity.</param>
+    /// <param name="id">The ID of the entity to find.</param>
+    /// <param name="partitionKey">The partition key of the entity to find.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The entity if found, otherwise null.</returns>
     public async ValueTask<TEntity?> FindAsync<TEntity>(
         string containerName,
         string id,
@@ -40,17 +52,21 @@ public sealed class CosmosDatabase : IDatabase
         return entity;
     }
 
+    /// <summary>
+    /// Creates a LINQ queryable for the specified Cosmos DB container.
+    /// </summary>
+    /// <typeparam name="TEntity">The type of entity to query.</typeparam>
+    /// <param name="containerName">The name of the Cosmos DB container.</param>
+    /// <returns>A LINQ queryable for the specified Cosmos DB container.</returns>
     public IQueryable<TEntity> CreateLinqQuery<TEntity>(string containerName) =>
         GetContainerFor(containerName).GetItemLinqQueryable<TEntity>(
             linqSerializerOptions: s_cosmosLinqSerializerOptions);
 
-    public IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string? partitionKey = null)
+    public IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string partitionKey)
     {
         var container = GetContainerFor(containerName);
 
-        var queryRequestOptions = partitionKey is null
-            ? s_defaultQueryRequestOptions
-            : new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKey) };
+        var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKey) };
 
         var query = container.GetItemLinqQueryable<TEntity>(
             requestOptions: queryRequestOptions,

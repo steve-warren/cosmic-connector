@@ -3,7 +3,11 @@ using System.Reflection;
 
 namespace Cosmodust.Serialization;
 
-public record PropertyAccessor(string PropertyName, Type PropertyType, Func<object, object?> Getter, Action<object, object?> Setter)
+public record PropertyAccessor(
+    string PropertyName,
+    Type PropertyType,
+    Func<object, object?> Getter,
+    Action<object, object?> Setter)
 {
     public static PropertyAccessor Create(string propertyName, Type type)
     {

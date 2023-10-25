@@ -22,8 +22,8 @@ public class DeleteTodoItemsEndpoint : ControllerBase
             return NotFound();
 
         var query = session.Query<TodoItem>(
-            "select * from c where c.__type = 'TodoItem'",
-            partitionKey: ownerId);
+            partitionKey: ownerId,
+            sql: "select * from c where c.__type = 'TodoItem'");
 
         await foreach (var item in query.ToAsyncEnumerable())
         {

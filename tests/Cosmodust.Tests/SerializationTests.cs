@@ -163,4 +163,22 @@ public class SerializationTests
 
         deserializedEntity.Should().BeEquivalentTo(entity, because: "we should be able to deserialize the value type.");
     }
+
+    [Fact]
+    public void Can_Extract_Parameters_From_Anonymous_Types()
+    {
+        var type = new
+        {
+            Id = "123",
+            NumberOfItems = 10,
+            TimeStamp = new DateTime(year: 2000, month: 01, day: 01)
+        };
+
+        var cache = new SqlParameterCache();
+        var parameters = cache.ExtractParametersFromObject(type).ToList();
+
+        parameters[0].Should().Be((nameof(type.Id), type.Id), because: "the id property name and value must match.");
+        parameters[1].Should().Be((nameof(type.NumberOfItems), type.NumberOfItems), because: "the id property name and value must match.");
+        parameters[2].Should().Be((nameof(type.TimeStamp), type.TimeStamp), because: "the id property name and value must match.");
+    }
 }
