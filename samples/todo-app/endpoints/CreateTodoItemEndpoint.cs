@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Cosmodust.Samples.TodoApp.Endpoints;
 
 [ApiController]
-[Route("api/todo/lists/{listId}/items")]
 public class CreateTodoItemEndpoint : ControllerBase
 {
     public record CreateTodoItemRequest(
@@ -18,12 +17,14 @@ public class CreateTodoItemEndpoint : ControllerBase
         string OwnerId,
         DateTimeOffset? Reminder);
 
-    [HttpPost]
+    [HttpPost("api/todo/lists/{listId}/items")]
     public async Task<IActionResult> CreateTodoItem(
-        [FromServices] IDocumentSession session,
+        [FromServices] ITodoListRepository todoLists,
+        [FromServices] ITodoItemRepository todoItems,
+        [FromServices] IUnitOfWork unitOfWork,
         [FromBody] CreateTodoItemRequest request)
     {
-        var list = await session.FindAsync<TodoList>(request.ListId, partitionKey: request.OwnerId);
+        var list = await todoLists.FindAsync(request.OwnerId, request.ListId);
 
         if (list is null)
             return NotFound();
@@ -37,11 +38,11 @@ public class CreateTodoItemEndpoint : ControllerBase
                                 reminder: request.Reminder);
 
         list.AddItem(item);
+        todoItems.Add(item);
 
-        session.Update(list);
-        session.Store(item);
+        todoLists.Update(list);
 
-        await session.CommitTransactionAsync();
+        await unitOfWork.SaveChangesAsTransactionAsync();
 
         return Ok(item);
     }

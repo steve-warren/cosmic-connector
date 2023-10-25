@@ -1,5 +1,4 @@
-﻿using Cosmodust.Query;
-using Cosmodust.Samples.TodoApp.Domain;
+﻿using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Session;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,30 +9,28 @@ public class DeleteTodoItemsEndpoint : ControllerBase
 {
     [HttpDelete("api/accounts/{ownerId}/lists/{listId}/items")]
     public async Task<IActionResult> Delete(
-        [FromServices] IDocumentSession session,
+        [FromServices] ITodoListRepository todoLists,
+        [FromServices] ITodoItemRepository todoItems,
+        [FromServices] IUnitOfWork unitOfWork,
         string ownerId,
         string listId)
     {
-        var list = await session.FindAsync<TodoList>(
-            id: listId,
-            partitionKey: ownerId);
+        var list = await todoLists.FindAsync(ownerId, listId);
 
         if (list is null)
             return NotFound();
 
-        var query = session.Query<TodoItem>(
-            partitionKey: ownerId,
-            sql: "select * from c where c.__type = 'TodoItem'");
+        var listItems = await todoItems.FindByListIdAsync(ownerId, listId);
 
-        await foreach (var item in query.ToAsyncEnumerable())
+        foreach (var item in listItems)
         {
             list.RemoveItem(item);
-            session.Remove(item);
+            todoItems.Remove(item);
         }
 
-        session.Update(list);
+        todoLists.Update(list);
 
-        await session.CommitTransactionAsync();
+        await unitOfWork.SaveChangesAsTransactionAsync();
 
         return Ok();
     }

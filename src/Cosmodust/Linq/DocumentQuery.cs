@@ -57,9 +57,9 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
         {
             Debug.Assert(entity is not null, "The entity should not be null.");
 
-            ChangeTracker.RegisterUnchanged(entity);
+            var trackedEntity = ChangeTracker.GetOrRegisterUnchanged(entity);
 
-            yield return entity;
+            yield return (TEntity) trackedEntity;
         }
     }
 
