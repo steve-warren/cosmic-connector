@@ -1,4 +1,5 @@
 using System.Configuration.Internal;
+using System.IO.Pipelines;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Json;
@@ -7,6 +8,7 @@ using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Query;
+using Cosmodust.Serialization;
 using Cosmodust.Store;
 using FluentAssertions;
 using Microsoft.Azure.Cosmos;
@@ -18,6 +20,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {
     private readonly IConfiguration _configuration;
     private readonly IDocumentStore _store;
+    private readonly QueryFacade _queryFacade;
 
     public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
@@ -69,6 +72,11 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                             .HasPartitionKey(e => e.PostId)
                             .ToContainer("blogPosts");
                     });
+
+        _queryFacade = new QueryFacade(
+            client: cosmosClient,
+            databaseName: "reminderdb",
+            sqlParameterCache: new SqlParameterCache());
     }
 
     [Fact]
@@ -299,5 +307,18 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var result = await query.FirstOrDefaultAsync();
 
         result.Should().BeEquivalentTo(expectation: blogPost, because: "the query should return an object by its id.");
+    }
+
+    [Fact]
+    public async Task Can_Use_Query_Facade()
+    {
+        var pipe = new Pipe();
+
+        await _queryFacade.ExecuteQueryAsync(
+            writer: pipe.Writer,
+            containerName: "todo",
+            partitionKey: "a_2X011ldw0dogcauAbw0oExAv21H",
+            sql: "select * from c where c.ownerId = @ownerId",
+            parameters: new { ownerId = "a_2X011ldw0dogcauAbw0oExAv21H" });
     }
 }

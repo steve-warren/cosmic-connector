@@ -8,7 +8,7 @@ namespace Cosmodust.Store;
 /// <summary>
 /// Represents a document store that provides access to a database and allows for creating document sessions.
 /// </summary>
-public sealed class DocumentStore : IDocumentStore
+public class DocumentStore : IDocumentStore
 {
     private readonly IDatabase _database;
     private readonly JsonSerializerOptions _options;
