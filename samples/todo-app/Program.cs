@@ -5,6 +5,8 @@ using Cosmodust.Cosmos.Json;
 using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Samples.TodoApp.Infra;
+using Cosmodust.Serialization;
+using Cosmodust.Session;
 using Cosmodust.Store;
 using Microsoft.Azure.Cosmos;
 
@@ -54,7 +56,8 @@ builder.Services.AddSingleton(sp =>
     var store = new DocumentStore(
         database,
         sp.GetRequiredService<JsonSerializerOptions>(),
-        sp.GetRequiredService<EntityConfigurationHolder>());
+        sp.GetRequiredService<EntityConfigurationHolder>(),
+        sqlParameterCache: sp.GetRequiredService<SqlParameterCache>());
 
     store.BuildModel(modelBuilder =>
     {
@@ -82,16 +85,21 @@ builder.Services.AddSingleton(sp =>
     return store;
 });
 
-builder.Services.AddScoped(sp =>
+builder.Services.AddScoped<DocumentSession>(sp =>
 {
     var store = sp.GetRequiredService<DocumentStore>();
-    return store.CreateSession();
+    return (DocumentSession) store.CreateSession();
 });
 
 builder.Services.AddScoped<ITodoListRepository, CosmodustTodoListRepository>();
 builder.Services.AddScoped<IAccountRepository, CosmodustAccountRepository>();
 builder.Services.AddScoped<ITodoItemRepository, CosmodustTodoItemRepository>();
 builder.Services.AddScoped<IUnitOfWork, CosmodustUnitOfWork>();
+builder.Services.AddSingleton<QueryFacade>(sp => new QueryFacade(
+    sp.GetRequiredService<CosmosClient>(),
+    databaseName: "reminderdb",
+    sp.GetRequiredService<SqlParameterCache>()));
+builder.Services.AddSingleton<SqlParameterCache>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
