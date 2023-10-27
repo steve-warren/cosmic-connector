@@ -21,7 +21,8 @@ builder.Services.AddSingleton(sp =>
              {
                  new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
                  new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new TypeMetadataJsonTypeModifier()
+                 new PartitionKeyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
+                 new TypeMetadataJsonTypeModifier(),
              })
     {
         jsonTypeInfoResolver.Modifiers.Add(action.Modify);
@@ -63,7 +64,9 @@ builder.Services.AddSingleton(sp =>
     {
         modelBuilder.HasEntity<Account>()
             .HasId(e => e.Id)
-            .HasPartitionKey(e => e.Id)
+            .HasPartitionKey(
+                "ownerId",
+                e => e.Id)
             .ToContainer("todo");
 
         modelBuilder.HasEntity<TodoList>()

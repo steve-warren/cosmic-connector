@@ -1,3 +1,4 @@
+using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Cosmos.Operations;
@@ -7,24 +8,20 @@ internal class ReplaceItemOperation : ICosmosWriteOperation
     private static readonly ItemRequestOptions s_defaultItemRequestOptions = new ItemRequestOptions
         { EnableContentResponseOnWrite = false };
     private readonly Container _container;
-    private readonly object _entity;
-    private readonly string _id;
-    private readonly string? _partitionKey;
+    private readonly EntityEntry _entityEntry;
 
-    public ReplaceItemOperation(Container container, object entity, string id, string? partitionKey)
+    public ReplaceItemOperation(Container container, EntityEntry entityEntry)
     {
         _container = container;
-        _entity = entity;
-        _id = id;
-        _partitionKey = string.IsNullOrEmpty(partitionKey) ? id : partitionKey;
+        _entityEntry = entityEntry;
     }
 
     public Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         return _container.ReplaceItemAsync(
-            _entity,
-            _id,
-            new PartitionKey(_partitionKey),
+            item: _entityEntry.Entity,
+            id: _entityEntry.Id,
+            partitionKey: new PartitionKey(_entityEntry.PartitionKey),
             requestOptions: s_defaultItemRequestOptions,
             cancellationToken: cancellationToken);
     }
