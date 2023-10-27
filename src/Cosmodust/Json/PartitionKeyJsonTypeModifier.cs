@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Store;
 
@@ -19,9 +20,12 @@ public sealed class PartitionKeyJsonTypeModifier : IJsonTypeModifier
         if (!_entityConfigurations.TryGet(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
+        var partitionKeyName = JsonNamingPolicy.CamelCase.ConvertName(
+            entityConfiguration.PartitionKeyDocumentPropertyName);
+
         var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(
             propertyType: typeof(string),
-            name: entityConfiguration!.PartitionKeyDocumentPropertyName);
+            name: partitionKeyName);
 
         jsonPropertyInfo.Get = entityConfiguration.PartitionKeySelector.GetString;
 
