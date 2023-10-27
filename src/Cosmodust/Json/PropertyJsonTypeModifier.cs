@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Store;
 
@@ -17,14 +18,13 @@ public sealed class PropertyJsonTypeModifier : IJsonTypeModifier
         if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object)
             return;
 
-        var entityConfiguration = _entityConfigurationHolder.Get(jsonTypeInfo.Type);
-
-        if (entityConfiguration is null)
+        if (!_entityConfigurationHolder.TryGet(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
         foreach (var property in entityConfiguration.Properties)
         {
-            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(property.PropertyType, property.PropertyName);
+            var fieldName = JsonNamingPolicy.CamelCase.ConvertName(property.PropertyName);
+            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(property.PropertyType, fieldName);
             jsonPropertyInfo.Get = property.Getter;
             jsonPropertyInfo.Set = property.Setter;
 

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Store;
 
@@ -17,14 +18,13 @@ public sealed class BackingFieldJsonTypeModifier : IJsonTypeModifier
         if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object)
             return;
 
-        var entityConfiguration = _entityConfigurationHolder.Get(jsonTypeInfo.Type);
-
-        if (entityConfiguration is null)
+        if (!_entityConfigurationHolder.TryGet(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
         foreach (var field in entityConfiguration.Fields)
         {
-            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(field.FieldType, field.FieldName);
+            var fieldName = JsonNamingPolicy.CamelCase.ConvertName(field.FieldName);
+            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(field.FieldType, fieldName);
             jsonPropertyInfo.Get = field.Getter;
             jsonPropertyInfo.Set = field.Setter;
 
