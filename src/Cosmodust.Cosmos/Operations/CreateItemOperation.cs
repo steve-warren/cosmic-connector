@@ -1,3 +1,5 @@
+using Cosmodust.Store;
+using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Cosmos.Operations;
@@ -8,18 +10,21 @@ internal class CreateItemOperation : ICosmosWriteOperation
         { EnableContentResponseOnWrite = false };
 
     private readonly Container _container;
-    private readonly object _entity;
+    private readonly EntityEntry _entityEntry;
 
-    public CreateItemOperation(Container container, object entity)
+    public CreateItemOperation(
+        Container container,
+        EntityEntry entityEntry)
     {
         _container = container;
-        _entity = entity;
+        _entityEntry = entityEntry;
     }
 
     public Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         return _container.CreateItemAsync(
-            _entity,
+            item: _entityEntry.Entity,
+            partitionKey: new PartitionKey(_entityEntry.PartitionKey),
             requestOptions: s_defaultItemRequestOptions,
             cancellationToken: cancellationToken);
     }

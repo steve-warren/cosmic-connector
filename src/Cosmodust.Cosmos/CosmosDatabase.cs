@@ -144,10 +144,11 @@ public sealed class CosmosDatabase : IDatabase
             if (entry.IsUnchanged)
                 continue;
 
-            var operation = CreateOperation(entry);
+            var operation = CreateWriteOperation(entry);
             var response = await operation.ExecuteAsync(cancellationToken);
 
-            Debug.WriteLine(response.StatusCode);
+            Debug.WriteLine(
+                $"Write operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
         }
     }
 
@@ -177,19 +178,20 @@ public sealed class CosmosDatabase : IDatabase
 
             var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-            Debug.WriteLine("Request charge: {0}", response.RequestCharge);
+            Debug.WriteLine(
+                $"Transaction operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
         }
     }
 
-    private ICosmosWriteOperation CreateOperation(EntityEntry entry)
+    private ICosmosWriteOperation CreateWriteOperation(EntityEntry entry)
     {
         var container = GetContainerFor(entry.ContainerName);
 
         return entry.State switch
         {
-            EntityState.Added => new CreateItemOperation(container, entry.Entity),
-            EntityState.Removed => new DeleteItemOperation(container, entry.Id, entry.PartitionKey),
-            EntityState.Modified => new ReplaceItemOperation(container, entry.Entity, entry.Id, entry.PartitionKey),
+            EntityState.Added => new CreateItemOperation(container, entry),
+            EntityState.Removed => new DeleteItemOperation(container, entry),
+            EntityState.Modified => new ReplaceItemOperation(container, entry),
             _ => throw new NotImplementedException()
         };
     }

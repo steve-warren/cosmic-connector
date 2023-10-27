@@ -4,7 +4,7 @@ public sealed class EntityEntry
 {
     public required string Id { get; init; }
     public required string ContainerName { get; init; }
-    public required string? PartitionKey { get; init; }
+    public required string PartitionKey { get; init; }
     public required object Entity { get; init; }
     public required Type EntityType { get; init; }
     public EntityState State { get; private set; } = EntityState.Detached;

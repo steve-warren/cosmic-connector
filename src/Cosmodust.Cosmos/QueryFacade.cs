@@ -74,6 +74,9 @@ public class QueryFacade
     private static void CopyStreamToWriter(PipeWriter writer, Stream stream)
     {
         var span = writer.GetSpan((int) stream.Length);
+
+        Debug.Assert(stream is MemoryStream, message: "stream is not a MemoryStream.");
+
         var bytesRead = stream.Read(span);
 
         writer.Advance(bytesRead);

@@ -10,6 +10,9 @@ public class EntityConfigurationHolder
             ? mapping
             : throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
 
+    public bool TryGet(Type entityType, out EntityConfiguration? entityConfiguration) =>
+        _mappings.TryGetValue(entityType, out entityConfiguration);
+
     public void Add(EntityConfiguration mapping) =>
         _mappings.Add(mapping.EntityType, mapping);
 

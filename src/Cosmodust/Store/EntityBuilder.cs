@@ -32,7 +32,25 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <returns>The entity builder instance.</returns>
     public EntityBuilder<TEntity> HasPartitionKey(Func<TEntity, string> partitionKeySelector)
     {
-        _entityConfiguration = _entityConfiguration with { PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector) };
+        _entityConfiguration = _entityConfiguration with
+        {
+            PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector)
+        };
+
+        return this;
+    }
+
+    public EntityBuilder<TEntity> HasPartitionKey(
+        string documentPropertyName,
+        Func<TEntity, string> partitionKeySelector)
+    {
+        ArgumentNullException.ThrowIfNull(documentPropertyName);
+
+        _entityConfiguration = _entityConfiguration with
+        {
+            PartitionKeyDocumentPropertyName = documentPropertyName,
+            PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector)
+        };
 
         return this;
     }

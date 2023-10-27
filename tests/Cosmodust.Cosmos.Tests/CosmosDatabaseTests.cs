@@ -59,6 +59,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                     {
                         builder.HasEntity<AccountPlan>()
                             .HasId(e => e.Id)
+                            .HasPartitionKey("ownerId", e => e.Id)
                             .ToContainer("accountPlans");
 
                         builder.HasEntity<BlogPost>()
