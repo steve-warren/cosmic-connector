@@ -38,7 +38,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                  {
                      new BackingFieldJsonTypeModifier(entityConfiguration),
                      new PropertyJsonTypeModifier(entityConfiguration),
-                     new ShadowPropertyJsonTypeModifier(entityConfiguration, shadowPropertyCache),
+                     new ShadowPropertyJsonTypeModifier(entityConfiguration),
                      new TypeMetadataJsonTypeModifier(),
                  })
         {
@@ -96,12 +96,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     {
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         writeSession.Store(entity);
         await writeSession.CommitAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
         var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         readEntity.Should().BeEquivalentTo(entity, because: "we should be able to find the entity we just created");
@@ -112,12 +112,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     {
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         writeSession.Store(entity);
         await writeSession.CommitAsync();
 
-        using var deleteSession = _store.CreateSession();
+        var deleteSession = _store.CreateSession();
         var deleteEntity = await deleteSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         deleteEntity.Should().NotBeNull(because: "we should be able to find the entity we just created");
@@ -126,7 +126,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         deleteSession.Remove(deleteEntity!);
         await deleteSession.CommitAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
         var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         readEntity.Should().BeNull(because: "we should not be able to find the entity we just deleted");
@@ -137,12 +137,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     {
         var entity = new AccountPlan(Guid.NewGuid().ToString());
 
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         writeSession.Store(entity);
         await writeSession.CommitAsync();
 
-        using var updateSession = _store.CreateSession();
+        var updateSession = _store.CreateSession();
         var updatedEntity = await updateSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         updatedEntity.Should().NotBeSameAs(entity, because: "the entity should be a different instance since it is from a different session");
@@ -153,7 +153,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         await updateSession.CommitAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
         var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
 
         readEntity.Should().NotBeSameAs(updatedEntity, because: "the entity should be a different instance since it is from a different session");
@@ -173,7 +173,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
         };
         
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         writeSession.Store(post);
         writeSession.Store(comments[0]);
@@ -181,7 +181,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         
         await writeSession.CommitTransactionAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
         var readEntities = await readSession.Query<BlogPostComment>(partitionKey: postId)
             .Where(comment => comment.PostId == postId)
             .ToListAsync();
@@ -202,7 +202,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
         };
         
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         writeSession.Store(post);
         writeSession.Store(comments[0]);
@@ -210,7 +210,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         
         await writeSession.CommitTransactionAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
         var readEntities = readSession.Query<BlogPostComment>(postId)
                            .Where(c => c.PostId == postId)
                            .ToAsyncEnumerable();
@@ -236,7 +236,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
         };
 
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         writeSession.Store(post);
         writeSession.Store(comments[0]);
@@ -244,7 +244,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         await writeSession.CommitTransactionAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
         var readEntity = await readSession.Query<BlogPostComment>(postId)
             .Where(c => c.PostId == postId)
             .FirstOrDefaultAsync();
@@ -256,7 +256,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Transactional_Batch()
     {
-        using var session = _store.CreateSession();
+        var session = _store.CreateSession();
 
         var postId = Guid.NewGuid().ToString();
         var post = new BlogPost { Id = postId, PostId = postId };
@@ -271,7 +271,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Backing_Field()
     {
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         var postId = DateTime.Now.ToFileTime().ToString();
         var post = new BlogPost { Id = postId, PostId = postId };
@@ -284,7 +284,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         await writeSession.CommitAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
 
         var readPost = await readSession.FindAsync<BlogPost>(postId, postId);
 
@@ -295,7 +295,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Query_Using_Raw_Sql_With_Parameters()
     {
-        using var writeSession = _store.CreateSession();
+        var writeSession = _store.CreateSession();
 
         var postId = Guid.NewGuid().ToString();
         var blogPost = new BlogPost
@@ -309,7 +309,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         writeSession.Store(blogPost);
         await writeSession.CommitAsync();
 
-        using var readSession = _store.CreateSession();
+        var readSession = _store.CreateSession();
 
         var query = readSession.Query<BlogPost>(
             partitionKey: postId,
