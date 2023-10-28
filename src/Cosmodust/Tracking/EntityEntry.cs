@@ -7,6 +7,7 @@ public sealed class EntityEntry
     public required string PartitionKey { get; init; }
     public required object Entity { get; init; }
     public required Type EntityType { get; init; }
+    public required IDictionary<string, object> ShadowProperties { get; init; }
     public EntityState State { get; private set; } = EntityState.Detached;
 
     public bool IsModified => State == EntityState.Modified;
@@ -41,4 +42,9 @@ public sealed class EntityEntry
 
     public void Detach() =>
         State = EntityState.Detached;
+
+    public TProperty? Property<TProperty>(string shadowPropertyName) =>
+        ShadowProperties.TryGetValue(shadowPropertyName, out var shadowPropertyValue)
+            ? (TProperty) shadowPropertyValue
+            : default;
 }
