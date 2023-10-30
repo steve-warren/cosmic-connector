@@ -137,59 +137,43 @@ public sealed class CosmosDatabase : IDatabase
         }
     }
 
-    public async Task CommitAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
+    public async Task CommitAsync(
+        IEnumerable<EntityEntry> entries,
+        CancellationToken cancellationToken = default)
     {
         foreach (var entry in entries)
         {
             if (entry.IsUnchanged)
                 continue;
 
-            var operation = CreateOperation(entry);
+            entry.ReturnShadowPropertiesToStore();
+
+            var operation = CreateWriteOperation(entry);
             var response = await operation.ExecuteAsync(cancellationToken);
 
-            Debug.WriteLine(response.StatusCode);
+            Debug.WriteLine(
+                $"Write operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
         }
     }
 
-    public async Task CommitTransactionAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken)
+    public Task CommitTransactionAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken)
     {
-        var containerAndPartitionKey = entries.GroupBy(e => (e.ContainerName, e.PartitionKey));
+        var batchOperation = new TransactionalBatchOperation(
+            database: _database,
+            entries: entries);
 
-        foreach (var entriesGrouping in containerAndPartitionKey)
-        {
-            var container = _database.GetContainer(entriesGrouping.Key.ContainerName);
-            var partitionKey = entriesGrouping.Key.PartitionKey;
-
-            var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
-
-            foreach (var entry in entriesGrouping)
-            {
-                _ = entry.State switch
-                {
-                    EntityState.Added => batch.CreateItem(entry.Entity),
-                    EntityState.Removed => batch.DeleteItem(entry.Id),
-                    EntityState.Modified => batch.ReplaceItem(entry.Id, entry.Entity),
-                    EntityState.Unchanged or
-                    EntityState.Detached => batch,
-                    _ => throw new NotImplementedException()
-                };
-            }
-
-            var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-
-            Debug.WriteLine("Request charge: {0}", response.RequestCharge);
-        }
+        return batchOperation.ExecuteAsync(cancellationToken);
     }
 
-    private ICosmosWriteOperation CreateOperation(EntityEntry entry)
+    private ICosmosWriteOperation CreateWriteOperation(EntityEntry entry)
     {
         var container = GetContainerFor(entry.ContainerName);
 
         return entry.State switch
         {
-            EntityState.Added => new CreateItemOperation(container, entry.Entity),
-            EntityState.Removed => new DeleteItemOperation(container, entry.Id, entry.PartitionKey),
-            EntityState.Modified => new ReplaceItemOperation(container, entry.Entity, entry.Id, entry.PartitionKey),
+            EntityState.Added => new CreateItemOperation(container, entry),
+            EntityState.Removed => new DeleteItemOperation(container, entry),
+            EntityState.Modified => new ReplaceItemOperation(container, entry),
             _ => throw new NotImplementedException()
         };
     }

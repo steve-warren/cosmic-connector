@@ -1,6 +1,6 @@
 namespace Cosmodust.Store;
 
-internal class StringSelector<TEntity> : IStringSelector
+internal sealed class StringSelector<TEntity> : IStringSelector
 {
     private readonly Func<TEntity, string> _partitionKeySelector;
 

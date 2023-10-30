@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Cosmodust.Store;
 
 public class EntityConfigurationHolder
@@ -9,6 +11,11 @@ public class EntityConfigurationHolder
         _mappings.TryGetValue(entityType, out var mapping)
             ? mapping
             : throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
+
+    public bool TryGet(
+        Type entityType,
+        [MaybeNullWhen(false)] out EntityConfiguration entityConfiguration) =>
+        _mappings.TryGetValue(entityType, out entityConfiguration);
 
     public void Add(EntityConfiguration mapping) =>
         _mappings.Add(mapping.EntityType, mapping);

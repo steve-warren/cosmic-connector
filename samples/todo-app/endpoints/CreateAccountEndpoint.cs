@@ -12,7 +12,7 @@ public class CreateAccountEndpoint : ControllerBase
 
     [HttpPost("api/accounts")]
     public async Task<IActionResult> CreateTodoList(
-        [FromServices] IDocumentSession session,
+        [FromServices] DocumentSession session,
         [FromBody] CreateAccountRequest request)
     {
         var account = new Account(id: Ksuid.NewKsuid("a_"));

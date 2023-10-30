@@ -1,5 +1,5 @@
-using System.Linq.Expressions;
 using Cosmodust.Serialization;
+using Cosmodust.Session;
 
 namespace Cosmodust.Store;
 
@@ -9,9 +9,16 @@ namespace Cosmodust.Store;
 /// <typeparam name="TEntity">The type of entity to configure.</typeparam>
 public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 {
+    private readonly ShadowPropertyStore _shadowPropertyStore;
     private EntityConfiguration _entityConfiguration = new(typeof(TEntity));
     private readonly HashSet<FieldAccessor> _fields = new();
     private readonly HashSet<PropertyAccessor> _properties = new();
+    private readonly HashSet<ShadowProperty> _shadowProperties = new();
+
+    public EntityBuilder(ShadowPropertyStore shadowPropertyStore)
+    {
+        _shadowPropertyStore = shadowPropertyStore;
+    }
 
     /// <summary>
     /// Configures the entity to use the specified function to extract the ID value.
@@ -32,7 +39,26 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <returns>The entity builder instance.</returns>
     public EntityBuilder<TEntity> HasPartitionKey(Func<TEntity, string> partitionKeySelector)
     {
-        _entityConfiguration = _entityConfiguration with { PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector) };
+        _entityConfiguration = _entityConfiguration with
+        {
+            PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector)
+        };
+
+        return this;
+    }
+
+    public EntityBuilder<TEntity> HasPartitionKey(
+        Func<TEntity, string> partitionKeySelector,
+    string partitionKeyName)
+    {
+        ArgumentNullException.ThrowIfNull(partitionKeySelector);
+        ArgumentException.ThrowIfNullOrEmpty(partitionKeyName);
+
+        _entityConfiguration = _entityConfiguration with
+        {
+            PartitionKeyName = partitionKeyName,
+            PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector)
+        };
 
         return this;
     }
@@ -51,20 +77,25 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return this;
     }
 
-    public EntityBuilder<TEntity> HasProperty(Expression<Func<TEntity, object>> propertySelector)
+    public EntityBuilder<TEntity> HasProperty(string propertyName)
     {
-        var accessor = PropertyAccessor.Create(propertySelector);
+        var accessor = PropertyAccessor.Create(propertyName, typeof(TEntity));
 
         _properties.Add(accessor);
 
         return this;
     }
 
-    public EntityBuilder<TEntity> HasProperty(string name)
+    public EntityBuilder<TEntity> HasShadowProperty<TProperty>(string propertyName)
     {
-        var accessor = PropertyAccessor.Create(name, typeof(TEntity));
+        var shadowProperty = new ShadowProperty
+        {
+            PropertyType = typeof(TProperty),
+            PropertyName = propertyName,
+            Store = _shadowPropertyStore
+        };
 
-        _properties.Add(accessor);
+        _shadowProperties.Add(shadowProperty);
 
         return this;
     }
@@ -83,7 +114,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return _entityConfiguration = _entityConfiguration with
         {
             Fields = _fields,
-            Properties = _properties
+            Properties = _properties,
+            ShadowProperties = _shadowProperties
         };
     }
 }

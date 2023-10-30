@@ -1,4 +1,6 @@
 using System.Configuration.Internal;
+using System.Diagnostics;
+using System.IO.Pipelines;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Json;
@@ -7,6 +9,8 @@ using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Query;
+using Cosmodust.Serialization;
+using Cosmodust.Session;
 using Cosmodust.Store;
 using FluentAssertions;
 using Microsoft.Azure.Cosmos;
@@ -17,7 +21,8 @@ namespace Cosmodust.Cosmos.Tests;
 public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {
     private readonly IConfiguration _configuration;
-    private readonly IDocumentStore _store;
+    private readonly DocumentStore _store;
+    private readonly QueryFacade _queryFacade;
 
     public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
@@ -27,11 +32,14 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
+        var shadowPropertyCache = new ShadowPropertyStore();
+        
         foreach (var action in new IJsonTypeModifier[]
                  {
                      new BackingFieldJsonTypeModifier(entityConfiguration),
                      new PropertyJsonTypeModifier(entityConfiguration),
-                     new TypeMetadataJsonTypeModifier()
+                     new ShadowPropertyJsonTypeModifier(entityConfiguration),
+                     new TypeMetadataJsonTypeModifier(),
                  })
         {
             jsonTypeInfoResolver.Modifiers.Add(action.Modify);
@@ -51,11 +59,18 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var db = cosmosClient.GetDatabase("reminderdb");
 
-        _store = new DocumentStore(new CosmosDatabase(db), options, entityConfiguration)
+        _store = new DocumentStore(
+                new CosmosDatabase(db),
+                options,
+                entityConfiguration,
+                shadowPropertyStore: shadowPropertyCache)
                     .BuildModel(builder =>
                     {
                         builder.HasEntity<AccountPlan>()
                             .HasId(e => e.Id)
+                            .HasPartitionKey(
+                                e => e.Id,
+                                "ownerId")
                             .ToContainer("accountPlans");
 
                         builder.HasEntity<BlogPost>()
@@ -66,9 +81,15 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
                         builder.HasEntity<BlogPostComment>()
                             .HasId(e => e.Id)
+                            .HasShadowProperty<DateTime>("createdOn")
                             .HasPartitionKey(e => e.PostId)
                             .ToContainer("blogPosts");
                     });
+
+        _queryFacade = new QueryFacade(
+            client: cosmosClient,
+            databaseName: "reminderdb",
+            sqlParameterCache: new SqlParameterCache());
     }
 
     [Fact]
@@ -181,13 +202,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 1" },
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
         };
-        
+
         var writeSession = _store.CreateSession();
 
         writeSession.Store(post);
         writeSession.Store(comments[0]);
         writeSession.Store(comments[1]);
-        
+
         await writeSession.CommitTransactionAsync();
 
         var readSession = _store.CreateSession();
@@ -299,5 +320,53 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var result = await query.FirstOrDefaultAsync();
 
         result.Should().BeEquivalentTo(expectation: blogPost, because: "the query should return an object by its id.");
+    }
+
+    [Fact]
+    public async Task Can_Use_Query_Facade()
+    {
+        var pipe = new Pipe();
+
+        await _queryFacade.ExecuteQueryAsync(
+            writer: pipe.Writer,
+            containerName: "todo",
+            partitionKey: "a_2X011ldw0dogcauAbw0oExAv21H",
+            sql: "select * from c where c.ownerId = @ownerId",
+            parameters: new { ownerId = "a_2X011ldw0dogcauAbw0oExAv21H" });
+    }
+
+    [Fact]
+    public async Task Can_Write_And_Read_Shadow_Property()
+    {
+        var id = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        var comment = new BlogPostComment
+        {
+            Id = id,
+            PostId = Guid.NewGuid().ToString()
+        };
+
+        writeSession.Store(comment);
+
+        var shadowProperty = new { Name = "createdOn", Value = new DateTime(year: 2000, month: 1, day: 1) };
+
+        writeSession.Entity(comment)
+               !.WriteShadowProperty(shadowProperty.Name, shadowProperty.Value);
+
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComment = await readSession.FindAsync<BlogPostComment>(
+            id: id,
+            partitionKey: comment.PostId);
+
+        readComment.Should().NotBeNull();
+
+        var readProperty = readSession.Entity(readComment!)!.ReadShadowProperty<DateTime>(shadowProperty.Name);
+
+        readProperty.Should().Be(shadowProperty.Value);
     }
 }

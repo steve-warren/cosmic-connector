@@ -8,36 +8,40 @@ namespace Cosmodust.Store;
 /// <summary>
 /// Represents a document store that provides access to a database and allows for creating document sessions.
 /// </summary>
-public sealed class DocumentStore : IDocumentStore
+public class DocumentStore : IDocumentStore
 {
     private readonly IDatabase _database;
     private readonly JsonSerializerOptions _options;
     private readonly EntityConfigurationHolder _entityConfiguration;
     private readonly SqlParameterCache _sqlParameterCache;
+    private readonly ShadowPropertyStore _shadowPropertyStore;
 
     public DocumentStore(
         IDatabase database,
         JsonSerializerOptions? options = default,
         EntityConfigurationHolder? entityConfiguration = default,
-        SqlParameterCache? sqlParameterCache = default)
+        SqlParameterCache? sqlParameterCache = default,
+        ShadowPropertyStore? shadowPropertyStore = default)
     {
         ArgumentNullException.ThrowIfNull(database);
 
         _database = database;
         _options = options ?? new JsonSerializerOptions();
         _entityConfiguration = entityConfiguration
-                              ?? new EntityConfigurationHolder();
+                               ?? new EntityConfigurationHolder();
         _sqlParameterCache = sqlParameterCache
-                          ?? new SqlParameterCache();
+                             ?? new SqlParameterCache();
+        _shadowPropertyStore = shadowPropertyStore
+                               ?? new ShadowPropertyStore();
     }
 
-    public IDocumentSession CreateSession()
+    public DocumentSession CreateSession()
     {
         return new DocumentSession(
-            new ChangeTracker(_entityConfiguration),
             _database,
             _entityConfiguration,
-            _sqlParameterCache);
+            _sqlParameterCache,
+            _shadowPropertyStore);
     }
 
     /// <summary>
@@ -49,7 +53,7 @@ public sealed class DocumentStore : IDocumentStore
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var modelBuilder = new ModelBuilder(_options);
+        var modelBuilder = new ModelBuilder(_options, _shadowPropertyStore);
         builder(modelBuilder);
 
         foreach (var configuration in modelBuilder.Build())

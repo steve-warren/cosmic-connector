@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Text.Json;
 using Cosmodust.Json;
+using Cosmodust.Session;
 
 namespace Cosmodust.Store;
 
@@ -10,13 +11,17 @@ namespace Cosmodust.Store;
 public class ModelBuilder
 {
     private readonly JsonSerializerOptions _options;
+    private readonly ShadowPropertyStore _shadowPropertyStore;
     private readonly List<IEntityBuilder> _entityBuilders = new();
 
-    public ModelBuilder(JsonSerializerOptions options)
+    public ModelBuilder(
+        JsonSerializerOptions options,
+        ShadowPropertyStore shadowPropertyStore)
     {
         _options = options;
+        _shadowPropertyStore = shadowPropertyStore;
     }
-    
+
     /// <summary>
     /// Returns an instance of <see cref="EntityBuilder{TEntity}"/> for the specified entity type.
     /// </summary>
@@ -24,7 +29,7 @@ public class ModelBuilder
     /// <returns>An instance of <see cref="EntityBuilder{TEntity}"/>.</returns>
     public EntityBuilder<TEntity> HasEntity<TEntity>() where TEntity : class
     {
-        var entityBuilder = new EntityBuilder<TEntity>();
+        var entityBuilder = new EntityBuilder<TEntity>(_shadowPropertyStore);
 
         _entityBuilders.Add(entityBuilder);
 
