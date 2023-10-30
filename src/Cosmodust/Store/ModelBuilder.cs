@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using Cosmodust.Json;
 using Cosmodust.Session;
+using Cosmodust.Shared;
 
 namespace Cosmodust.Store;
 
@@ -18,6 +19,9 @@ public class ModelBuilder
         JsonSerializerOptions options,
         ShadowPropertyStore shadowPropertyStore)
     {
+        Ensure.NotNull(options);
+        Ensure.NotNull(shadowPropertyStore);
+
         _options = options;
         _shadowPropertyStore = shadowPropertyStore;
     }

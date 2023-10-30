@@ -1,5 +1,6 @@
 using Cosmodust.Serialization;
 using Cosmodust.Session;
+using Cosmodust.Shared;
 
 namespace Cosmodust.Store;
 
@@ -17,6 +18,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 
     public EntityBuilder(ShadowPropertyStore shadowPropertyStore)
     {
+        Ensure.NotNull(shadowPropertyStore);
+
         _shadowPropertyStore = shadowPropertyStore;
     }
 
@@ -27,6 +30,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <returns>The entity builder instance.</returns>
     public EntityBuilder<TEntity> HasId(Func<TEntity, string> idSelector)
     {
+        Ensure.NotNull(idSelector);
+
         _entityConfiguration = _entityConfiguration with { IdSelector = new StringSelector<TEntity>(idSelector) };
 
         return this;
@@ -39,6 +44,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <returns>The entity builder instance.</returns>
     public EntityBuilder<TEntity> HasPartitionKey(Func<TEntity, string> partitionKeySelector)
     {
+        Ensure.NotNull(partitionKeySelector);
+
         _entityConfiguration = _entityConfiguration with
         {
             PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector)
@@ -51,8 +58,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         Func<TEntity, string> partitionKeySelector,
     string partitionKeyName)
     {
-        ArgumentNullException.ThrowIfNull(partitionKeySelector);
-        ArgumentException.ThrowIfNullOrEmpty(partitionKeyName);
+        Ensure.NotNull(partitionKeySelector);
+        Ensure.NotNullOrWhiteSpace(partitionKeyName);
 
         _entityConfiguration = _entityConfiguration with
         {
@@ -66,11 +73,13 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <summary>
     /// Adds a field to the entity configuration.
     /// </summary>
-    /// <param name="name">The name of the field to add.</param>
+    /// <param name="fieldName">The name of the field to add.</param>
     /// <returns>The entity builder instance.</returns>
-    public EntityBuilder<TEntity> HasField(string name)
+    public EntityBuilder<TEntity> HasField(string fieldName)
     {
-        var accessor = FieldAccessor.Create(name, typeof(TEntity));
+        Ensure.NotNullOrWhiteSpace(fieldName);
+
+        var accessor = FieldAccessor.Create(fieldName, typeof(TEntity));
 
         _fields.Add(accessor);
 
@@ -79,6 +88,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 
     public EntityBuilder<TEntity> HasProperty(string propertyName)
     {
+        Ensure.NotNullOrWhiteSpace(propertyName);
+
         var accessor = PropertyAccessor.Create(propertyName, typeof(TEntity));
 
         _properties.Add(accessor);
@@ -88,6 +99,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 
     public EntityBuilder<TEntity> HasShadowProperty<TProperty>(string propertyName)
     {
+        Ensure.NotNullOrWhiteSpace(propertyName);
+
         var shadowProperty = new ShadowProperty
         {
             PropertyType = typeof(TProperty),
@@ -106,6 +119,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// <param name="containerName">The name of the container.</param>
     public void ToContainer(string containerName)
     {
+        Ensure.NotNullOrWhiteSpace(containerName);
+
         _entityConfiguration = _entityConfiguration with { ContainerName = containerName };
     }
 

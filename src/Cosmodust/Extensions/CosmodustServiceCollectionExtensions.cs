@@ -11,6 +11,12 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class CosmodustServiceCollectionExtensions
 {
+    /// <summary>
+    /// Adds the necessary services for using Cosmodust with Cosmos DB to the specified <see cref="IServiceCollection"/>.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
+    /// <param name="cosmodustOptionsAction">An <see cref="Action{T}"/> to configure the <see cref="CosmodustOptions"/>.</param>
+    /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
     public static IServiceCollection AddCosmodust(
         this IServiceCollection services,
         Action<CosmodustOptions> cosmodustOptionsAction)

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
-using Cosmodust.Tracking;
+using Cosmodust.Shared;
 
 namespace Cosmodust.Store;
 
@@ -23,7 +23,7 @@ public class DocumentStore : IDocumentStore
         SqlParameterCache? sqlParameterCache = default,
         ShadowPropertyStore? shadowPropertyStore = default)
     {
-        ArgumentNullException.ThrowIfNull(database);
+        Ensure.NotNull(database);
 
         _database = database;
         _options = options ?? new JsonSerializerOptions();
@@ -51,7 +51,7 @@ public class DocumentStore : IDocumentStore
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
     public DocumentStore BuildModel(Action<ModelBuilder> builder)
     {
-        ArgumentNullException.ThrowIfNull(builder);
+        Ensure.NotNull(builder);
 
         var modelBuilder = new ModelBuilder(_options, _shadowPropertyStore);
         builder(modelBuilder);

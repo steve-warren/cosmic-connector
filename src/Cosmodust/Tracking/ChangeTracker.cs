@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Cosmodust.Session;
+using Cosmodust.Shared;
 using Cosmodust.Store;
 
 namespace Cosmodust.Tracking;
@@ -14,8 +15,8 @@ public sealed class ChangeTracker : IDisposable
         EntityConfigurationProvider entityConfiguration,
         ShadowPropertyStore shadowPropertyStore)
     {
-        ArgumentNullException.ThrowIfNull(entityConfiguration);
-        ArgumentNullException.ThrowIfNull(shadowPropertyStore);
+        Ensure.NotNull(entityConfiguration);
+        Ensure.NotNull(shadowPropertyStore);
 
         EntityConfiguration = entityConfiguration;
         ShadowPropertyStore = shadowPropertyStore;
@@ -39,7 +40,7 @@ public sealed class ChangeTracker : IDisposable
     /// <param name="entity">The entity to register.</param>
     public void RegisterAdded(object entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
 
         CreateEntry(entity, EntityState.Added);
     }
@@ -50,14 +51,14 @@ public sealed class ChangeTracker : IDisposable
     /// <param name="entity">The entity to register.</param>
     public void RegisterUnchanged(object entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
 
         CreateEntry(entity, EntityState.Unchanged);
     }
 
     public object GetOrRegisterUnchanged(object entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
 
         var config = EntityConfiguration.Get(entity.GetType());
         var id = config.IdSelector.GetString(entity);
@@ -76,7 +77,7 @@ public sealed class ChangeTracker : IDisposable
     /// <param name="entity">The entity to register as modified.</param>
     public void RegisterModified(object entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
 
         var entry = Entry(entity)
                     ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
@@ -90,7 +91,7 @@ public sealed class ChangeTracker : IDisposable
     /// <param name="entity">The entity to remove.</param>
     public void RegisterRemoved(object entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
 
         var entry = Entry(entity)
                     ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
@@ -107,6 +108,8 @@ public sealed class ChangeTracker : IDisposable
     /// <returns><c>true</c> if the identity map contains an entity with the specified ID; otherwise, <c>false</c>.</returns>
     public bool TryGet<TEntity>(string id, out TEntity? entity)
     {
+        Ensure.NotNullOrWhiteSpace(id);
+
         if (_entityByTypeId.TryGetValue((Type: typeof(TEntity), Id: id), out var value))
         {
             entity = (TEntity?) value;
@@ -117,8 +120,12 @@ public sealed class ChangeTracker : IDisposable
         return false;
     }
 
-    public bool Exists<TEntity>(string id) =>
-        _entityByTypeId.ContainsKey((Type: typeof(TEntity), Id: id));
+    public bool Exists<TEntity>(string id)
+    {
+        Ensure.NotNullOrWhiteSpace(id);
+
+        return _entityByTypeId.ContainsKey((Type: typeof(TEntity), Id: id));
+    }
 
     /// <summary>
     /// Commits all changes made to the tracked entities by removing all entities
