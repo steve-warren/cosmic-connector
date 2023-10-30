@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos;
-using Cosmodust.Cosmos.Json;
 using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Samples.TodoApp.Infra;

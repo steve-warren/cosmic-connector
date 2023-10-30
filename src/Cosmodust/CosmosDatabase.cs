@@ -1,8 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Azure.Cosmos;
 using System.Diagnostics;
-using Cosmodust.Cosmos.Operations;
 using Cosmodust.Linq;
+using Cosmodust.Operations;
 using Cosmodust.Query;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos.Linq;

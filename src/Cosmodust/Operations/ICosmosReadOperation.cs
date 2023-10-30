@@ -1,4 +1,4 @@
-namespace Cosmodust.Cosmos.Operations;
+namespace Cosmodust.Operations;
 
 internal interface ICosmosReadOperation<TResult>
 {

@@ -1,6 +1,6 @@
 using Microsoft.Azure.Cosmos;
 
-namespace Cosmodust.Cosmos.Operations;
+namespace Cosmodust.Operations;
 
 internal interface ICosmosWriteOperation
 {
