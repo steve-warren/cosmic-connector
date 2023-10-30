@@ -1,7 +1,7 @@
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 
-namespace Cosmodust.Cosmos.Operations;
+namespace Cosmodust.Operations;
 
 internal class DeleteItemOperation : ICosmosWriteOperation
 {

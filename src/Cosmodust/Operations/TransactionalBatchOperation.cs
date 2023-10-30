@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 
-namespace Cosmodust.Cosmos.Operations;
+namespace Cosmodust.Operations;
 
 public class TransactionalBatchOperation
 {

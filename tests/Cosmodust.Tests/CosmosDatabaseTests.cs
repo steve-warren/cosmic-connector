@@ -1,9 +1,8 @@
-using System.Configuration.Internal;
-using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using Cosmodust.Cosmos.Json;
+using Cosmodust.Cosmos;
+using Cosmodust.Cosmos.Tests;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Json;
@@ -12,11 +11,10 @@ using Cosmodust.Query;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Store;
-using FluentAssertions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
-namespace Cosmodust.Cosmos.Tests;
+namespace Cosmodust.Tests;
 
 public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {

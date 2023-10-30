@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Cosmodust.Cosmos.Memory;
+using Cosmodust.Memory;
 using Microsoft.Azure.Cosmos;
 
-namespace Cosmodust.Cosmos.Json;
+namespace Cosmodust.Json;
 
 public sealed class CosmosJsonSerializer : CosmosSerializer
 {

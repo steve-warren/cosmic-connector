@@ -1,4 +1,4 @@
-namespace Cosmodust.Cosmos.Memory;
+namespace Cosmodust.Memory;
 
 /// <summary>
 /// Provides a way to get a <see cref="MemoryStream"/> instance.
