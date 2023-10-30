@@ -12,6 +12,7 @@ using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSingleton(new ShadowPropertyStore());
 builder.Services.AddSingleton(new EntityConfigurationHolder());
 builder.Services.AddSingleton(sp =>
 {
@@ -22,7 +23,8 @@ builder.Services.AddSingleton(sp =>
                  new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
                  new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
                  new PartitionKeyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new TypeMetadataJsonTypeModifier(),
+                 new ShadowPropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
+                 new TypeMetadataJsonTypeModifier()
              })
     {
         jsonTypeInfoResolver.Modifiers.Add(action.Modify);
@@ -58,21 +60,24 @@ builder.Services.AddSingleton(sp =>
         database,
         sp.GetRequiredService<JsonSerializerOptions>(),
         sp.GetRequiredService<EntityConfigurationHolder>(),
-        sqlParameterCache: sp.GetRequiredService<SqlParameterCache>());
+        sqlParameterCache: sp.GetRequiredService<SqlParameterCache>(),
+        shadowPropertyStore: sp.GetRequiredService<ShadowPropertyStore>());
 
     store.BuildModel(modelBuilder =>
     {
         modelBuilder.HasEntity<Account>()
             .HasId(e => e.Id)
             .HasPartitionKey(
-                "ownerId",
-                e => e.Id)
+                e => e.Id,
+                "ownerId")
             .ToContainer("todo");
 
         modelBuilder.HasEntity<TodoList>()
             .HasId(e => e.Id)
             .HasPartitionKey(e => e.OwnerId)
             .HasProperty("Items")
+            .HasShadowProperty<string>("_etag")
+            .HasShadowProperty<long>("_ts")
             .ToContainer("todo");
 
         modelBuilder.HasEntity<TodoItem>()

@@ -16,7 +16,7 @@ public class DeleteTodoItemEndpoint : ControllerBase
     {
         var list = await session.FindAsync<TodoList>(id: listId, partitionKey: ownerId);
         var item = await session.FindAsync<TodoItem>(id: itemId, partitionKey: ownerId);
-        
+
         if (list is null || item is null)
             return NotFound();
 

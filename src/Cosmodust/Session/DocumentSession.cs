@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Cosmodust.Linq;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
@@ -6,19 +7,20 @@ using Cosmodust.Tracking;
 
 namespace Cosmodust.Session;
 
-/// <inheritdoc />
-public sealed class DocumentSession : IDocumentSession
+public sealed class DocumentSession : IDocumentSession, IDisposable
 {
     internal DocumentSession(
-        ChangeTracker changeTracker,
         IDatabase database,
         EntityConfigurationHolder entityConfiguration,
-        SqlParameterCache sqlParameterCache)
+        SqlParameterCache sqlParameterCache,
+        ShadowPropertyStore shadowPropertyStore)
     {
         Database = database;
-        ChangeTracker = changeTracker;
         EntityConfiguration = entityConfiguration;
         SqlParameterCache = sqlParameterCache;
+        ChangeTracker = new ChangeTracker(
+            entityConfiguration,
+            shadowPropertyStore);
     }
 
     public ChangeTracker ChangeTracker { get; }
@@ -116,6 +118,14 @@ public sealed class DocumentSession : IDocumentSession
     {
         await Database.CommitTransactionAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
         ChangeTracker.Commit();
+    }
+
+    public EntityEntry? Entity(object entity) =>
+        ChangeTracker.Entry(entity);
+
+    public void Dispose()
+    {
+        ChangeTracker.Dispose();
     }
 
     private EntityConfiguration GetConfiguration<TEntity>() =>

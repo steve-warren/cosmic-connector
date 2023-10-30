@@ -21,7 +21,7 @@ public sealed class PartitionKeyJsonTypeModifier : IJsonTypeModifier
             return;
 
         var partitionKeyName = JsonNamingPolicy.CamelCase.ConvertName(
-            entityConfiguration.PartitionKeyDocumentPropertyName);
+            entityConfiguration.PartitionKeyName);
 
         var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(
             propertyType: typeof(string),

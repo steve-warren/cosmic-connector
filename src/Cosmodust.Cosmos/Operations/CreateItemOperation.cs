@@ -1,6 +1,9 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Cosmodust.Cosmos.Operations;
 

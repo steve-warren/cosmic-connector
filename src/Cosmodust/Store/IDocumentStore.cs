@@ -4,5 +4,5 @@ namespace Cosmodust.Store;
 
 public interface IDocumentStore
 {
-    IDocumentSession CreateSession();
+    DocumentSession CreateSession();
 }
