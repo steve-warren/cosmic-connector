@@ -30,8 +30,8 @@ public class SerializationTests
     {
         using var stream = new MemoryStream();
         var entity = new BackingFieldEntity(firstName: "Michael", lastName: "Scott");
-        var configuration = new EntityConfigurationHolder();
-        configuration.Add(new EntityConfiguration(typeof(BackingFieldEntity))
+        var configuration = new EntityConfigurationProvider();
+        configuration.AddEntityConfiguration(new EntityConfiguration(typeof(BackingFieldEntity))
         {
             Fields = new[]
             {

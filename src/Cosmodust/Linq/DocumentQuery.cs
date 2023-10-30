@@ -13,7 +13,7 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
         IDatabase database,
         ChangeTracker changeTracker,
         EntityConfiguration entityConfiguration,
-        string? partitionKey,
+        string partitionKey,
         IQueryable<TEntity> databaseLinqQuery)
     {
         Database = database;
@@ -47,7 +47,7 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
     public ChangeTracker ChangeTracker { get; }
     public IQueryable<TEntity> DatabaseLinqQuery { get; }
     public EntityConfiguration EntityConfiguration { get; }
-    public string? PartitionKey { get; }
+    public string PartitionKey { get; }
 
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

@@ -12,54 +12,37 @@ using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Store;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Configuration;
 
 namespace Cosmodust.Tests;
 
 public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 {
-    private readonly IConfiguration _configuration;
     private readonly DocumentStore _store;
     private readonly QueryFacade _queryFacade;
 
     public CosmosDatabaseTests(CosmosTextFixture configurationTextFixture)
     {
-        _configuration = configurationTextFixture.Configuration;
+        var configuration = configurationTextFixture.Configuration;
 
-        var entityConfiguration = new EntityConfigurationHolder();
-
-        var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
-
+        var entityConfiguration = new EntityConfigurationProvider();
         var shadowPropertyCache = new ShadowPropertyStore();
+        var serializer = new CosmodustJsonSerializer(new IJsonTypeModifier[]
+        {
+            new BackingFieldJsonTypeModifier(entityConfiguration),
+            new PropertyJsonTypeModifier(entityConfiguration),
+            new ShadowPropertyJsonTypeModifier(entityConfiguration), new TypeMetadataJsonTypeModifier()
+        });
         
-        foreach (var action in new IJsonTypeModifier[]
-                 {
-                     new BackingFieldJsonTypeModifier(entityConfiguration),
-                     new PropertyJsonTypeModifier(entityConfiguration),
-                     new ShadowPropertyJsonTypeModifier(entityConfiguration),
-                     new TypeMetadataJsonTypeModifier(),
-                 })
+        var cosmosClient = new CosmosClient(configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
         {
-            jsonTypeInfoResolver.Modifiers.Add(action.Modify);
-        }
-
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            TypeInfoResolver = jsonTypeInfoResolver
-        };
-
-        var cosmosClient = new CosmosClient(_configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
-        {
-            Serializer = new CosmosJsonSerializer(options)
+            Serializer = serializer
         });
 
         var db = cosmosClient.GetDatabase("reminderdb");
 
         _store = new DocumentStore(
                 new CosmosDatabase(db),
-                options,
+                serializer.Options,
                 entityConfiguration,
                 shadowPropertyStore: shadowPropertyCache)
                     .BuildModel(builder =>

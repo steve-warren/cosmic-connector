@@ -4,7 +4,7 @@ public static class DocumentQueryExtensions
 {
     public static async Task<List<TEntity>> ToListAsync<TEntity>(this IQueryable<TEntity> queryable, CancellationToken cancellationToken = default)
     {
-        var documentQuery = GetDocumentQuery(queryable);
+        var documentQuery = queryable.ToDocumentQuery();
         var iterator = documentQuery.ToAsyncEnumerable(cancellationToken);
 
         var list = new List<TEntity>();
@@ -17,13 +17,13 @@ public static class DocumentQueryExtensions
 
     public static IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(this IQueryable<TEntity> queryable, CancellationToken cancellationToken = default)
     {
-        var documentQuery = GetDocumentQuery(queryable);
+        var documentQuery = queryable.ToDocumentQuery();
         return documentQuery.ToAsyncEnumerable(cancellationToken);
     }
 
     public static async Task<TEntity?> FirstOrDefaultAsync<TEntity>(this IQueryable<TEntity> queryable, CancellationToken cancellationToken = default)
     {
-        var documentQuery = GetDocumentQuery(queryable.Take(1));
+        var documentQuery = queryable.Take(1).ToDocumentQuery();
 
         var iterator = documentQuery.ToAsyncEnumerable(cancellationToken);
 
@@ -33,7 +33,7 @@ public static class DocumentQueryExtensions
         return default;
     }
 
-    private static CosmodustLinqQuery<TEntity> GetDocumentQuery<TEntity>(IQueryable<TEntity> queryable)
+    private static CosmodustLinqQuery<TEntity> ToDocumentQuery<TEntity>(this IQueryable<TEntity> queryable)
     {
         if (queryable is not CosmodustLinqQuery<TEntity> documentQueryable)
             throw new ArgumentException($"The {nameof(queryable)} must be of type {nameof(CosmodustLinqQuery<TEntity>)}", nameof(queryable));

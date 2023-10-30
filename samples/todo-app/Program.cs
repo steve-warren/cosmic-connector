@@ -1,123 +1,56 @@
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
-using Cosmodust.Cosmos;
-using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Samples.TodoApp.Infra;
-using Cosmodust.Serialization;
-using Cosmodust.Session;
-using Cosmodust.Store;
-using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
+var services = builder.Services;
 
-builder.Services.AddSingleton(new ShadowPropertyStore());
-builder.Services.AddSingleton(new EntityConfigurationHolder());
-builder.Services.AddSingleton(sp =>
-{
-    var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
-
-    foreach (var action in new IJsonTypeModifier[]
-             {
-                 new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new PartitionKeyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new ShadowPropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new TypeMetadataJsonTypeModifier()
-             })
+services.AddCosmodust(
+    options =>
     {
-        jsonTypeInfoResolver.Modifiers.Add(action.Modify);
-    }
+        options.WithConnectionString(builder.Configuration["ConnectionStrings:CosmosDB"])
+            .WithDatabase("reminderdb")
+            .WithModel(modelBuilder =>
+            {
+                modelBuilder.HasEntity<Account>()
+                    .HasId(e => e.Id)
+                    .HasPartitionKey(
+                        e => e.Id,
+                        "ownerId")
+                    .ToContainer("todo");
 
-    return new JsonSerializerOptions
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        TypeInfoResolver = jsonTypeInfoResolver
-    };
-});
+                modelBuilder.HasEntity<TodoList>()
+                    .HasId(e => e.Id)
+                    .HasPartitionKey(e => e.OwnerId)
+                    .HasProperty("Items")
+                    .HasShadowProperty<string>("_etag")
+                    .HasShadowProperty<long>("_ts")
+                    .ToContainer("todo");
 
-builder.Services.AddSingleton(sp =>
-{
-    var client = new CosmosClient(
-        sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDB"],
-        new CosmosClientOptions
-        {
-            ConnectionMode = ConnectionMode.Direct,
-            Serializer = new CosmosJsonSerializer(sp.GetRequiredService<JsonSerializerOptions>())
-        });
+                modelBuilder.HasEntity<TodoItem>()
+                    .HasId(e => e.Id)
+                    .HasPartitionKey(e => e.OwnerId)
+                    .ToContainer("todo");
 
-    return client;
-});
-
-builder.Services.AddSingleton(sp =>
-{
-    var client = sp.GetRequiredService<CosmosClient>();
-    var database = new CosmosDatabase(client.GetDatabase("reminderdb"));
-
-    var store = new DocumentStore(
-        database,
-        sp.GetRequiredService<JsonSerializerOptions>(),
-        sp.GetRequiredService<EntityConfigurationHolder>(),
-        sqlParameterCache: sp.GetRequiredService<SqlParameterCache>(),
-        shadowPropertyStore: sp.GetRequiredService<ShadowPropertyStore>());
-
-    store.BuildModel(modelBuilder =>
-    {
-        modelBuilder.HasEntity<Account>()
-            .HasId(e => e.Id)
-            .HasPartitionKey(
-                e => e.Id,
-                "ownerId")
-            .ToContainer("todo");
-
-        modelBuilder.HasEntity<TodoList>()
-            .HasId(e => e.Id)
-            .HasPartitionKey(e => e.OwnerId)
-            .HasProperty("Items")
-            .HasShadowProperty<string>("_etag")
-            .HasShadowProperty<long>("_ts")
-            .ToContainer("todo");
-
-        modelBuilder.HasEntity<TodoItem>()
-            .HasId(e => e.Id)
-            .HasPartitionKey(e => e.OwnerId)
-            .ToContainer("todo");
-
-        modelBuilder.HasValueObject<ArchiveState>()
-            .HasValueObject<TodoItemCompletedState>()
-            .HasValueObject<TodoItemPriority>();
+                modelBuilder.HasValueObject<ArchiveState>()
+                    .HasValueObject<TodoItemCompletedState>()
+                    .HasValueObject<TodoItemPriority>();
+            });
     });
 
-    return store;
-});
-
-builder.Services.AddScoped<DocumentSession>(sp =>
-{
-    var store = sp.GetRequiredService<DocumentStore>();
-    return (DocumentSession) store.CreateSession();
-});
-
-builder.Services.AddScoped<ITodoListRepository, CosmodustTodoListRepository>();
-builder.Services.AddScoped<IAccountRepository, CosmodustAccountRepository>();
-builder.Services.AddScoped<ITodoItemRepository, CosmodustTodoItemRepository>();
-builder.Services.AddScoped<IUnitOfWork, CosmodustUnitOfWork>();
-builder.Services.AddSingleton<QueryFacade>(sp => new QueryFacade(
-    sp.GetRequiredService<CosmosClient>(),
-    databaseName: "reminderdb",
-    sp.GetRequiredService<SqlParameterCache>()));
-builder.Services.AddSingleton<SqlParameterCache>();
-
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+services.AddScoped<ITodoListRepository, CosmodustTodoListRepository>()
+    .AddScoped<IAccountRepository, CosmodustAccountRepository>()
+    .AddScoped<ITodoItemRepository, CosmodustTodoItemRepository>()
+    .AddScoped<IUnitOfWork, CosmodustUnitOfWork>()
+    .AddEndpointsApiExplorer()
+    .AddSwaggerGen()
+    .AddControllers();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger()
+        .UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

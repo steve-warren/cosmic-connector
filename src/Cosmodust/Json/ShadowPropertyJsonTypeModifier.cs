@@ -8,12 +8,12 @@ namespace Cosmodust.Json;
 /// </summary>
 public class ShadowPropertyJsonTypeModifier : IJsonTypeModifier
 {
-    private readonly EntityConfigurationHolder _entityConfigurationHolder;
+    private readonly EntityConfigurationProvider _entityConfigurationProvider;
 
     public ShadowPropertyJsonTypeModifier(
-        EntityConfigurationHolder entityConfigurationHolder)
+        EntityConfigurationProvider entityConfigurationProvider)
     {
-        _entityConfigurationHolder = entityConfigurationHolder;
+        _entityConfigurationProvider = entityConfigurationProvider;
     }
 
     public void Modify(JsonTypeInfo jsonTypeInfo)
@@ -21,7 +21,7 @@ public class ShadowPropertyJsonTypeModifier : IJsonTypeModifier
         if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object)
             return;
 
-        if (!_entityConfigurationHolder.TryGet(jsonTypeInfo.Type, out var entityConfiguration))
+        if (!_entityConfigurationProvider.TryGetEntityConfiguration(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
         foreach (var shadowProperty in entityConfiguration.ShadowProperties)

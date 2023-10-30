@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Cosmodust.Linq;
 using Cosmodust.Operations;
 using Cosmodust.Query;
+using Cosmodust.Shared;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos.Linq;
 
@@ -14,7 +15,6 @@ namespace Cosmodust.Cosmos;
 /// </summary>
 public sealed class CosmosDatabase : IDatabase
 {
-    private static readonly QueryRequestOptions s_defaultQueryRequestOptions = new();
     private static readonly CosmosLinqSerializerOptions s_cosmosLinqSerializerOptions =
         new() { PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase };
 
@@ -43,6 +43,10 @@ public sealed class CosmosDatabase : IDatabase
         string partitionKey,
         CancellationToken cancellationToken = default)
     {
+        Ensure.NotNullOrWhiteSpace(containerName);
+        Ensure.NotNullOrWhiteSpace(id);
+        Ensure.NotNullOrWhiteSpace(partitionKey);
+
         var container = GetContainerFor(containerName);
 
         var operation = new ReadItemOperation<TEntity>(container, id, partitionKey);
@@ -58,27 +62,20 @@ public sealed class CosmosDatabase : IDatabase
     /// <typeparam name="TEntity">The type of entity to query.</typeparam>
     /// <param name="containerName">The name of the Cosmos DB container.</param>
     /// <returns>A LINQ queryable for the specified Cosmos DB container.</returns>
-    public IQueryable<TEntity> CreateLinqQuery<TEntity>(string containerName) =>
-        GetContainerFor(containerName).GetItemLinqQueryable<TEntity>(
-            linqSerializerOptions: s_cosmosLinqSerializerOptions);
-
-    public IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string partitionKey)
+    public IQueryable<TEntity> CreateLinqQuery<TEntity>(string containerName)
     {
-        var container = GetContainerFor(containerName);
+        Ensure.NotNullOrWhiteSpace(containerName);
 
-        var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKey) };
-
-        var query = container.GetItemLinqQueryable<TEntity>(
-            requestOptions: queryRequestOptions,
+        return GetContainerFor(containerName).GetItemLinqQueryable<TEntity>(
             linqSerializerOptions: s_cosmosLinqSerializerOptions);
-
-        return query;
     }
 
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(
         CosmodustLinqQuery<TEntity> query,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        Ensure.NotNull(query);
+
         var originalQueryDefinition = query.DatabaseLinqQuery.ToQueryDefinition();
         var typedQuerySql = originalQueryDefinition.QueryText + " AND root.__type = @type";
         var typedQueryDefinition = new QueryDefinition(query: typedQuerySql);
@@ -86,10 +83,7 @@ public sealed class CosmosDatabase : IDatabase
         
         var container = GetContainerFor(query.EntityConfiguration.ContainerName);
         
-        var queryRequestOptions =
-            query.PartitionKey is null
-            ? s_defaultQueryRequestOptions
-            : new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
+        var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
 
         using var feed = container.GetItemQueryIterator<TEntity>(
             typedQueryDefinition,
@@ -111,6 +105,8 @@ public sealed class CosmosDatabase : IDatabase
         SqlQuery<TEntity> query,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        Ensure.NotNull(query);
+
         var queryDefinition = new QueryDefinition(query.Sql);
 
         foreach (var parameter in query.Parameters)
@@ -141,6 +137,8 @@ public sealed class CosmosDatabase : IDatabase
         IEnumerable<EntityEntry> entries,
         CancellationToken cancellationToken = default)
     {
+        Ensure.NotNull(entries);
+
         foreach (var entry in entries)
         {
             if (entry.IsUnchanged)
@@ -158,6 +156,8 @@ public sealed class CosmosDatabase : IDatabase
 
     public Task CommitTransactionAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken)
     {
+        Ensure.NotNull(entries);
+
         var batchOperation = new TransactionalBatchOperation(
             database: _database,
             entries: entries);

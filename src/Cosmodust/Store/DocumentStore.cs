@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
-using Cosmodust.Tracking;
+using Cosmodust.Shared;
 
 namespace Cosmodust.Store;
 
@@ -12,23 +12,23 @@ public class DocumentStore : IDocumentStore
 {
     private readonly IDatabase _database;
     private readonly JsonSerializerOptions _options;
-    private readonly EntityConfigurationHolder _entityConfiguration;
+    private readonly EntityConfigurationProvider _entityConfiguration;
     private readonly SqlParameterCache _sqlParameterCache;
     private readonly ShadowPropertyStore _shadowPropertyStore;
 
     public DocumentStore(
         IDatabase database,
         JsonSerializerOptions? options = default,
-        EntityConfigurationHolder? entityConfiguration = default,
+        EntityConfigurationProvider? entityConfiguration = default,
         SqlParameterCache? sqlParameterCache = default,
         ShadowPropertyStore? shadowPropertyStore = default)
     {
-        ArgumentNullException.ThrowIfNull(database);
+        Ensure.NotNull(database);
 
         _database = database;
         _options = options ?? new JsonSerializerOptions();
         _entityConfiguration = entityConfiguration
-                               ?? new EntityConfigurationHolder();
+                               ?? new EntityConfigurationProvider();
         _sqlParameterCache = sqlParameterCache
                              ?? new SqlParameterCache();
         _shadowPropertyStore = shadowPropertyStore
@@ -51,13 +51,13 @@ public class DocumentStore : IDocumentStore
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
     public DocumentStore BuildModel(Action<ModelBuilder> builder)
     {
-        ArgumentNullException.ThrowIfNull(builder);
+        Ensure.NotNull(builder);
 
         var modelBuilder = new ModelBuilder(_options, _shadowPropertyStore);
         builder(modelBuilder);
 
         foreach (var configuration in modelBuilder.Build())
-            _entityConfiguration.Add(configuration);
+            _entityConfiguration.AddEntityConfiguration(configuration);
 
         // marks the entity configuration object as read-only
         _entityConfiguration.Configure();
