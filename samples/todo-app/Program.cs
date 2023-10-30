@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos;
 using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
@@ -11,53 +10,19 @@ using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton(new ShadowPropertyStore());
-builder.Services.AddSingleton(new EntityConfigurationHolder());
-builder.Services.AddSingleton(sp =>
-{
-    var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
+builder.Services.AddCosmodust(
+    connectionString: builder.Configuration["ConnectionStrings:CosmosDB"],
+    database: "reminderdb");
 
-    foreach (var action in new IJsonTypeModifier[]
-             {
-                 new BackingFieldJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new PropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new PartitionKeyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new ShadowPropertyJsonTypeModifier(sp.GetRequiredService<EntityConfigurationHolder>()),
-                 new TypeMetadataJsonTypeModifier()
-             })
-    {
-        jsonTypeInfoResolver.Modifiers.Add(action.Modify);
-    }
-
-    return new JsonSerializerOptions
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        TypeInfoResolver = jsonTypeInfoResolver
-    };
-});
-
-builder.Services.AddSingleton(sp =>
-{
-    var client = new CosmosClient(
-        sp.GetRequiredService<IConfiguration>()["ConnectionStrings:CosmosDB"],
-        new CosmosClientOptions
-        {
-            ConnectionMode = ConnectionMode.Direct,
-            Serializer = new CosmosJsonSerializer(sp.GetRequiredService<JsonSerializerOptions>())
-        });
-
-    return client;
-});
-
-builder.Services.AddSingleton(sp =>
+builder.Services.AddSingleton<DocumentStore>(sp =>
 {
     var client = sp.GetRequiredService<CosmosClient>();
     var database = new CosmosDatabase(client.GetDatabase("reminderdb"));
+    var options = sp.GetRequiredService<CosmodustJsonSerializer>().Options;
 
     var store = new DocumentStore(
         database,
-        sp.GetRequiredService<JsonSerializerOptions>(),
+        options,
         sp.GetRequiredService<EntityConfigurationHolder>(),
         sqlParameterCache: sp.GetRequiredService<SqlParameterCache>(),
         shadowPropertyStore: sp.GetRequiredService<ShadowPropertyStore>());
@@ -92,21 +57,10 @@ builder.Services.AddSingleton(sp =>
     return store;
 });
 
-builder.Services.AddScoped<DocumentSession>(sp =>
-{
-    var store = sp.GetRequiredService<DocumentStore>();
-    return (DocumentSession) store.CreateSession();
-});
-
 builder.Services.AddScoped<ITodoListRepository, CosmodustTodoListRepository>();
 builder.Services.AddScoped<IAccountRepository, CosmodustAccountRepository>();
 builder.Services.AddScoped<ITodoItemRepository, CosmodustTodoItemRepository>();
 builder.Services.AddScoped<IUnitOfWork, CosmodustUnitOfWork>();
-builder.Services.AddSingleton<QueryFacade>(sp => new QueryFacade(
-    sp.GetRequiredService<CosmosClient>(),
-    databaseName: "reminderdb",
-    sp.GetRequiredService<SqlParameterCache>()));
-builder.Services.AddSingleton<SqlParameterCache>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

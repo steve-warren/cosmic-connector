@@ -52,7 +52,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var cosmosClient = new CosmosClient(_configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
         {
-            Serializer = new CosmosJsonSerializer(options)
+            Serializer = new CosmodustJsonSerializer(options)
         });
 
         var db = cosmosClient.GetDatabase("reminderdb");
