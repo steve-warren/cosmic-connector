@@ -12,7 +12,7 @@ using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton(new ShadowPropertyCache());
+builder.Services.AddSingleton(new ShadowPropertyStore());
 builder.Services.AddSingleton(new EntityConfigurationHolder());
 builder.Services.AddSingleton(sp =>
 {
@@ -61,7 +61,7 @@ builder.Services.AddSingleton(sp =>
         sp.GetRequiredService<JsonSerializerOptions>(),
         sp.GetRequiredService<EntityConfigurationHolder>(),
         sqlParameterCache: sp.GetRequiredService<SqlParameterCache>(),
-        shadowPropertyCache: sp.GetRequiredService<ShadowPropertyCache>());
+        shadowPropertyStore: sp.GetRequiredService<ShadowPropertyStore>());
 
     store.BuildModel(modelBuilder =>
     {

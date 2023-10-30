@@ -9,15 +9,15 @@ namespace Cosmodust.Store;
 /// <typeparam name="TEntity">The type of entity to configure.</typeparam>
 public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 {
-    private readonly ShadowPropertyCache _shadowPropertyCache;
+    private readonly ShadowPropertyStore _shadowPropertyStore;
     private EntityConfiguration _entityConfiguration = new(typeof(TEntity));
     private readonly HashSet<FieldAccessor> _fields = new();
     private readonly HashSet<PropertyAccessor> _properties = new();
     private readonly HashSet<ShadowProperty> _shadowProperties = new();
 
-    public EntityBuilder(ShadowPropertyCache shadowPropertyCache)
+    public EntityBuilder(ShadowPropertyStore shadowPropertyStore)
     {
-        _shadowPropertyCache = shadowPropertyCache;
+        _shadowPropertyStore = shadowPropertyStore;
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         {
             PropertyType = typeof(TProperty),
             PropertyName = propertyName,
-            Cache = _shadowPropertyCache
+            Store = _shadowPropertyStore
         };
 
         _shadowProperties.Add(shadowProperty);

@@ -32,7 +32,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
-        var shadowPropertyCache = new ShadowPropertyCache();
+        var shadowPropertyCache = new ShadowPropertyStore();
         
         foreach (var action in new IJsonTypeModifier[]
                  {
@@ -63,7 +63,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                 new CosmosDatabase(db),
                 options,
                 entityConfiguration,
-                shadowPropertyCache: shadowPropertyCache)
+                shadowPropertyStore: shadowPropertyCache)
                     .BuildModel(builder =>
                     {
                         builder.HasEntity<AccountPlan>()
@@ -81,6 +81,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
                         builder.HasEntity<BlogPostComment>()
                             .HasId(e => e.Id)
+                            .HasShadowProperty<DateTime>("createdOn")
                             .HasPartitionKey(e => e.PostId)
                             .ToContainer("blogPosts");
                     });
@@ -201,13 +202,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 1" },
             new BlogPostComment { PostId = postId, Id = Guid.NewGuid().ToString(), Content = "Comment 2" }
         };
-        
+
         var writeSession = _store.CreateSession();
 
         writeSession.Store(post);
         writeSession.Store(comments[0]);
         writeSession.Store(comments[1]);
-        
+
         await writeSession.CommitTransactionAsync();
 
         var readSession = _store.CreateSession();
@@ -335,8 +336,37 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     }
 
     [Fact]
-    public void Foo()
+    public async Task Can_Write_And_Read_Shadow_Property()
     {
-        
+        var id = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        var comment = new BlogPostComment
+        {
+            Id = id,
+            PostId = Guid.NewGuid().ToString()
+        };
+
+        writeSession.Store(comment);
+
+        var shadowProperty = new { Name = "createdOn", Value = new DateTime(year: 2000, month: 1, day: 1) };
+
+        writeSession.Entity(comment)
+               !.WriteShadowProperty(shadowProperty.Name, shadowProperty.Value);
+
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComment = await readSession.FindAsync<BlogPostComment>(
+            id: id,
+            partitionKey: comment.PostId);
+
+        readComment.Should().NotBeNull();
+
+        var readProperty = readSession.Entity(readComment!)!.ReadShadowProperty<DateTime>(shadowProperty.Name);
+
+        readProperty.Should().Be(shadowProperty.Value);
     }
 }

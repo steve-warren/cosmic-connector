@@ -14,14 +14,14 @@ public class DocumentStore : IDocumentStore
     private readonly JsonSerializerOptions _options;
     private readonly EntityConfigurationHolder _entityConfiguration;
     private readonly SqlParameterCache _sqlParameterCache;
-    private readonly ShadowPropertyCache _shadowPropertyCache;
+    private readonly ShadowPropertyStore _shadowPropertyStore;
 
     public DocumentStore(
         IDatabase database,
         JsonSerializerOptions? options = default,
         EntityConfigurationHolder? entityConfiguration = default,
         SqlParameterCache? sqlParameterCache = default,
-        ShadowPropertyCache? shadowPropertyCache = default)
+        ShadowPropertyStore? shadowPropertyStore = default)
     {
         ArgumentNullException.ThrowIfNull(database);
 
@@ -31,8 +31,8 @@ public class DocumentStore : IDocumentStore
                                ?? new EntityConfigurationHolder();
         _sqlParameterCache = sqlParameterCache
                              ?? new SqlParameterCache();
-        _shadowPropertyCache = shadowPropertyCache
-                               ?? new ShadowPropertyCache();
+        _shadowPropertyStore = shadowPropertyStore
+                               ?? new ShadowPropertyStore();
     }
 
     public DocumentSession CreateSession()
@@ -41,7 +41,7 @@ public class DocumentStore : IDocumentStore
             _database,
             _entityConfiguration,
             _sqlParameterCache,
-            _shadowPropertyCache);
+            _shadowPropertyStore);
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public class DocumentStore : IDocumentStore
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var modelBuilder = new ModelBuilder(_options, _shadowPropertyCache);
+        var modelBuilder = new ModelBuilder(_options, _shadowPropertyStore);
         builder(modelBuilder);
 
         foreach (var configuration in modelBuilder.Build())

@@ -1,6 +1,4 @@
 using System.Text.Json.Serialization.Metadata;
-using Cosmodust.Serialization;
-using Cosmodust.Session;
 using Cosmodust.Store;
 
 namespace Cosmodust.Json;
@@ -28,12 +26,14 @@ public class ShadowPropertyJsonTypeModifier : IJsonTypeModifier
 
         foreach (var shadowProperty in entityConfiguration.ShadowProperties)
         {
-            var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(
+            var shadowJsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(
                 shadowProperty.PropertyType,
                 shadowProperty.PropertyName);
 
-            jsonPropertyInfo.Set = shadowProperty.SetValue;
-            jsonTypeInfo.Properties.Add(jsonPropertyInfo);
+            shadowJsonPropertyInfo.Set = shadowProperty.WritePropertyToSharedStore;
+            shadowJsonPropertyInfo.Get = shadowProperty.ReadPropertyFromSharedStore;
+
+            jsonTypeInfo.Properties.Add(shadowJsonPropertyInfo);
         }
     }
 }

@@ -4,7 +4,7 @@ using Cosmodust.Store;
 
 namespace Cosmodust.Tracking;
 
-public sealed class ChangeTracker
+public sealed class ChangeTracker : IDisposable
 {
     private readonly List<EntityEntry> _entries = new();
     private readonly Dictionary<(Type Type, string Id), object> _entityByTypeId = new();
@@ -12,17 +12,17 @@ public sealed class ChangeTracker
 
     public ChangeTracker(
         EntityConfigurationHolder entityConfiguration,
-        ShadowPropertyCache shadowPropertyCache)
+        ShadowPropertyStore shadowPropertyStore)
     {
         ArgumentNullException.ThrowIfNull(entityConfiguration);
-        ArgumentNullException.ThrowIfNull(shadowPropertyCache);
+        ArgumentNullException.ThrowIfNull(shadowPropertyStore);
 
         EntityConfiguration = entityConfiguration;
-        ShadowPropertyCache = shadowPropertyCache;
+        ShadowPropertyStore = shadowPropertyStore;
     }
 
     public EntityConfigurationHolder EntityConfiguration { get; }
-    public ShadowPropertyCache ShadowPropertyCache { get; }
+    public ShadowPropertyStore ShadowPropertyStore { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
     public IEnumerable<EntityEntry> PendingChanges =>
@@ -41,9 +41,7 @@ public sealed class ChangeTracker
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var entry = CreateEntry(entity);
-
-        entry.Add();
+        CreateEntry(entity, EntityState.Added);
     }
 
     /// <summary>
@@ -54,9 +52,7 @@ public sealed class ChangeTracker
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var entry = CreateEntry(entity);
-
-        entry.Unchange();
+        CreateEntry(entity, EntityState.Unchanged);
     }
 
     public object GetOrRegisterUnchanged(object entity)
@@ -82,7 +78,8 @@ public sealed class ChangeTracker
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        var entry = Entry(entity) ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
+        var entry = Entry(entity)
+                    ?? throw new InvalidOperationException($"Cannot update entity of type {entity.GetType()} because it has not been loaded into the session.");
 
         entry.Modify();
     }
@@ -141,35 +138,36 @@ public sealed class ChangeTracker
                     break;
 
                 case EntityState.Removed:
-                    entry.Detach();
-                    _entries.RemoveAt(i);
-                    _entityByTypeId.Remove((Type: entry.EntityType, entry.Id));
+                    OnRemove(entry);
                     i--;
                     break;
                 case EntityState.Unchanged:
                     break;
-                case EntityState.Detached:
-                default:
-                    throw new InvalidOperationException($"Unknown entity state: {entry.State}");
             }
+
+            // now that all writes are finished, borrow
+            entry.BorrowShadowPropertiesFromStore();
         }
     }
 
-    private EntityEntry CreateEntry(object entity)
+    private void OnRemove(EntityEntry entry)
+    {
+        entry.Detach();
+        _entries.Remove(entry);
+        _entityByTypeId.Remove((Type: entry.EntityType, entry.Id));
+    }
+
+    private EntityEntry CreateEntry(object entity, EntityState state)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
         var entityType = entity.GetType();
 
-        var config = EntityConfiguration.Get(entityType)
-                     ?? throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
+        var config = EntityConfiguration.Get(entityType);
         var id = config.IdSelector.GetString(entity);
 
         if (_entityByTypeId.ContainsKey((Type: entityType, Id: id)))
             throw new InvalidOperationException($"An entity of type '{entityType.Name}' with ID '{id}' has already been loaded into the session.");
-
-        var shadowProperties = ShadowPropertyCache.TakeOwnershipOf(entity);
-        Debug.WriteLine($"Retrieved entity '{id}' from the shadow property cache.");
 
         var entry = new EntityEntry
         {
@@ -178,12 +176,36 @@ public sealed class ChangeTracker
             PartitionKey = config.PartitionKeySelector.GetString(entity),
             Entity = entity,
             EntityType = entity.GetType(),
-            ShadowProperties = shadowProperties
+            Store = ShadowPropertyStore,
+            State = state
         };
+
+        entry.BorrowShadowPropertiesFromStore();
+
+        if(state == EntityState.Added)
+            foreach (var shadowProperty in config.ShadowProperties)
+                entry.WriteShadowProperty(shadowProperty.PropertyName, value: shadowProperty.DefaultValue);
 
         _entries.Add(entry);
         _entityByTypeId.Add((Type: entry.EntityType, entry.Id), entity);
         _entriesByEntity.Add(key: entity, value: entry);
+
         return entry;
+    }
+
+    public void Dispose()
+    {
+        foreach (var entry in _entries)
+        {
+            try
+            {
+                entry.BorrowShadowPropertiesFromStore();
+            }
+
+            catch
+            {
+                // ignored
+            }
+        }
     }
 }

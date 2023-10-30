@@ -7,20 +7,20 @@ using Cosmodust.Tracking;
 
 namespace Cosmodust.Session;
 
-public sealed class DocumentSession : IDocumentSession
+public sealed class DocumentSession : IDocumentSession, IDisposable
 {
     internal DocumentSession(
         IDatabase database,
         EntityConfigurationHolder entityConfiguration,
         SqlParameterCache sqlParameterCache,
-        ShadowPropertyCache shadowPropertyCache)
+        ShadowPropertyStore shadowPropertyStore)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
         SqlParameterCache = sqlParameterCache;
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
-            shadowPropertyCache);
+            shadowPropertyStore);
     }
 
     public ChangeTracker ChangeTracker { get; }
@@ -106,9 +106,6 @@ public sealed class DocumentSession : IDocumentSession
         ChangeTracker.RegisterRemoved(entity);
     }
 
-    public EntityEntry? Entry(object entity) =>
-        ChangeTracker.Entry(entity);
-
     /// <inheritdoc />
     public async Task CommitAsync(CancellationToken cancellationToken = default)
     {
@@ -121,6 +118,14 @@ public sealed class DocumentSession : IDocumentSession
     {
         await Database.CommitTransactionAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
         ChangeTracker.Commit();
+    }
+
+    public EntityEntry? Entity(object entity) =>
+        ChangeTracker.Entry(entity);
+
+    public void Dispose()
+    {
+        ChangeTracker.Dispose();
     }
 
     private EntityConfiguration GetConfiguration<TEntity>() =>

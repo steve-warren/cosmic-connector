@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using Cosmodust.Session;
+
 namespace Cosmodust.Tracking;
 
 public sealed class EntityEntry
@@ -7,8 +10,10 @@ public sealed class EntityEntry
     public required string PartitionKey { get; init; }
     public required object Entity { get; init; }
     public required Type EntityType { get; init; }
-    public required IDictionary<string, object> ShadowProperties { get; init; }
-    public EntityState State { get; private set; } = EntityState.Detached;
+    public required ShadowPropertyStore Store { get; init; }
+    public IDictionary<string, object?> ShadowPropertyValues { get; private set; }
+        = ShadowPropertyStore.EmptyShadowPropertyEntry;
+    public EntityState State { get; set; } = EntityState.Detached;
 
     public bool IsModified => State == EntityState.Modified;
     public bool IsRemoved => State == EntityState.Removed;
@@ -43,8 +48,43 @@ public sealed class EntityEntry
     public void Detach() =>
         State = EntityState.Detached;
 
-    public TProperty? Property<TProperty>(string shadowPropertyName) =>
-        ShadowProperties.TryGetValue(shadowPropertyName, out var shadowPropertyValue)
-            ? (TProperty) shadowPropertyValue
+    public TProperty? ReadShadowProperty<TProperty>(string shadowPropertyName) =>
+        ShadowPropertyValues.TryGetValue(shadowPropertyName, out var shadowPropertyValue)
+            ? (TProperty?) shadowPropertyValue
             : default;
+
+    public void WriteShadowProperty<TProperty>(string shadowPropertyName, TProperty? value) =>
+        ShadowPropertyValues[shadowPropertyName] = value;
+
+    public void WriteShadowProperty(string shadowPropertyName, object? value) =>
+        ShadowPropertyValues[shadowPropertyName] = value;
+
+    /// <summary>
+    /// Borrows shadow properties from the store for the current entity.
+    /// </summary>
+    public void BorrowShadowPropertiesFromStore()
+    {
+        Debug.Assert(Entity != null);
+        ShadowPropertyValues = Store.Borrow(Entity);
+        Debug.WriteLine($"Retrieved entity '{Id}' from the shadow property store.");
+    }
+
+    /// <summary>
+    /// Returns the shadow properties of the entity to the store for JSON serialization.
+    /// </summary>
+    public void ReturnShadowPropertiesToStore()
+    {
+        Debug.Assert(Entity != null);
+
+        try
+        {
+            Store.Return(Entity, ShadowPropertyValues);
+            Debug.WriteLine($"Returned entity '{Id}' to the shadow property store.");
+        }
+
+        finally
+        {
+            ShadowPropertyValues = ShadowPropertyStore.EmptyShadowPropertyEntry;
+        }
+    }
 }
