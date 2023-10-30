@@ -70,21 +70,6 @@ public sealed class ChangeTracker : IDisposable
         return entity;
     }
 
-    public object GetOrRegisterUnchanged(object entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        var config = EntityConfiguration.Get(entity.GetType());
-        var id = config.IdSelector.GetString(entity);
-        
-        if (_entityByTypeId.TryGetValue((Type: entity.GetType(), Id: id), out var trackedEntity))
-            return trackedEntity;
-
-        RegisterUnchanged(entity);
-
-        return entity;
-    }
-
     /// <summary>
     /// Registers an entity as modified in the change tracker.
     /// </summary>
