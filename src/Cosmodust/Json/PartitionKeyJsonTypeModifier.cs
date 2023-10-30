@@ -6,9 +6,9 @@ namespace Cosmodust.Json;
 
 public sealed class PartitionKeyJsonTypeModifier : IJsonTypeModifier
 {
-    private readonly EntityConfigurationHolder _entityConfigurations;
+    private readonly EntityConfigurationProvider _entityConfigurations;
 
-    public PartitionKeyJsonTypeModifier(EntityConfigurationHolder entityConfigurations)
+    public PartitionKeyJsonTypeModifier(EntityConfigurationProvider entityConfigurations)
     {
         _entityConfigurations = entityConfigurations;
     }
@@ -17,7 +17,7 @@ public sealed class PartitionKeyJsonTypeModifier : IJsonTypeModifier
         if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object)
             return;
 
-        if (!_entityConfigurations.TryGet(jsonTypeInfo.Type, out var entityConfiguration))
+        if (!_entityConfigurations.TryGetEntityConfiguration(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
         var partitionKeyName = JsonNamingPolicy.CamelCase.ConvertName(

@@ -11,7 +11,9 @@ public class ShadowProperty
 
     public ShadowProperty() =>
         _defaultValue = new Lazy<object?>(valueFactory: () =>
-            Activator.CreateInstance(PropertyType ?? throw new InvalidOperationException()));
+            PropertyType == typeof(string)
+                ? default
+                : Activator.CreateInstance(PropertyType ?? throw new InvalidOperationException()));
 
     public required string PropertyName { get; init; }
     public required Type PropertyType { get; init; }

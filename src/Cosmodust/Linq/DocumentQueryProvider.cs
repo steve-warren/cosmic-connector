@@ -12,7 +12,7 @@ internal sealed class CosmodustLinqQueryProvider : IQueryProvider
         IDatabase database,
         EntityConfiguration entityConfiguration,
         ChangeTracker changeTracker,
-        string? partitionKey,
+        string partitionKey,
         IQueryProvider databaseLinqQueryProvider)
     {
         Database = database;
@@ -25,7 +25,7 @@ internal sealed class CosmodustLinqQueryProvider : IQueryProvider
     public IDatabase Database { get; }
     public ChangeTracker ChangeTracker { get; }
     public EntityConfiguration EntityConfiguration { get; }
-    public string? PartitionKey { get; }
+    public string PartitionKey { get; }
 
     public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {

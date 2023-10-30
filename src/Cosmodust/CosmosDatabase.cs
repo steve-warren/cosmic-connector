@@ -14,7 +14,6 @@ namespace Cosmodust.Cosmos;
 /// </summary>
 public sealed class CosmosDatabase : IDatabase
 {
-    private static readonly QueryRequestOptions s_defaultQueryRequestOptions = new();
     private static readonly CosmosLinqSerializerOptions s_cosmosLinqSerializerOptions =
         new() { PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase };
 
@@ -62,19 +61,6 @@ public sealed class CosmosDatabase : IDatabase
         GetContainerFor(containerName).GetItemLinqQueryable<TEntity>(
             linqSerializerOptions: s_cosmosLinqSerializerOptions);
 
-    public IQueryable<TEntity> GetLinqQuery<TEntity>(string containerName, string partitionKey)
-    {
-        var container = GetContainerFor(containerName);
-
-        var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKey) };
-
-        var query = container.GetItemLinqQueryable<TEntity>(
-            requestOptions: queryRequestOptions,
-            linqSerializerOptions: s_cosmosLinqSerializerOptions);
-
-        return query;
-    }
-
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(
         CosmodustLinqQuery<TEntity> query,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -86,10 +72,7 @@ public sealed class CosmosDatabase : IDatabase
         
         var container = GetContainerFor(query.EntityConfiguration.ContainerName);
         
-        var queryRequestOptions =
-            query.PartitionKey is null
-            ? s_defaultQueryRequestOptions
-            : new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
+        var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
 
         using var feed = container.GetItemQueryIterator<TEntity>(
             typedQueryDefinition,

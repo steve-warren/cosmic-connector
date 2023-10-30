@@ -20,11 +20,11 @@ public static class CosmodustServiceCollectionExtensions
             services.Configure(cosmodustOptionsAction);
 
         services.AddSingleton<ShadowPropertyStore>();
-        services.AddSingleton<EntityConfigurationHolder>();
+        services.AddSingleton<EntityConfigurationProvider>();
         services.AddSingleton<SqlParameterCache>();
         services.AddSingleton<CosmodustJsonSerializer>(sp =>
         {
-            var entityConfigurationHolder = sp.GetRequiredService<EntityConfigurationHolder>();
+            var entityConfigurationHolder = sp.GetRequiredService<EntityConfigurationProvider>();
 
             return new CosmodustJsonSerializer(
                 new IJsonTypeModifier[]

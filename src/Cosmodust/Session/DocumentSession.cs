@@ -11,7 +11,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
 {
     internal DocumentSession(
         IDatabase database,
-        EntityConfigurationHolder entityConfiguration,
+        EntityConfigurationProvider entityConfiguration,
         SqlParameterCache sqlParameterCache,
         ShadowPropertyStore shadowPropertyStore)
     {
@@ -25,7 +25,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
 
     public ChangeTracker ChangeTracker { get; }
     public IDatabase Database { get; }
-    public EntityConfigurationHolder EntityConfiguration { get; }
+    public EntityConfigurationProvider EntityConfiguration { get; }
     public SqlParameterCache SqlParameterCache { get; }
 
     /// <inheritdoc />

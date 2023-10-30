@@ -5,7 +5,8 @@ using Cosmodust.Tracking;
 namespace Cosmodust.Query;
 
 /// <summary>
-/// Represents a SQL query that can be executed against a database and returns a sequence of results of type <typeparamref name="TEntity"/>.
+/// Represents a SQL query that can be executed against a database
+/// and returns a sequence of results of type <typeparamref name="TEntity"/>.
 /// </summary>
 /// <typeparam name="TEntity">The type of the query result.</typeparam>
 public class SqlQuery<TEntity>
@@ -60,7 +61,7 @@ public class SqlQuery<TEntity>
     {
         var items = Database.ToAsyncEnumerable(this, cancellationToken);
 
-        await foreach (var item in items.WithCancellation(cancellationToken))
+        await foreach (var item in items)
         {
             ChangeTracker.RegisterUnchanged(item!);
             yield return item;

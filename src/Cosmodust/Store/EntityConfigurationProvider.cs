@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Cosmodust.Store;
 
-public class EntityConfigurationHolder
+public class EntityConfigurationProvider
 {
     private IDictionary<Type, EntityConfiguration> _mappings =
         new Dictionary<Type, EntityConfiguration>();
@@ -12,12 +12,12 @@ public class EntityConfigurationHolder
             ? mapping
             : throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
 
-    public bool TryGet(
+    public bool TryGetEntityConfiguration(
         Type entityType,
         [MaybeNullWhen(false)] out EntityConfiguration entityConfiguration) =>
         _mappings.TryGetValue(entityType, out entityConfiguration);
 
-    public void Add(EntityConfiguration mapping) =>
+    public void AddEntityConfiguration(EntityConfiguration mapping) =>
         _mappings.Add(mapping.EntityType, mapping);
 
     public void Configure() =>

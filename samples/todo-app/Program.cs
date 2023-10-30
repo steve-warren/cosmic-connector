@@ -23,7 +23,7 @@ builder.Services.AddSingleton<DocumentStore>(sp =>
     var store = new DocumentStore(
         database,
         options,
-        sp.GetRequiredService<EntityConfigurationHolder>(),
+        sp.GetRequiredService<EntityConfigurationProvider>(),
         sqlParameterCache: sp.GetRequiredService<SqlParameterCache>(),
         shadowPropertyStore: sp.GetRequiredService<ShadowPropertyStore>());
 

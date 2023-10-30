@@ -11,7 +11,7 @@ public sealed class ChangeTracker : IDisposable
     private readonly Dictionary<object, EntityEntry> _entriesByEntity = new();
 
     public ChangeTracker(
-        EntityConfigurationHolder entityConfiguration,
+        EntityConfigurationProvider entityConfiguration,
         ShadowPropertyStore shadowPropertyStore)
     {
         ArgumentNullException.ThrowIfNull(entityConfiguration);
@@ -21,7 +21,7 @@ public sealed class ChangeTracker : IDisposable
         ShadowPropertyStore = shadowPropertyStore;
     }
 
-    public EntityConfigurationHolder EntityConfiguration { get; }
+    public EntityConfigurationProvider EntityConfiguration { get; }
     public ShadowPropertyStore ShadowPropertyStore { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
