@@ -3,6 +3,7 @@ using Cosmodust.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Store;
+using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
 

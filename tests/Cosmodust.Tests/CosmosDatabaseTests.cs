@@ -11,6 +11,7 @@ using Cosmodust.Query;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Store;
+using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Tests;
@@ -56,7 +57,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
                         builder.HasEntity<BlogPost>()
                             .HasId(e => e.Id)
-                            .HasPartitionKey(e => e.PostId)
+                            .HasPartitionKey(e => e.Id, "id")
                             .HasField("_likes")
                             .ToContainer("blogPosts");
 
@@ -147,7 +148,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_List()
     {
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         var comments = new[]
         {
@@ -176,7 +177,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         var comments = new[]
         {
@@ -210,7 +211,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         var comments = new[]
         {
@@ -241,7 +242,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var session = _store.CreateSession();
 
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
         var comment = new BlogPostComment { Id = Guid.NewGuid().ToString(), PostId = post.Id };
 
         session.Store(post);
@@ -256,7 +257,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var writeSession = _store.CreateSession();
 
         var postId = DateTime.Now.ToFileTime().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         post.Like();
         post.GetLikes().Should().Be(1, because: "the post should have one like");
@@ -283,7 +284,6 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var blogPost = new BlogPost
         {
             Id = postId,
-            PostId = postId,
             Title = "🦖Rawr SQL!",
             PublishedOn = new DateTimeOffset(new DateTime(2000, 1, 1), TimeSpan.FromHours(-5))
         };

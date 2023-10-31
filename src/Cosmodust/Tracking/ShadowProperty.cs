@@ -1,6 +1,4 @@
-using Cosmodust.Session;
-
-namespace Cosmodust.Serialization;
+namespace Cosmodust.Tracking;
 
 /// <summary>
 /// Represents a shadow property that can be used to store additional data for an entity.

@@ -47,12 +47,14 @@ public class QueryFacade
             {
                 var readNextTask = feed.ReadNextAsync();
 
-                await flushTask;
-                using var response = await readNextTask;
+                await flushTask.ConfigureAwait(false);
+                using var response = await readNextTask.ConfigureAwait(false);
 
                 Debug.WriteLine($"{response.Headers.RequestCharge} RUs");
 
-                await using var stream = response.Content;
+                // ReSharper disable once UseAwaitUsing
+                // underlying stream is MemoryStream
+                using var stream = response.Content;
 
                 CopyStreamToWriter(
                     writer: writer,
@@ -61,13 +63,13 @@ public class QueryFacade
                 flushTask = writer.FlushAsync();
             }
 
-            await writer.CompleteAsync();
+            await writer.CompleteAsync().ConfigureAwait(false);
         }
 
         finally
         {
             if (!flushTask.IsCompleted)
-                await flushTask;
+                await flushTask.ConfigureAwait(false);
         }
     }
 

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using Microsoft.Azure.Cosmos;
 
@@ -24,6 +25,9 @@ internal class ReadItemOperation<TResult> : ICosmosReadOperation<TResult?>
                 _id,
                 new PartitionKey(_partitionKey),
                 cancellationToken: cancellationToken);
+
+            Debug.WriteLine(
+                $"Transaction operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
 
             return response.Resource;
         }

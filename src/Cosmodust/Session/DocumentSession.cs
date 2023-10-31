@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Cosmodust.Linq;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
+using Cosmodust.Shared;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 
@@ -34,8 +35,10 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         string partitionKey,
         CancellationToken cancellationToken = default)
     {
+        Ensure.NotNullOrWhiteSpace(id);
+        Ensure.NotNullOrWhiteSpace(partitionKey);
+
         var configuration = GetConfiguration<TEntity>();
-        ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
         if (ChangeTracker.TryGet(id, out TEntity? entity))
             return entity;

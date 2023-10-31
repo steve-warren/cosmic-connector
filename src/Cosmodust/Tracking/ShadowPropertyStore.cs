@@ -1,8 +1,7 @@
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 
-namespace Cosmodust.Session;
+namespace Cosmodust.Tracking;
 
 /// <summary>
 /// An in-memory store for storing shadow properties of entities. This class is thread-safe.

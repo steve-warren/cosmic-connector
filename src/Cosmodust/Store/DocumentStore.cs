@@ -2,6 +2,7 @@ using System.Text.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Shared;
+using Cosmodust.Tracking;
 
 namespace Cosmodust.Store;
 
