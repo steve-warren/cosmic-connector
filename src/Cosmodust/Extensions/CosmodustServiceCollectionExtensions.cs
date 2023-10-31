@@ -25,7 +25,7 @@ public static class CosmodustServiceCollectionExtensions
         services.Configure(cosmodustOptionsAction)
             .AddSingleton<ShadowPropertyStore>()
             .AddSingleton<EntityConfigurationProvider>()
-            .AddSingleton<SqlParameterCache>()
+            .AddSingleton<SqlParameterObjectTypeCache>()
             .AddSingleton<CosmodustJsonSerializer>(sp =>
             {
                 var entityConfigurationHolder = sp.GetRequiredService<EntityConfigurationProvider>();
@@ -65,7 +65,7 @@ public static class CosmodustServiceCollectionExtensions
                 return new QueryFacade(
                     sp.GetRequiredService<CosmosClient>(),
                     databaseName: options.DatabaseId,
-                    sp.GetRequiredService<SqlParameterCache>());
+                    sp.GetRequiredService<SqlParameterObjectTypeCache>());
             })
             .AddSingleton<DocumentStore>(sp =>
             {
@@ -79,10 +79,10 @@ public static class CosmodustServiceCollectionExtensions
                     database,
                     jsonSerializerOptions,
                     sp.GetRequiredService<EntityConfigurationProvider>(),
-                    sqlParameterCache: sp.GetRequiredService<SqlParameterCache>(),
+                    sqlParameterCache: sp.GetRequiredService<SqlParameterObjectTypeCache>(),
                     shadowPropertyStore: sp.GetRequiredService<ShadowPropertyStore>());
 
-                store.BuildModel(cosmodustOptions.ModelBuilder);
+                store.DefineModel(cosmodustOptions.ModelBuilder);
                 
                 return store;
             });

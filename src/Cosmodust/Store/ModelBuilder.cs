@@ -32,7 +32,7 @@ public class ModelBuilder
     /// </summary>
     /// <typeparam name="TEntity">The type of entity to be built.</typeparam>
     /// <returns>An instance of <see cref="EntityBuilder{TEntity}"/>.</returns>
-    public EntityBuilder<TEntity> HasEntity<TEntity>() where TEntity : class
+    public EntityBuilder<TEntity> DefineEntity<TEntity>() where TEntity : class
     {
         var entityBuilder = new EntityBuilder<TEntity>(_shadowPropertyStore);
 
@@ -61,7 +61,7 @@ public class ModelBuilder
     /// </summary>
     /// <typeparam name="TEnumeration">The type of the value object.</typeparam>
     /// <returns>The current instance of <see cref="ModelBuilder"/>.</returns>
-    public ModelBuilder HasValueObject<TEnumeration>() where TEnumeration : class
+    public ModelBuilder DefineEnumeration<TEnumeration>() where TEnumeration : class
     {
         var jsonConverter = new ValueObjectJsonConverter<TEnumeration>();
 

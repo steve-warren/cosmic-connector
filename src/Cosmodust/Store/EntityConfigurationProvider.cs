@@ -7,7 +7,7 @@ public class EntityConfigurationProvider
     private IDictionary<Type, EntityConfiguration> _mappings =
         new Dictionary<Type, EntityConfiguration>();
 
-    public EntityConfiguration Get(Type entityType) =>
+    public EntityConfiguration GetEntityConfiguration(Type entityType) =>
         _mappings.TryGetValue(entityType, out var mapping)
             ? mapping
             : throw new InvalidOperationException($"No configuration has been registered for type {entityType.FullName}.");
@@ -20,6 +20,6 @@ public class EntityConfigurationProvider
     public void AddEntityConfiguration(EntityConfiguration mapping) =>
         _mappings.Add(mapping.EntityType, mapping);
 
-    public void Configure() =>
+    public void Build() =>
         _mappings = _mappings.AsReadOnly();
 }

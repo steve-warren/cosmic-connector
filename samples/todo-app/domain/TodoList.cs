@@ -6,7 +6,7 @@ public class TodoList
                     string name,
                     string ownerId)
     {
-        Id = ListId = id;
+        Id = id;
         Name = name;
         OwnerId = ownerId;
         ArchiveState = ArchiveState.NotArchived;
@@ -14,7 +14,6 @@ public class TodoList
 
     public string Id { get; private set; }
     public string OwnerId { get; private set; }
-    public string ListId { get; private set; }
     public string Name { get; private set; }
     public int Count => Items.Count;
     private List<string> Items { get; init; } = new();

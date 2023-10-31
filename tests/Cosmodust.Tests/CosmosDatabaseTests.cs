@@ -31,7 +31,9 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         {
             new BackingFieldJsonTypeModifier(entityConfiguration),
             new PropertyJsonTypeModifier(entityConfiguration),
-            new ShadowPropertyJsonTypeModifier(entityConfiguration), new TypeMetadataJsonTypeModifier()
+            new ShadowPropertyJsonTypeModifier(entityConfiguration),
+            new PartitionKeyJsonTypeModifier(entityConfiguration),
+            new TypeMetadataJsonTypeModifier()
         });
         
         var cosmosClient = new CosmosClient(configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
@@ -46,32 +48,32 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                 serializer.Options,
                 entityConfiguration,
                 shadowPropertyStore: shadowPropertyCache)
-                    .BuildModel(builder =>
+                    .DefineModel(builder =>
                     {
-                        builder.HasEntity<AccountPlan>()
-                            .HasId(e => e.Id)
-                            .HasPartitionKey(
+                        builder.DefineEntity<AccountPlan>()
+                            .WithId(e => e.Id)
+                            .WithPartitionKey(
                                 e => e.Id,
                                 "ownerId")
                             .ToContainer("accountPlans");
 
-                        builder.HasEntity<BlogPost>()
-                            .HasId(e => e.Id)
-                            .HasPartitionKey(e => e.Id, "id")
+                        builder.DefineEntity<BlogPost>()
+                            .WithId(e => e.Id)
+                            .WithPartitionKey(e => e.Id, "postId")
                             .HasField("_likes")
                             .ToContainer("blogPosts");
 
-                        builder.HasEntity<BlogPostComment>()
-                            .HasId(e => e.Id)
-                            .HasShadowProperty<DateTime>("createdOn")
-                            .HasPartitionKey(e => e.PostId)
+                        builder.DefineEntity<BlogPostComment>()
+                            .WithId(e => e.Id)
+                            .WithShadowProperty<DateTime>("createdOn")
+                            .WithPartitionKey(e => e.PostId)
                             .ToContainer("blogPosts");
                     });
 
         _queryFacade = new QueryFacade(
             client: cosmosClient,
             databaseName: "reminderdb",
-            sqlParameterCache: new SqlParameterCache());
+            sqlParameterObjectTypeCache: new SqlParameterObjectTypeCache());
     }
 
     [Fact]

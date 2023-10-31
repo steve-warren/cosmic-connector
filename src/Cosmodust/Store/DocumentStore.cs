@@ -14,14 +14,14 @@ public class DocumentStore : IDocumentStore
     private readonly IDatabase _database;
     private readonly JsonSerializerOptions _options;
     private readonly EntityConfigurationProvider _entityConfiguration;
-    private readonly SqlParameterCache _sqlParameterCache;
+    private readonly SqlParameterObjectTypeCache _sqlParameterObjectTypeCache;
     private readonly ShadowPropertyStore _shadowPropertyStore;
 
     public DocumentStore(
         IDatabase database,
         JsonSerializerOptions? options = default,
         EntityConfigurationProvider? entityConfiguration = default,
-        SqlParameterCache? sqlParameterCache = default,
+        SqlParameterObjectTypeCache? sqlParameterCache = default,
         ShadowPropertyStore? shadowPropertyStore = default)
     {
         Ensure.NotNull(database);
@@ -30,8 +30,8 @@ public class DocumentStore : IDocumentStore
         _options = options ?? new JsonSerializerOptions();
         _entityConfiguration = entityConfiguration
                                ?? new EntityConfigurationProvider();
-        _sqlParameterCache = sqlParameterCache
-                             ?? new SqlParameterCache();
+        _sqlParameterObjectTypeCache = sqlParameterCache
+                             ?? new SqlParameterObjectTypeCache();
         _shadowPropertyStore = shadowPropertyStore
                                ?? new ShadowPropertyStore();
     }
@@ -41,7 +41,7 @@ public class DocumentStore : IDocumentStore
         return new DocumentSession(
             _database,
             _entityConfiguration,
-            _sqlParameterCache,
+            _sqlParameterObjectTypeCache,
             _shadowPropertyStore);
     }
 
@@ -50,7 +50,7 @@ public class DocumentStore : IDocumentStore
     /// </summary>
     /// <param name="builder">The action used to configure the entities.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore BuildModel(Action<ModelBuilder> builder)
+    public DocumentStore DefineModel(Action<ModelBuilder> builder)
     {
         Ensure.NotNull(builder);
 
@@ -61,7 +61,7 @@ public class DocumentStore : IDocumentStore
             _entityConfiguration.AddEntityConfiguration(configuration);
 
         // marks the entity configuration object as read-only
-        _entityConfiguration.Configure();
+        _entityConfiguration.Build();
 
         return this;
     }

@@ -13,12 +13,12 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     internal DocumentSession(
         IDatabase database,
         EntityConfigurationProvider entityConfiguration,
-        SqlParameterCache sqlParameterCache,
+        SqlParameterObjectTypeCache sqlParameterObjectTypeCache,
         ShadowPropertyStore shadowPropertyStore)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
-        SqlParameterCache = sqlParameterCache;
+        SqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
             shadowPropertyStore);
@@ -27,7 +27,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     public ChangeTracker ChangeTracker { get; }
     public IDatabase Database { get; }
     public EntityConfigurationProvider EntityConfiguration { get; }
-    public SqlParameterCache SqlParameterCache { get; }
+    public SqlParameterObjectTypeCache SqlParameterObjectTypeCache { get; }
 
     /// <inheritdoc />
     public async ValueTask<TEntity?> FindAsync<TEntity>(
@@ -85,7 +85,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
             entityConfiguration: config,
             sql: sql,
             partitionKey: partitionKey,
-            parameters: SqlParameterCache.ExtractParametersFromObject(parameters));
+            parameters: SqlParameterObjectTypeCache.ExtractParametersFromObject(parameters));
     }
 
     /// <inheritdoc />
@@ -132,6 +132,6 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     }
 
     private EntityConfiguration GetConfiguration<TEntity>() =>
-        EntityConfiguration.Get(typeof(TEntity)) ??
+        EntityConfiguration.GetEntityConfiguration(typeof(TEntity)) ??
         throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
 }

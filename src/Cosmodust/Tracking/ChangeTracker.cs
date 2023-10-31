@@ -60,7 +60,7 @@ public sealed class ChangeTracker : IDisposable
     {
         Ensure.NotNull(entity);
 
-        var config = EntityConfiguration.Get(entity.GetType());
+        var config = EntityConfiguration.GetEntityConfiguration(entity.GetType());
         var id = config.IdSelector.GetString(entity);
 
         if (_entityByTypeId.TryGetValue((Type: entity.GetType(), Id: id), out var trackedEntity))
@@ -170,7 +170,7 @@ public sealed class ChangeTracker : IDisposable
 
         var entityType = entity.GetType();
 
-        var config = EntityConfiguration.Get(entityType);
+        var config = EntityConfiguration.GetEntityConfiguration(entityType);
         var id = config.IdSelector.GetString(entity);
 
         if (_entityByTypeId.ContainsKey((Type: entityType, Id: id)))

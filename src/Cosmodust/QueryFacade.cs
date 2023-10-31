@@ -8,15 +8,15 @@ namespace Cosmodust.Cosmos;
 public class QueryFacade
 {
     private readonly Database _database;
-    private readonly SqlParameterCache _sqlParameterCache;
+    private readonly SqlParameterObjectTypeCache _sqlParameterObjectTypeCache;
 
     public QueryFacade(
         CosmosClient client,
         string databaseName,
-        SqlParameterCache sqlParameterCache)
+        SqlParameterObjectTypeCache sqlParameterObjectTypeCache)
     {
         _database = client.GetDatabase(databaseName);
-        _sqlParameterCache = sqlParameterCache;
+        _sqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
     }
 
     public async ValueTask ExecuteQueryAsync(
@@ -30,7 +30,7 @@ public class QueryFacade
 
         var query = new QueryDefinition(sql);
 
-        foreach (var parameter in _sqlParameterCache.ExtractParametersFromObject(parameters))
+        foreach (var parameter in _sqlParameterObjectTypeCache.ExtractParametersFromObject(parameters))
             query.WithParameter(parameter.Name, parameter.Value);
 
         using var feed = container.GetItemQueryStreamIterator(query,
