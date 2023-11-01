@@ -1,17 +1,25 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
 name: .NET
 
 on:
+  workflow_dispatch: 
+  push:
+    branches: ['master']
   pull_request:
-    branches: [ "master" ]
+    branches: ['master']
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  NuGetDirectory: ${{github.workspace}}/nuget
+
+defaults:
+  run:
+    shell: pwsh
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
