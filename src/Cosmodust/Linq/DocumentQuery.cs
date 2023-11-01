@@ -39,7 +39,7 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
         Expression = databaseLinqQuery.Expression;
         Provider = cosmodustLinqQueryProvider;
     }
-    
+
     public Type ElementType { get; }
     public Expression Expression { get; }
     public IQueryProvider Provider { get; }

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Shared;
+using Cosmodust.Tracking;
 
 namespace Cosmodust.Store;
 
@@ -13,15 +14,15 @@ public class DocumentStore : IDocumentStore
     private readonly IDatabase _database;
     private readonly JsonSerializerOptions _options;
     private readonly EntityConfigurationProvider _entityConfiguration;
-    private readonly SqlParameterCache _sqlParameterCache;
-    private readonly ShadowPropertyStore _shadowPropertyStore;
+    private readonly SqlParameterObjectTypeCache _sqlParameterObjectTypeCache;
+    private readonly JsonSerializerPropertyStore _jsonSerializerPropertyStore;
 
     public DocumentStore(
         IDatabase database,
         JsonSerializerOptions? options = default,
         EntityConfigurationProvider? entityConfiguration = default,
-        SqlParameterCache? sqlParameterCache = default,
-        ShadowPropertyStore? shadowPropertyStore = default)
+        SqlParameterObjectTypeCache? sqlParameterCache = default,
+        JsonSerializerPropertyStore? shadowPropertyStore = default)
     {
         Ensure.NotNull(database);
 
@@ -29,10 +30,10 @@ public class DocumentStore : IDocumentStore
         _options = options ?? new JsonSerializerOptions();
         _entityConfiguration = entityConfiguration
                                ?? new EntityConfigurationProvider();
-        _sqlParameterCache = sqlParameterCache
-                             ?? new SqlParameterCache();
-        _shadowPropertyStore = shadowPropertyStore
-                               ?? new ShadowPropertyStore();
+        _sqlParameterObjectTypeCache = sqlParameterCache
+                             ?? new SqlParameterObjectTypeCache();
+        _jsonSerializerPropertyStore = shadowPropertyStore
+                               ?? new JsonSerializerPropertyStore();
     }
 
     public DocumentSession CreateSession()
@@ -40,8 +41,8 @@ public class DocumentStore : IDocumentStore
         return new DocumentSession(
             _database,
             _entityConfiguration,
-            _sqlParameterCache,
-            _shadowPropertyStore);
+            _sqlParameterObjectTypeCache,
+            _jsonSerializerPropertyStore);
     }
 
     /// <summary>
@@ -49,18 +50,18 @@ public class DocumentStore : IDocumentStore
     /// </summary>
     /// <param name="builder">The action used to configure the entities.</param>
     /// <returns>The current instance of the <see cref="DocumentStore"/> class.</returns>
-    public DocumentStore BuildModel(Action<ModelBuilder> builder)
+    public DocumentStore DefineModel(Action<ModelBuilder> builder)
     {
         Ensure.NotNull(builder);
 
-        var modelBuilder = new ModelBuilder(_options, _shadowPropertyStore);
+        var modelBuilder = new ModelBuilder(_options, _jsonSerializerPropertyStore);
         builder(modelBuilder);
 
         foreach (var configuration in modelBuilder.Build())
             _entityConfiguration.AddEntityConfiguration(configuration);
 
         // marks the entity configuration object as read-only
-        _entityConfiguration.Configure();
+        _entityConfiguration.Build();
 
         return this;
     }

@@ -174,7 +174,7 @@ public class SerializationTests
             TimeStamp = new DateTime(year: 2000, month: 01, day: 01)
         };
 
-        var cache = new SqlParameterCache();
+        var cache = new SqlParameterObjectTypeCache();
         var parameters = cache.ExtractParametersFromObject(type).ToList();
 
         parameters[0].Should().Be(("@" + nameof(type.Id), type.Id), because: "the id property name and value must match.");

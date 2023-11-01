@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Cosmodust.Linq;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
+using Cosmodust.Shared;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 
@@ -12,21 +13,21 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     internal DocumentSession(
         IDatabase database,
         EntityConfigurationProvider entityConfiguration,
-        SqlParameterCache sqlParameterCache,
-        ShadowPropertyStore shadowPropertyStore)
+        SqlParameterObjectTypeCache sqlParameterObjectTypeCache,
+        JsonSerializerPropertyStore jsonSerializerPropertyStore)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
-        SqlParameterCache = sqlParameterCache;
+        SqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
-            shadowPropertyStore);
+            jsonSerializerPropertyStore);
     }
 
     public ChangeTracker ChangeTracker { get; }
     public IDatabase Database { get; }
     public EntityConfigurationProvider EntityConfiguration { get; }
-    public SqlParameterCache SqlParameterCache { get; }
+    public SqlParameterObjectTypeCache SqlParameterObjectTypeCache { get; }
 
     /// <inheritdoc />
     public async ValueTask<TEntity?> FindAsync<TEntity>(
@@ -34,17 +35,26 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         string partitionKey,
         CancellationToken cancellationToken = default)
     {
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Document id key required.");
+
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Partition key required.");
+
         var configuration = GetConfiguration<TEntity>();
-        ArgumentException.ThrowIfNullOrEmpty(id, nameof(id));
 
         if (ChangeTracker.TryGet(id, out TEntity? entity))
             return entity;
 
-        entity = await Database.FindAsync<TEntity>(
+        var readOperationResult = await Database.FindAsync<TEntity>(
             configuration.ContainerName,
             id,
             partitionKey,
             cancellationToken);
+
+        entity = (TEntity?) readOperationResult.Entity;
 
         if (entity is null)
             return default;
@@ -57,6 +67,10 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     /// <inheritdoc />
     public IQueryable<TEntity> Query<TEntity>(string partitionKey)
     {
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Partition key required.");
+
         var entityConfiguration = GetConfiguration<TEntity>();
         var queryable = Database.CreateLinqQuery<TEntity>(entityConfiguration.ContainerName);
 
@@ -74,6 +88,14 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         string sql,
         object? parameters = null)
     {
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Partition key required.");
+        
+        Ensure.NotNullOrWhiteSpace(
+            argument: sql,
+            message: "Query required.");
+
         var config = GetConfiguration<TEntity>();
 
         return new SqlQuery<TEntity>(
@@ -82,27 +104,27 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
             entityConfiguration: config,
             sql: sql,
             partitionKey: partitionKey,
-            parameters: SqlParameterCache.ExtractParametersFromObject(parameters));
+            parameters: SqlParameterObjectTypeCache.ExtractParametersFromObject(parameters));
     }
 
     /// <inheritdoc />
     public void Store<TEntity>(TEntity entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
         ChangeTracker.RegisterAdded(entity);
     }
 
     /// <inheritdoc />
     public void Update<TEntity>(TEntity entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
         ChangeTracker.RegisterModified(entity);
     }
 
     /// <inheritdoc />
     public void Remove<TEntity>(TEntity entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
         ChangeTracker.RegisterRemoved(entity);
     }
 
@@ -120,7 +142,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         ChangeTracker.Commit();
     }
 
-    public EntityEntry? Entity(object entity) =>
+    public EntityEntry Entity(object entity) =>
         ChangeTracker.Entry(entity);
 
     public void Dispose()
@@ -129,6 +151,6 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     }
 
     private EntityConfiguration GetConfiguration<TEntity>() =>
-        EntityConfiguration.Get(typeof(TEntity)) ??
+        EntityConfiguration.GetEntityConfiguration(typeof(TEntity)) ??
         throw new InvalidOperationException($"No configuration has been registered for type {typeof(TEntity).FullName}.");
 }

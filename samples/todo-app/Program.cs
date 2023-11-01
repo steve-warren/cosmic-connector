@@ -11,29 +11,28 @@ services.AddCosmodust(
             .WithDatabase("reminderdb")
             .WithModel(modelBuilder =>
             {
-                modelBuilder.HasEntity<Account>()
-                    .HasId(e => e.Id)
-                    .HasPartitionKey(
+                modelBuilder.DefineEntity<Account>()
+                    .WithId(e => e.Id)
+                    .WithPartitionKey(
                         e => e.Id,
                         "ownerId")
                     .ToContainer("todo");
 
-                modelBuilder.HasEntity<TodoList>()
-                    .HasId(e => e.Id)
-                    .HasPartitionKey(e => e.OwnerId)
-                    .HasProperty("Items")
-                    .HasShadowProperty<string>("_etag")
-                    .HasShadowProperty<long>("_ts")
+                modelBuilder.DefineEntity<TodoList>()
+                    .WithId(e => e.Id)
+                    .WithPartitionKey(e => e.OwnerId)
+                    .WithProperty("Items")
+                    .WithShadowProperty<long>("_ts")
                     .ToContainer("todo");
 
-                modelBuilder.HasEntity<TodoItem>()
-                    .HasId(e => e.Id)
-                    .HasPartitionKey(e => e.OwnerId)
+                modelBuilder.DefineEntity<TodoItem>()
+                    .WithId(e => e.Id)
+                    .WithPartitionKey(e => e.OwnerId)
                     .ToContainer("todo");
 
-                modelBuilder.HasValueObject<ArchiveState>()
-                    .HasValueObject<TodoItemCompletedState>()
-                    .HasValueObject<TodoItemPriority>();
+                modelBuilder.DefineEnumeration<ArchiveState>()
+                    .DefineEnumeration<TodoItemCompletedState>()
+                    .DefineEnumeration<TodoItemPriority>();
             });
     });
 

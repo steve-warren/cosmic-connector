@@ -1,6 +1,4 @@
 using System.IO.Pipelines;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos;
 using Cosmodust.Cosmos.Tests;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
@@ -9,8 +7,8 @@ using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
-using Cosmodust.Session;
 using Cosmodust.Store;
+using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Tests;
@@ -25,12 +23,15 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var configuration = configurationTextFixture.Configuration;
 
         var entityConfiguration = new EntityConfigurationProvider();
-        var shadowPropertyCache = new ShadowPropertyStore();
+        var propertyStore = new JsonSerializerPropertyStore();
         var serializer = new CosmodustJsonSerializer(new IJsonTypeModifier[]
         {
             new BackingFieldJsonTypeModifier(entityConfiguration),
             new PropertyJsonTypeModifier(entityConfiguration),
-            new ShadowPropertyJsonTypeModifier(entityConfiguration), new TypeMetadataJsonTypeModifier()
+            new ShadowPropertyJsonTypeModifier(entityConfiguration),
+            new PartitionKeyJsonTypeModifier(entityConfiguration),
+            new TypeMetadataJsonTypeModifier(),
+            new DocumentETagJsonTypeModifier(entityConfiguration, propertyStore)
         });
         
         var cosmosClient = new CosmosClient(configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
@@ -41,36 +42,39 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var db = cosmosClient.GetDatabase("reminderdb");
 
         _store = new DocumentStore(
-                new CosmosDatabase(db),
+                new CosmosDatabase(db, new CosmosLinqSerializerOptions
+                {
+                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                }),
                 serializer.Options,
                 entityConfiguration,
-                shadowPropertyStore: shadowPropertyCache)
-                    .BuildModel(builder =>
+                shadowPropertyStore: propertyStore)
+                    .DefineModel(builder =>
                     {
-                        builder.HasEntity<AccountPlan>()
-                            .HasId(e => e.Id)
-                            .HasPartitionKey(
+                        builder.DefineEntity<AccountPlan>()
+                            .WithId(e => e.Id)
+                            .WithPartitionKey(
                                 e => e.Id,
                                 "ownerId")
                             .ToContainer("accountPlans");
 
-                        builder.HasEntity<BlogPost>()
-                            .HasId(e => e.Id)
-                            .HasPartitionKey(e => e.PostId)
+                        builder.DefineEntity<BlogPost>()
+                            .WithId(e => e.Id)
+                            .WithPartitionKey(e => e.Id, "postId")
                             .HasField("_likes")
                             .ToContainer("blogPosts");
 
-                        builder.HasEntity<BlogPostComment>()
-                            .HasId(e => e.Id)
-                            .HasShadowProperty<DateTime>("createdOn")
-                            .HasPartitionKey(e => e.PostId)
+                        builder.DefineEntity<BlogPostComment>()
+                            .WithId(e => e.Id)
+                            .WithShadowProperty<DateTime>("createdOn")
+                            .WithPartitionKey(e => e.PostId)
                             .ToContainer("blogPosts");
                     });
 
         _queryFacade = new QueryFacade(
             client: cosmosClient,
             databaseName: "reminderdb",
-            sqlParameterCache: new SqlParameterCache());
+            sqlParameterObjectTypeCache: new SqlParameterObjectTypeCache());
     }
 
     [Fact]
@@ -147,7 +151,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_List()
     {
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         var comments = new[]
         {
@@ -176,7 +180,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_AsyncEnumerable()
     {
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         var comments = new[]
         {
@@ -210,7 +214,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     public async Task Can_Execute_Linq_Query_As_FirstOrDefault()
     {
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         var comments = new[]
         {
@@ -241,7 +245,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var session = _store.CreateSession();
 
         var postId = Guid.NewGuid().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
         var comment = new BlogPostComment { Id = Guid.NewGuid().ToString(), PostId = post.Id };
 
         session.Store(post);
@@ -256,7 +260,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var writeSession = _store.CreateSession();
 
         var postId = DateTime.Now.ToFileTime().ToString();
-        var post = new BlogPost { Id = postId, PostId = postId };
+        var post = new BlogPost { Id = postId };
 
         post.Like();
         post.GetLikes().Should().Be(1, because: "the post should have one like");
@@ -283,7 +287,6 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var blogPost = new BlogPost
         {
             Id = postId,
-            PostId = postId,
             Title = "🦖Rawr SQL!",
             PublishedOn = new DateTimeOffset(new DateTime(2000, 1, 1), TimeSpan.FromHours(-5))
         };
@@ -349,5 +352,101 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var readProperty = readSession.Entity(readComment!)!.ReadShadowProperty<DateTime>(shadowProperty.Name);
 
         readProperty.Should().Be(shadowProperty.Value);
+    }
+
+    [Fact]
+    public async Task Should_Return_Entity_ETag_During_Read_Operation()
+    {
+        var id = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        var comment = new BlogPostComment
+        {
+            Id = id,
+            PostId = Guid.NewGuid().ToString()
+        };
+
+        writeSession.Store(comment);
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComment = await readSession.FindAsync<BlogPostComment>(
+            id: id,
+            partitionKey: comment.PostId);
+
+        Assert.NotNull(readComment);
+
+        readComment.Should().NotBeNull(because: "the entity should be returned from the database.");
+        var entry = readSession.Entity(readComment);
+
+        entry.ETag.Should().NotBeEmpty(because: "the ETag should be returned from the database.");
+    }
+
+    [Fact]
+    public async Task Should_Return_Entity_ETag_During_Linq_Query_Operation()
+    {
+        var postId = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        for (var i = 0; i < 2; i++)
+        {
+            var comment = new BlogPostComment { Id = Guid.NewGuid().ToString(), PostId = postId };
+
+            writeSession.Store(comment);
+        }
+
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComments = await readSession.Query<BlogPostComment>(
+            partitionKey: postId)
+            .Where(c => c.PostId == postId)
+            .ToListAsync();
+
+        foreach (var readComment in readComments)
+        {
+            Assert.NotNull(readComment);
+
+            var entry = readSession.Entity(readComment);
+
+            entry.ETag.Should().NotBeEmpty(because: "the ETag should be returned from the database.");
+        }
+    }
+
+    [Fact]
+    public async Task Should_Return_Entity_ETag_During_Sql_Query_Operation()
+    {
+        var postId = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        for (var i = 0; i < 2; i++)
+        {
+            var comment = new BlogPostComment { Id = Guid.NewGuid().ToString(), PostId = postId };
+
+            writeSession.Store(comment);
+        }
+
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComments = await readSession.Query<BlogPostComment>(
+            partitionKey: postId,
+            sql: "select * from c where c.postId = @postId",
+            parameters: new { postId = postId }).ToListAsync();
+
+        foreach (var readComment in readComments)
+        {
+            Assert.NotNull(readComment);
+
+            var entry = readSession.Entity(readComment);
+
+            entry.ETag.Should().NotBeEmpty(because: "the ETag should be returned from the database.");
+        }
     }
 }

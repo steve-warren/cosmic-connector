@@ -1,6 +1,7 @@
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Shared;
+using Cosmodust.Tracking;
 
 namespace Cosmodust.Store;
 
@@ -10,17 +11,17 @@ namespace Cosmodust.Store;
 /// <typeparam name="TEntity">The type of entity to configure.</typeparam>
 public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 {
-    private readonly ShadowPropertyStore _shadowPropertyStore;
+    private readonly JsonSerializerPropertyStore _jsonSerializerPropertyStore;
     private EntityConfiguration _entityConfiguration = new(typeof(TEntity));
     private readonly HashSet<FieldAccessor> _fields = new();
     private readonly HashSet<PropertyAccessor> _properties = new();
     private readonly HashSet<ShadowProperty> _shadowProperties = new();
 
-    public EntityBuilder(ShadowPropertyStore shadowPropertyStore)
+    public EntityBuilder(JsonSerializerPropertyStore jsonSerializerPropertyStore)
     {
-        Ensure.NotNull(shadowPropertyStore);
+        Ensure.NotNull(jsonSerializerPropertyStore);
 
-        _shadowPropertyStore = shadowPropertyStore;
+        _jsonSerializerPropertyStore = jsonSerializerPropertyStore;
     }
 
     /// <summary>
@@ -28,7 +29,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// </summary>
     /// <param name="idSelector">A function that extracts the ID value from an entity instance.</param>
     /// <returns>The entity builder instance.</returns>
-    public EntityBuilder<TEntity> HasId(Func<TEntity, string> idSelector)
+    public EntityBuilder<TEntity> WithId(Func<TEntity, string> idSelector)
     {
         Ensure.NotNull(idSelector);
 
@@ -42,7 +43,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// </summary>
     /// <param name="partitionKeySelector">A function that selects the partition key for the entity.</param>
     /// <returns>The entity builder instance.</returns>
-    public EntityBuilder<TEntity> HasPartitionKey(Func<TEntity, string> partitionKeySelector)
+    public EntityBuilder<TEntity> WithPartitionKey(Func<TEntity, string> partitionKeySelector)
     {
         Ensure.NotNull(partitionKeySelector);
 
@@ -54,7 +55,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return this;
     }
 
-    public EntityBuilder<TEntity> HasPartitionKey(
+    public EntityBuilder<TEntity> WithPartitionKey(
         Func<TEntity, string> partitionKeySelector,
     string partitionKeyName)
     {
@@ -86,7 +87,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return this;
     }
 
-    public EntityBuilder<TEntity> HasProperty(string propertyName)
+    public EntityBuilder<TEntity> WithProperty(string propertyName)
     {
         Ensure.NotNullOrWhiteSpace(propertyName);
 
@@ -97,7 +98,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return this;
     }
 
-    public EntityBuilder<TEntity> HasShadowProperty<TProperty>(string propertyName)
+    public EntityBuilder<TEntity> WithShadowProperty<TProperty>(string propertyName)
     {
         Ensure.NotNullOrWhiteSpace(propertyName);
 
@@ -105,7 +106,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         {
             PropertyType = typeof(TProperty),
             PropertyName = propertyName,
-            Store = _shadowPropertyStore
+            Store = _jsonSerializerPropertyStore
         };
 
         _shadowProperties.Add(shadowProperty);

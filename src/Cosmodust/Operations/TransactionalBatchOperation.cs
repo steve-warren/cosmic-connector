@@ -48,11 +48,13 @@ public class TransactionalBatchOperation
 
         var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
 
-        foreach (var entry in entries)
+        var entityEntries = entries.ToList();
+
+        foreach (var entry in entityEntries)
         {
-            // return the shadow property to the store
+            // send the json properties to the store
             // for the json serializer to pick up
-            entry.ReturnShadowPropertiesToStore();
+            entry.SendJsonPropertiesToSerializer();
 
             _ = entry.State switch
             {
@@ -65,11 +67,19 @@ public class TransactionalBatchOperation
             };
         }
 
-        var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        var batchResponse = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-        Debug.WriteLine(
-            $"Transaction operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
+        Debug.Assert(batchResponse.Count == entityEntries.Count);
 
-        return response;
+        for(var i = 0; i < entityEntries.Count; i ++)
+        {
+            var entry = entityEntries[i];
+            var itemResponse = batchResponse[i];
+
+            entry.FetchJsonPropertiesFromSerializer();
+            entry.UpdateETag(itemResponse.ETag);
+        }
+
+        return batchResponse;
     }
 }

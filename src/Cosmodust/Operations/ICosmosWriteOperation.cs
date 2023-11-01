@@ -4,5 +4,5 @@ namespace Cosmodust.Operations;
 
 internal interface ICosmosWriteOperation
 {
-    Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default);
+    Task<OperationResult> ExecuteAsync(CancellationToken cancellationToken = default);
 }

@@ -7,32 +7,32 @@ namespace Cosmodust.Tracking;
 
 public sealed class ChangeTracker : IDisposable
 {
+    private readonly JsonSerializerPropertyStore _propertyStore;
     private readonly List<EntityEntry> _entries = new();
     private readonly Dictionary<(Type Type, string Id), object> _entityByTypeId = new();
     private readonly Dictionary<object, EntityEntry> _entriesByEntity = new();
 
     public ChangeTracker(
         EntityConfigurationProvider entityConfiguration,
-        ShadowPropertyStore shadowPropertyStore)
+        JsonSerializerPropertyStore propertyStore)
     {
         Ensure.NotNull(entityConfiguration);
-        Ensure.NotNull(shadowPropertyStore);
+        Ensure.NotNull(propertyStore);
 
         EntityConfiguration = entityConfiguration;
-        ShadowPropertyStore = shadowPropertyStore;
+        _propertyStore = propertyStore;
     }
 
     public EntityConfigurationProvider EntityConfiguration { get; }
-    public ShadowPropertyStore ShadowPropertyStore { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
     public IEnumerable<EntityEntry> PendingChanges =>
         _entries.Where(x => x.State != EntityState.Unchanged);
 
-    public EntityEntry? Entry(object entity) =>
+    public EntityEntry Entry(object entity) =>
         _entriesByEntity.TryGetValue(key: entity, out var entry)
             ? entry
-            : default;
+            : throw new InvalidOperationException("Entity has not been loaded into the session.");
 
     /// <summary>
     /// Registers an entity as added in the change tracker.
@@ -42,25 +42,35 @@ public sealed class ChangeTracker : IDisposable
     {
         Ensure.NotNull(entity);
 
-        CreateEntry(entity, EntityState.Added);
+        var entry = CreateEntry(entity, EntityState.Added);
+
+        TrackEntity(entry);
     }
 
     /// <summary>
     /// Registers an entity as unchanged in the change tracker.
     /// </summary>
     /// <param name="entity">The entity to register.</param>
-    public void RegisterUnchanged(object entity)
+    /// <param name="eTag">The ETag of the entity.</param>
+    public void RegisterUnchanged(object entity, string? eTag = null)
     {
         Ensure.NotNull(entity);
 
-        CreateEntry(entity, EntityState.Unchanged);
+        var entry = CreateEntry(entity, EntityState.Unchanged);
+
+        if (eTag is not null)
+            entry.WriteShadowProperty("_etag", eTag);
+
+        entry.ETag = eTag ?? entry.ReadShadowProperty<string>("_etag");
+
+        TrackEntity(entry);
     }
 
     public object GetOrRegisterUnchanged(object entity)
     {
         Ensure.NotNull(entity);
 
-        var config = EntityConfiguration.Get(entity.GetType());
+        var config = EntityConfiguration.GetEntityConfiguration(entity.GetType());
         var id = config.IdSelector.GetString(entity);
 
         if (_entityByTypeId.TryGetValue((Type: entity.GetType(), Id: id), out var trackedEntity))
@@ -145,59 +155,41 @@ public sealed class ChangeTracker : IDisposable
                     break;
 
                 case EntityState.Removed:
-                    OnRemove(entry);
+                    UntrackEntity(entry);
                     i--;
                     break;
                 case EntityState.Unchanged:
                     break;
             }
-
-            // now that all writes are finished, borrow
-            entry.BorrowShadowPropertiesFromStore();
         }
-    }
-
-    private void OnRemove(EntityEntry entry)
-    {
-        entry.Detach();
-        _entries.Remove(entry);
-        _entityByTypeId.Remove((Type: entry.EntityType, entry.Id));
     }
 
     private EntityEntry CreateEntry(object entity, EntityState state)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
 
         var entityType = entity.GetType();
-
-        var config = EntityConfiguration.Get(entityType);
-        var id = config.IdSelector.GetString(entity);
-
-        if (_entityByTypeId.ContainsKey((Type: entityType, Id: id)))
-            throw new InvalidOperationException($"An entity of type '{entityType.Name}' with ID '{id}' has already been loaded into the session.");
-
-        var entry = new EntityEntry
-        {
-            Id = id,
-            ContainerName = config.ContainerName,
-            PartitionKey = config.PartitionKeySelector.GetString(entity),
-            Entity = entity,
-            EntityType = entity.GetType(),
-            Store = ShadowPropertyStore,
-            State = state
-        };
-
-        entry.BorrowShadowPropertiesFromStore();
-
-        if(state == EntityState.Added)
-            foreach (var shadowProperty in config.ShadowProperties)
-                entry.WriteShadowProperty(shadowProperty.PropertyName, value: shadowProperty.DefaultValue);
-
-        _entries.Add(entry);
-        _entityByTypeId.Add((Type: entry.EntityType, entry.Id), entity);
-        _entriesByEntity.Add(key: entity, value: entry);
+        var config = EntityConfiguration.GetEntityConfiguration(entityType);
+        var entry = config.CreateEntry(_propertyStore, entity, state);
 
         return entry;
+    }
+
+    private void TrackEntity(EntityEntry entry)
+    {
+        if (_entityByTypeId.ContainsKey((Type: entry.EntityType, Id: entry.Id)))
+            throw new InvalidOperationException($"An entity of type '{entry.EntityType.Name}' with ID '{entry.Id}' has already been loaded into the session.");
+
+        _entries.Add(entry);
+        _entityByTypeId.Add((Type: entry.EntityType, entry.Id), entry.Entity);
+        _entriesByEntity.Add(key: entry.Entity, value: entry);
+    }
+
+    private void UntrackEntity(EntityEntry entry)
+    {
+        entry.Detach();
+        _entries.Remove(entry);
+        _entityByTypeId.Remove((Type: entry.EntityType, entry.Id));
     }
 
     public void Dispose()
@@ -206,7 +198,7 @@ public sealed class ChangeTracker : IDisposable
         {
             try
             {
-                entry.BorrowShadowPropertiesFromStore();
+                entry.FetchJsonPropertiesFromSerializer();
             }
 
             catch
