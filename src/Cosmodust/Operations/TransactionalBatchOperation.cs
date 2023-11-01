@@ -48,7 +48,9 @@ public class TransactionalBatchOperation
 
         var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
 
-        foreach (var entry in entries)
+        var entityEntries = entries.ToList();
+
+        foreach (var entry in entityEntries)
         {
             // send the json properties to the store
             // for the json serializer to pick up
@@ -67,13 +69,12 @@ public class TransactionalBatchOperation
 
         var batchResponse = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-        using var itr = entries.GetEnumerator();
+        Debug.Assert(batchResponse.Count == entityEntries.Count);
 
-        foreach (var itemResponse in batchResponse)
+        for(var i = 0; i < entityEntries.Count; i ++)
         {
-            itr.MoveNext();
-
-            var entry = itr.Current;
+            var entry = entityEntries[i];
+            var itemResponse = batchResponse[i];
 
             entry.FetchJsonPropertiesFromSerializer();
             entry.UpdateETag(itemResponse.ETag);

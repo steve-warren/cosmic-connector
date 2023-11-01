@@ -48,6 +48,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -90,10 +91,12 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
 
                 builder.DefineEntity<Reminder>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -149,6 +152,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -171,6 +175,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -195,6 +200,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -218,6 +224,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -248,6 +255,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -277,6 +285,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -300,6 +309,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -325,6 +335,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 
@@ -350,6 +361,7 @@ public class DocumentStoreTests
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
+                       .WithPartitionKey(e => e.Id)
                        .ToContainer("db");
             });
 

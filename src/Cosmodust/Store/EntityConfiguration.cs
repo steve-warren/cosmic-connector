@@ -24,12 +24,17 @@ public record EntityConfiguration(Type EntityType)
         Ensure.Equals(entity.GetType(), EntityType, "Entity types must match.");
 
         var id = IdSelector.GetString(entity);
+        var partitionKey = PartitionKeySelector.GetString(entity);
+
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Partition key is empty.");
 
         var entry = new EntityEntry
         {
             Id = id,
             ContainerName = ContainerName,
-            PartitionKey = PartitionKeySelector.GetString(entity),
+            PartitionKey = partitionKey,
             Entity = entity,
             EntityType = EntityType,
             Store = store,

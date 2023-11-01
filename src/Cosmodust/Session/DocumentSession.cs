@@ -35,8 +35,13 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         string partitionKey,
         CancellationToken cancellationToken = default)
     {
-        Ensure.NotNullOrWhiteSpace(id);
-        Ensure.NotNullOrWhiteSpace(partitionKey);
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Document id key required.");
+
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Partition key required.");
 
         var configuration = GetConfiguration<TEntity>();
 
@@ -62,6 +67,10 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     /// <inheritdoc />
     public IQueryable<TEntity> Query<TEntity>(string partitionKey)
     {
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Partition key required.");
+
         var entityConfiguration = GetConfiguration<TEntity>();
         var queryable = Database.CreateLinqQuery<TEntity>(entityConfiguration.ContainerName);
 
@@ -79,6 +88,14 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         string sql,
         object? parameters = null)
     {
+        Ensure.NotNullOrWhiteSpace(
+            argument: partitionKey,
+            message: "Partition key required.");
+        
+        Ensure.NotNullOrWhiteSpace(
+            argument: sql,
+            message: "Query required.");
+
         var config = GetConfiguration<TEntity>();
 
         return new SqlQuery<TEntity>(
@@ -93,21 +110,21 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     /// <inheritdoc />
     public void Store<TEntity>(TEntity entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
         ChangeTracker.RegisterAdded(entity);
     }
 
     /// <inheritdoc />
     public void Update<TEntity>(TEntity entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
         ChangeTracker.RegisterModified(entity);
     }
 
     /// <inheritdoc />
     public void Remove<TEntity>(TEntity entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        Ensure.NotNull(entity);
         ChangeTracker.RegisterRemoved(entity);
     }
 

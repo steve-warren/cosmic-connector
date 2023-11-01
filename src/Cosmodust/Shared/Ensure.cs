@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Cosmodust.Shared;
@@ -15,6 +16,7 @@ internal static class Ensure
     /// <param name="message">The error message to include in the exception if the check fails.</param>
     /// <param name="paramName">The name of the parameter being checked.</param>
     /// <exception cref="ArgumentException">Thrown if <paramref name="argument"/> is null, empty, or consists only of white-space characters.</exception>
+    [DebuggerHidden]
     public static void NotNullOrWhiteSpace(
         [NotNull]
         string? argument,

@@ -383,4 +383,70 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         entry.ETag.Should().NotBeEmpty(because: "the ETag should be returned from the database.");
     }
+
+    [Fact]
+    public async Task Should_Return_Entity_ETag_During_Linq_Query_Operation()
+    {
+        var postId = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        for (var i = 0; i < 2; i++)
+        {
+            var comment = new BlogPostComment { Id = Guid.NewGuid().ToString(), PostId = postId };
+
+            writeSession.Store(comment);
+        }
+
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComments = await readSession.Query<BlogPostComment>(
+            partitionKey: postId)
+            .Where(c => c.PostId == postId)
+            .ToListAsync();
+
+        foreach (var readComment in readComments)
+        {
+            Assert.NotNull(readComment);
+
+            var entry = readSession.Entity(readComment);
+
+            entry.ETag.Should().NotBeEmpty(because: "the ETag should be returned from the database.");
+        }
+    }
+
+    [Fact]
+    public async Task Should_Return_Entity_ETag_During_Sql_Query_Operation()
+    {
+        var postId = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        for (var i = 0; i < 2; i++)
+        {
+            var comment = new BlogPostComment { Id = Guid.NewGuid().ToString(), PostId = postId };
+
+            writeSession.Store(comment);
+        }
+
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComments = await readSession.Query<BlogPostComment>(
+            partitionKey: postId,
+            sql: "select * from c where c.postId = @postId",
+            parameters: new { postId = postId }).ToListAsync();
+
+        foreach (var readComment in readComments)
+        {
+            Assert.NotNull(readComment);
+
+            var entry = readSession.Entity(readComment);
+
+            entry.ETag.Should().NotBeEmpty(because: "the ETag should be returned from the database.");
+        }
+    }
 }
