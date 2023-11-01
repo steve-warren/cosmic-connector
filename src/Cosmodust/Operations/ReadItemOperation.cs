@@ -4,7 +4,7 @@ using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Operations;
 
-internal class ReadItemOperation<TResult> : ICosmosReadOperation<TResult?>
+internal class ReadItemOperation<TEntity>
 {
     private readonly Container _container;
     private readonly string _id;
@@ -17,11 +17,12 @@ internal class ReadItemOperation<TResult> : ICosmosReadOperation<TResult?>
         _partitionKey = partitionKey;
     }
 
-    public async Task<TResult?> ExecuteAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<ReadOperationResult<TEntity?>> ExecuteAsync(
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var response = await _container.ReadItemAsync<TResult>(
+            var response = await _container.ReadItemAsync<TEntity>(
                 _id,
                 new PartitionKey(_partitionKey),
                 cancellationToken: cancellationToken);
@@ -29,12 +30,16 @@ internal class ReadItemOperation<TResult> : ICosmosReadOperation<TResult?>
             Debug.WriteLine(
                 $"Transaction operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
 
-            return response.Resource;
+            return new ReadOperationResult<TEntity?>(
+                response.Resource,
+                response.StatusCode,
+                response.ETag,
+                response.RequestCharge);
         }
 
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            return default;
+            return new ReadOperationResult<TEntity?>(default(TEntity), ex.StatusCode);
         }
     }
 }

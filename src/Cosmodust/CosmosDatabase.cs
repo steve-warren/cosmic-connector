@@ -37,7 +37,7 @@ public sealed class CosmosDatabase : IDatabase
     /// <param name="partitionKey">The partition key of the entity to find.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The entity if found, otherwise null.</returns>
-    public async ValueTask<TEntity?> FindAsync<TEntity>(
+    public ValueTask<ReadOperationResult<TEntity?>> FindAsync<TEntity>(
         string containerName,
         string id,
         string partitionKey,
@@ -49,11 +49,9 @@ public sealed class CosmosDatabase : IDatabase
 
         var container = GetContainerFor(containerName);
 
-        var operation = new ReadItemOperation<TEntity>(container, id, partitionKey);
+        var operation = new ReadItemOperation<TEntity?>(container, id, partitionKey);
 
-        var entity = await operation.ExecuteAsync(cancellationToken);
-
-        return entity;
+        return operation.ExecuteAsync(cancellationToken);
     }
 
     /// <summary>

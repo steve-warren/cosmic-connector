@@ -1,5 +1,7 @@
+using System.Net;
 using System.Runtime.CompilerServices;
 using Cosmodust.Linq;
+using Cosmodust.Operations;
 using Cosmodust.Query;
 using Cosmodust.Tracking;
 
@@ -13,10 +15,11 @@ public sealed class MockDatabase : IDatabase
     public int Count => _entities.Count;
     public bool CommitWasCalled { get; private set; }
 
-    public ValueTask<TEntity?> FindAsync<TEntity>(string containerName, string id, string partitionKey, CancellationToken cancellationToken = default)
+    public ValueTask<ReadOperationResult<TEntity?>> FindAsync<TEntity>(string containerName, string id,
+        string partitionKey, CancellationToken cancellationToken = default)
     {
         if (_entities.TryGetValue((typeof(TEntity), id), out var entity))
-            return new ValueTask<TEntity?>((TEntity?) entity);
+            ValueTask.FromResult(new ReadOperationResult<TEntity?>((TEntity?) entity, HttpStatusCode.OK));
 
         return default;
     }

@@ -352,4 +352,34 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         readProperty.Should().Be(shadowProperty.Value);
     }
+
+    [Fact]
+    public async Task Should_Return_Entity_ETag_During_Read_Operation()
+    {
+        var id = Guid.NewGuid().ToString();
+
+        var writeSession = _store.CreateSession();
+
+        var comment = new BlogPostComment
+        {
+            Id = id,
+            PostId = Guid.NewGuid().ToString()
+        };
+
+        writeSession.Store(comment);
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readComment = await readSession.FindAsync<BlogPostComment>(
+            id: id,
+            partitionKey: comment.PostId);
+
+        Assert.NotNull(readComment);
+
+        readComment.Should().NotBeNull(because: "the entity should be returned from the database.");
+        var entry = readSession.Entity(readComment);
+
+        entry.ETag.Should().NotBeEmpty(because: "the ETag should be returned from the database.");
+    }
 }

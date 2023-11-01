@@ -11,6 +11,7 @@ public sealed class EntityEntry
     public required object Entity { get; init; }
     public required Type EntityType { get; init; }
     public required ShadowPropertyStore Store { get; init; }
+    public string? ETag { get; private set; }
     public IDictionary<string, object?> ShadowPropertyValues { get; private set; }
         = ShadowPropertyStore.EmptyShadowPropertyEntry;
     public EntityState State { get; set; } = EntityState.Detached;
@@ -86,5 +87,10 @@ public sealed class EntityEntry
         {
             ShadowPropertyValues = ShadowPropertyStore.EmptyShadowPropertyEntry;
         }
+    }
+
+    public void Modify(string eTag)
+    {
+        ETag = eTag;
     }
 }

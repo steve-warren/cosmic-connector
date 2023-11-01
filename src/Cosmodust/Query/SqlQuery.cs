@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Cosmodust.Shared;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 
@@ -63,7 +64,8 @@ public class SqlQuery<TEntity>
 
         await foreach (var item in items)
         {
-            ChangeTracker.RegisterUnchanged(item!);
+            Ensure.NotNull(item);
+            ChangeTracker.RegisterUnchanged(item, "");
             yield return item;
         }
     }

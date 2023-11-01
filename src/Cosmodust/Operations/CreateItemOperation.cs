@@ -19,12 +19,16 @@ internal class CreateItemOperation : ICosmosWriteOperation
         _entityEntry = entityEntry;
     }
 
-    public Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task<ItemResponse<object>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return _container.CreateItemAsync(
+        var response = await _container.CreateItemAsync(
             item: _entityEntry.Entity,
             partitionKey: new PartitionKey(_entityEntry.PartitionKey),
             requestOptions: s_defaultItemRequestOptions,
             cancellationToken: cancellationToken);
+
+        _entityEntry.Modify(response.ETag);
+
+        return response;
     }
 }

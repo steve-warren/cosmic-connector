@@ -43,16 +43,18 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         if (ChangeTracker.TryGet(id, out TEntity? entity))
             return entity;
 
-        entity = await Database.FindAsync<TEntity>(
+        var readOperationResult = await Database.FindAsync<TEntity>(
             configuration.ContainerName,
             id,
             partitionKey,
             cancellationToken);
 
+        entity = readOperationResult.Entity;
+
         if (entity is null)
             return default;
 
-        ChangeTracker.RegisterUnchanged(entity);
+        ChangeTracker.RegisterUnchanged(entity, readOperationResult.ETag);
 
         return entity;
     }
@@ -123,7 +125,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         ChangeTracker.Commit();
     }
 
-    public EntityEntry? Entity(object entity) =>
+    public EntityEntry Entity(object entity) =>
         ChangeTracker.Entry(entity);
 
     public void Dispose()

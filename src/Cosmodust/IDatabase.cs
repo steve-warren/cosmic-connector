@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Cosmodust.Linq;
+using Cosmodust.Operations;
 using Cosmodust.Query;
 using Cosmodust.Tracking;
 
@@ -8,8 +9,7 @@ namespace Cosmodust;
 public interface IDatabase
 {
     string Name { get; }
-    ValueTask<TEntity?> FindAsync<TEntity>(
-        string containerName,
+    ValueTask<ReadOperationResult<TEntity?>> FindAsync<TEntity>(string containerName,
         string id,
         string partitionKey,
         CancellationToken cancellationToken = default);
