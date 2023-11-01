@@ -15,13 +15,19 @@ public sealed class MockDatabase : IDatabase
     public int Count => _entities.Count;
     public bool CommitWasCalled { get; private set; }
 
-    public ValueTask<ReadOperationResult<TEntity?>> FindAsync<TEntity>(string containerName, string id,
+    public ValueTask<OperationResult> FindAsync<TEntity>(string containerName, string id,
         string partitionKey, CancellationToken cancellationToken = default)
     {
-        if (_entities.TryGetValue((typeof(TEntity), id), out var entity))
-            ValueTask.FromResult(new ReadOperationResult<TEntity?>((TEntity?) entity, HttpStatusCode.OK));
+        _ = _entities.TryGetValue((typeof(TEntity), id), out var entity);
 
-        return default;
+        return ValueTask.FromResult(new OperationResult
+        {
+            Entity = entity,
+            EntityType = typeof(TEntity),
+            StatusCode = HttpStatusCode.OK,
+            Cost = 1_000,
+            ETag = "etag"
+        });
     }
 
     public void Add(string id, object entity)

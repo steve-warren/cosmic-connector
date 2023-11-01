@@ -9,7 +9,7 @@ namespace Cosmodust;
 public interface IDatabase
 {
     string Name { get; }
-    ValueTask<ReadOperationResult<TEntity?>> FindAsync<TEntity>(string containerName,
+    ValueTask<OperationResult> FindAsync<TEntity>(string containerName,
         string id,
         string partitionKey,
         CancellationToken cancellationToken = default);

@@ -37,7 +37,7 @@ public sealed class CosmosDatabase : IDatabase
     /// <param name="partitionKey">The partition key of the entity to find.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The entity if found, otherwise null.</returns>
-    public ValueTask<ReadOperationResult<TEntity?>> FindAsync<TEntity>(
+    public ValueTask<OperationResult> FindAsync<TEntity>(
         string containerName,
         string id,
         string partitionKey,
@@ -148,7 +148,7 @@ public sealed class CosmosDatabase : IDatabase
             var response = await operation.ExecuteAsync(cancellationToken);
 
             Debug.WriteLine(
-                $"Write operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
+                $"Write operation HTTP {response.StatusCode} - {response.Cost} RUs");
         }
     }
 
@@ -169,9 +169,9 @@ public sealed class CosmosDatabase : IDatabase
 
         return entry.State switch
         {
-            EntityState.Added => new CreateItemOperation(container, entry),
-            EntityState.Removed => new DeleteItemOperation(container, entry),
-            EntityState.Modified => new ReplaceItemOperation(container, entry),
+            EntityState.Added => new CreateItemOperation(container, entry.Entity, entry.PartitionKey),
+            EntityState.Removed => new DeleteItemOperation(container, entry.Id, entry.PartitionKey),
+            EntityState.Modified => new ReplaceItemOperation(container, entry.Entity, entry.Id, entry.PartitionKey),
             _ => throw new NotImplementedException()
         };
     }

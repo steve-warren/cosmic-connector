@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using Cosmodust.Shared;
 using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Operations;
@@ -10,36 +11,41 @@ internal class ReadItemOperation<TEntity>
     private readonly string _id;
     private readonly string _partitionKey;
 
-    public ReadItemOperation(Container container, string id, string partitionKey)
+    public ReadItemOperation(
+        Container container,
+        string id,
+        string partitionKey)
     {
+        Ensure.NotNull(container);
+        Ensure.NotNullOrWhiteSpace(id);
+        Ensure.NotNullOrWhiteSpace(partitionKey);
+
         _container = container;
         _id = id;
         _partitionKey = partitionKey;
     }
 
-    public async ValueTask<ReadOperationResult<TEntity?>> ExecuteAsync(
+    public async ValueTask<OperationResult> ExecuteAsync(
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var response = await _container.ReadItemAsync<TEntity>(
+            var response = await _container.ReadItemAsync<TEntity?>(
                 _id,
                 new PartitionKey(_partitionKey),
                 cancellationToken: cancellationToken);
 
-            Debug.WriteLine(
-                $"Transaction operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
-
-            return new ReadOperationResult<TEntity?>(
-                response.Resource,
-                response.StatusCode,
-                response.ETag,
-                response.RequestCharge);
+            return response.ToOperationResult();
         }
 
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            return new ReadOperationResult<TEntity?>(default(TEntity), ex.StatusCode);
+            return new OperationResult
+            {
+                EntityType = typeof(TEntity?),
+                Entity = default,
+                StatusCode = ex.StatusCode
+            };
         }
     }
 }

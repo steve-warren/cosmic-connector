@@ -49,7 +49,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
             partitionKey,
             cancellationToken);
 
-        entity = readOperationResult.Entity;
+        entity = (TEntity?) readOperationResult.Entity;
 
         if (entity is null)
             return default;

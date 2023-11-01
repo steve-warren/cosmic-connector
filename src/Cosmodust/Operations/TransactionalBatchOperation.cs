@@ -67,9 +67,6 @@ public class TransactionalBatchOperation
 
         var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-        Debug.WriteLine(
-            $"Transaction operation HTTP {response.StatusCode} - RUs {response.Headers.RequestCharge}");
-
         return response;
     }
 }
