@@ -14,14 +14,14 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         IDatabase database,
         EntityConfigurationProvider entityConfiguration,
         SqlParameterObjectTypeCache sqlParameterObjectTypeCache,
-        ShadowPropertyStore shadowPropertyStore)
+        JsonSerializerPropertyStore jsonSerializerPropertyStore)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
         SqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
-            shadowPropertyStore);
+            jsonSerializerPropertyStore);
     }
 
     public ChangeTracker ChangeTracker { get; }
@@ -54,7 +54,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         if (entity is null)
             return default;
 
-        ChangeTracker.RegisterUnchanged(entity, readOperationResult.ETag);
+        ChangeTracker.RegisterUnchanged(entity);
 
         return entity;
     }

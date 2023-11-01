@@ -1,3 +1,4 @@
+using Cosmodust;
 using Cosmodust.Cosmos;
 using Cosmodust.Json;
 using Cosmodust.Serialization;
@@ -23,21 +24,23 @@ public static class CosmodustServiceCollectionExtensions
         Action<CosmodustOptions> cosmodustOptionsAction)
     {
         services.Configure(cosmodustOptionsAction)
-            .AddSingleton<ShadowPropertyStore>()
+            .AddSingleton<JsonSerializerPropertyStore>()
             .AddSingleton<EntityConfigurationProvider>()
             .AddSingleton<SqlParameterObjectTypeCache>()
             .AddSingleton<CosmodustJsonSerializer>(sp =>
             {
-                var entityConfigurationHolder = sp.GetRequiredService<EntityConfigurationProvider>();
-
+                var entityConfigurationProvider = sp.GetRequiredService<EntityConfigurationProvider>();
+                var jsonSerializerPropertyStore = sp.GetRequiredService<JsonSerializerPropertyStore>();
+                
                 return new CosmodustJsonSerializer(
                     new IJsonTypeModifier[]
                     {
-                        new BackingFieldJsonTypeModifier(entityConfigurationHolder),
-                        new PropertyJsonTypeModifier(entityConfigurationHolder),
-                        new PartitionKeyJsonTypeModifier(entityConfigurationHolder),
-                        new ShadowPropertyJsonTypeModifier(entityConfigurationHolder),
-                        new TypeMetadataJsonTypeModifier()
+                        new BackingFieldJsonTypeModifier(entityConfigurationProvider),
+                        new PropertyJsonTypeModifier(entityConfigurationProvider),
+                        new PartitionKeyJsonTypeModifier(entityConfigurationProvider),
+                        new ShadowPropertyJsonTypeModifier(entityConfigurationProvider),
+                        new TypeMetadataJsonTypeModifier(),
+                        new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore)
                     });
             })
             .AddSingleton<CosmosClient>(sp =>
@@ -72,7 +75,11 @@ public static class CosmodustServiceCollectionExtensions
                 var cosmodustOptions = sp.GetRequiredService<IOptions<CosmodustOptions>>().Value;
 
                 var client = sp.GetRequiredService<CosmosClient>();
-                var database = new CosmosDatabase(client.GetDatabase(id: cosmodustOptions.DatabaseId));
+                var linqSerializerOptions = new CosmosLinqSerializerOptions
+                {
+                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                };
+                var database = new CosmosDatabase(client.GetDatabase(id: cosmodustOptions.DatabaseId),linqSerializerOptions);
                 var jsonSerializerOptions = sp.GetRequiredService<CosmodustJsonSerializer>().Options;
                 
                 var store = new DocumentStore(
@@ -80,7 +87,7 @@ public static class CosmodustServiceCollectionExtensions
                     jsonSerializerOptions,
                     sp.GetRequiredService<EntityConfigurationProvider>(),
                     sqlParameterCache: sp.GetRequiredService<SqlParameterObjectTypeCache>(),
-                    shadowPropertyStore: sp.GetRequiredService<ShadowPropertyStore>());
+                    shadowPropertyStore: sp.GetRequiredService<JsonSerializerPropertyStore>());
 
                 store.DefineModel(cosmodustOptions.ModelBuilder);
                 

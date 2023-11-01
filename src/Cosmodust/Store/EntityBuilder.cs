@@ -11,17 +11,17 @@ namespace Cosmodust.Store;
 /// <typeparam name="TEntity">The type of entity to configure.</typeparam>
 public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 {
-    private readonly ShadowPropertyStore _shadowPropertyStore;
+    private readonly JsonSerializerPropertyStore _jsonSerializerPropertyStore;
     private EntityConfiguration _entityConfiguration = new(typeof(TEntity));
     private readonly HashSet<FieldAccessor> _fields = new();
     private readonly HashSet<PropertyAccessor> _properties = new();
     private readonly HashSet<ShadowProperty> _shadowProperties = new();
 
-    public EntityBuilder(ShadowPropertyStore shadowPropertyStore)
+    public EntityBuilder(JsonSerializerPropertyStore jsonSerializerPropertyStore)
     {
-        Ensure.NotNull(shadowPropertyStore);
+        Ensure.NotNull(jsonSerializerPropertyStore);
 
-        _shadowPropertyStore = shadowPropertyStore;
+        _jsonSerializerPropertyStore = jsonSerializerPropertyStore;
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         {
             PropertyType = typeof(TProperty),
             PropertyName = propertyName,
-            Store = _shadowPropertyStore
+            Store = _jsonSerializerPropertyStore
         };
 
         _shadowProperties.Add(shadowProperty);

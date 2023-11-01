@@ -1,29 +1,28 @@
-﻿using System.Runtime.CompilerServices;
-using Microsoft.Azure.Cosmos;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Cosmodust.Linq;
 using Cosmodust.Operations;
 using Cosmodust.Query;
 using Cosmodust.Shared;
 using Cosmodust.Tracking;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 
-namespace Cosmodust.Cosmos;
+namespace Cosmodust;
 
 /// <summary>
 /// Represents a Cosmos DB database.
 /// </summary>
 public sealed class CosmosDatabase : IDatabase
 {
-    private static readonly CosmosLinqSerializerOptions s_cosmosLinqSerializerOptions =
-        new() { PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase };
-
     private readonly Dictionary<string, Container> _containers = new();
     private readonly Database _database;
+    private readonly CosmosLinqSerializerOptions _cosmosLinqSerializerOptions;
 
-    public CosmosDatabase(Database database)
+    public CosmosDatabase(Database database, CosmosLinqSerializerOptions cosmosLinqSerializerOptions)
     {
         _database = database;
+        _cosmosLinqSerializerOptions = cosmosLinqSerializerOptions;
     }
 
     public string Name => _database.Id;
@@ -65,7 +64,7 @@ public sealed class CosmosDatabase : IDatabase
         Ensure.NotNullOrWhiteSpace(containerName);
 
         return GetContainerFor(containerName).GetItemLinqQueryable<TEntity>(
-            linqSerializerOptions: s_cosmosLinqSerializerOptions);
+            linqSerializerOptions: _cosmosLinqSerializerOptions);
     }
 
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(
@@ -78,16 +77,16 @@ public sealed class CosmosDatabase : IDatabase
         var typedQuerySql = originalQueryDefinition.QueryText + " AND root.__type = @type";
         var typedQueryDefinition = new QueryDefinition(query: typedQuerySql);
         typedQueryDefinition.WithParameter("@type", typeof(TEntity).Name);
-        
+
         var container = GetContainerFor(query.EntityConfiguration.ContainerName);
-        
+
         var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
 
         using var feed = container.GetItemQueryIterator<TEntity>(
             typedQueryDefinition,
             continuationToken: null,
             queryRequestOptions);
- 
+
         while (feed.HasMoreResults)
         {
             var response = await feed
@@ -142,7 +141,7 @@ public sealed class CosmosDatabase : IDatabase
             if (entry.IsUnchanged)
                 continue;
 
-            entry.ReturnShadowPropertiesToStore();
+            entry.SendJsonPropertiesToSerializer();
 
             var operation = CreateWriteOperation(entry);
             var response = await operation.ExecuteAsync(cancellationToken);
@@ -152,7 +151,9 @@ public sealed class CosmosDatabase : IDatabase
         }
     }
 
-    public Task CommitTransactionAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken)
+    public async Task CommitTransactionAsync(
+        IEnumerable<EntityEntry> entries,
+        CancellationToken cancellationToken)
     {
         Ensure.NotNull(entries);
 
@@ -160,7 +161,8 @@ public sealed class CosmosDatabase : IDatabase
             database: _database,
             entries: entries);
 
-        return batchOperation.ExecuteAsync(cancellationToken);
+        await batchOperation.ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private ICosmosWriteOperation CreateWriteOperation(EntityEntry entry)

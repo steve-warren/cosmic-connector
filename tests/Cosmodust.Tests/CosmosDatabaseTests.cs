@@ -1,6 +1,4 @@
 using System.IO.Pipelines;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos;
 using Cosmodust.Cosmos.Tests;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
@@ -9,7 +7,6 @@ using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
-using Cosmodust.Session;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
@@ -26,14 +23,15 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var configuration = configurationTextFixture.Configuration;
 
         var entityConfiguration = new EntityConfigurationProvider();
-        var shadowPropertyCache = new ShadowPropertyStore();
+        var propertyStore = new JsonSerializerPropertyStore();
         var serializer = new CosmodustJsonSerializer(new IJsonTypeModifier[]
         {
             new BackingFieldJsonTypeModifier(entityConfiguration),
             new PropertyJsonTypeModifier(entityConfiguration),
             new ShadowPropertyJsonTypeModifier(entityConfiguration),
             new PartitionKeyJsonTypeModifier(entityConfiguration),
-            new TypeMetadataJsonTypeModifier()
+            new TypeMetadataJsonTypeModifier(),
+            new DocumentETagJsonTypeModifier(entityConfiguration, propertyStore)
         });
         
         var cosmosClient = new CosmosClient(configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
@@ -44,10 +42,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var db = cosmosClient.GetDatabase("reminderdb");
 
         _store = new DocumentStore(
-                new CosmosDatabase(db),
+                new CosmosDatabase(db, new CosmosLinqSerializerOptions
+                {
+                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                }),
                 serializer.Options,
                 entityConfiguration,
-                shadowPropertyStore: shadowPropertyCache)
+                shadowPropertyStore: propertyStore)
                     .DefineModel(builder =>
                     {
                         builder.DefineEntity<AccountPlan>()

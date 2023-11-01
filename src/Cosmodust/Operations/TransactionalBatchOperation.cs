@@ -50,9 +50,9 @@ public class TransactionalBatchOperation
 
         foreach (var entry in entries)
         {
-            // return the shadow property to the store
+            // send the json properties to the store
             // for the json serializer to pick up
-            entry.ReturnShadowPropertiesToStore();
+            entry.SendJsonPropertiesToSerializer();
 
             _ = entry.State switch
             {
@@ -65,8 +65,20 @@ public class TransactionalBatchOperation
             };
         }
 
-        var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        var batchResponse = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-        return response;
+        using var itr = entries.GetEnumerator();
+
+        foreach (var itemResponse in batchResponse)
+        {
+            itr.MoveNext();
+
+            var entry = itr.Current;
+
+            entry.FetchJsonPropertiesFromSerializer();
+            entry.UpdateETag(itemResponse.ETag);
+        }
+
+        return batchResponse;
     }
 }

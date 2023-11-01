@@ -39,7 +39,7 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
         Expression = databaseLinqQuery.Expression;
         Provider = cosmodustLinqQueryProvider;
     }
-    
+
     public Type ElementType { get; }
     public Expression Expression { get; }
     public IQueryProvider Provider { get; }
@@ -57,7 +57,7 @@ public sealed class CosmodustLinqQuery<TEntity> : IQueryable<TEntity>
         {
             Debug.Assert(entity is not null, "The entity should not be null.");
 
-            var trackedEntity = ChangeTracker.GetOrRegisterUnchanged(entity, "");
+            var trackedEntity = ChangeTracker.GetOrRegisterUnchanged(entity);
 
             yield return (TEntity) trackedEntity;
         }

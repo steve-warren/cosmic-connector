@@ -20,6 +20,9 @@ public class EntityConfigurationProvider
     public void AddEntityConfiguration(EntityConfiguration mapping) =>
         _mappings.Add(mapping.EntityType, mapping);
 
+    public bool HasEntityConfiguration(Type type) =>
+        _mappings.ContainsKey(type);
+    
     public void Build() =>
         _mappings = _mappings.AsReadOnly();
 }

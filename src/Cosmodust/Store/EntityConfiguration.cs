@@ -16,7 +16,7 @@ public record EntityConfiguration(Type EntityType)
     public IReadOnlyCollection<ShadowProperty> ShadowProperties { get; init; } = Array.Empty<ShadowProperty>();
 
     public EntityEntry CreateEntry(
-        ShadowPropertyStore store,
+        JsonSerializerPropertyStore store,
         object entity,
         EntityState state)
     {
@@ -36,7 +36,7 @@ public record EntityConfiguration(Type EntityType)
             State = state
         };
 
-        entry.BorrowShadowPropertiesFromStore();
+        entry.FetchJsonPropertiesFromSerializer();
 
         if (state != EntityState.Added)
             return entry;

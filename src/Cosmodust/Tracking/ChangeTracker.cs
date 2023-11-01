@@ -7,23 +7,23 @@ namespace Cosmodust.Tracking;
 
 public sealed class ChangeTracker : IDisposable
 {
+    private readonly JsonSerializerPropertyStore _propertyStore;
     private readonly List<EntityEntry> _entries = new();
     private readonly Dictionary<(Type Type, string Id), object> _entityByTypeId = new();
     private readonly Dictionary<object, EntityEntry> _entriesByEntity = new();
 
     public ChangeTracker(
         EntityConfigurationProvider entityConfiguration,
-        ShadowPropertyStore shadowPropertyStore)
+        JsonSerializerPropertyStore propertyStore)
     {
         Ensure.NotNull(entityConfiguration);
-        Ensure.NotNull(shadowPropertyStore);
+        Ensure.NotNull(propertyStore);
 
         EntityConfiguration = entityConfiguration;
-        ShadowPropertyStore = shadowPropertyStore;
+        _propertyStore = propertyStore;
     }
 
     public EntityConfigurationProvider EntityConfiguration { get; }
-    public ShadowPropertyStore ShadowPropertyStore { get; }
     public IReadOnlyList<EntityEntry> Entries => _entries;
 
     public IEnumerable<EntityEntry> PendingChanges =>
@@ -52,18 +52,21 @@ public sealed class ChangeTracker : IDisposable
     /// </summary>
     /// <param name="entity">The entity to register.</param>
     /// <param name="eTag">The ETag of the entity.</param>
-    public void RegisterUnchanged(object entity, string eTag)
+    public void RegisterUnchanged(object entity, string? eTag = null)
     {
         Ensure.NotNull(entity);
 
         var entry = CreateEntry(entity, EntityState.Unchanged);
 
-        entry.Modify(eTag);
+        if (eTag is not null)
+            entry.WriteShadowProperty("_etag", eTag);
+
+        entry.ETag = eTag ?? entry.ReadShadowProperty<string>("_etag");
 
         TrackEntity(entry);
     }
 
-    public object GetOrRegisterUnchanged(object entity, string eTag)
+    public object GetOrRegisterUnchanged(object entity)
     {
         Ensure.NotNull(entity);
 
@@ -73,7 +76,7 @@ public sealed class ChangeTracker : IDisposable
         if (_entityByTypeId.TryGetValue((Type: entity.GetType(), Id: id), out var trackedEntity))
             return trackedEntity;
 
-        RegisterUnchanged(entity, eTag);
+        RegisterUnchanged(entity);
 
         return entity;
     }
@@ -158,9 +161,6 @@ public sealed class ChangeTracker : IDisposable
                 case EntityState.Unchanged:
                     break;
             }
-
-            // now that all writes are finished, borrow
-            entry.BorrowShadowPropertiesFromStore();
         }
     }
 
@@ -170,8 +170,8 @@ public sealed class ChangeTracker : IDisposable
 
         var entityType = entity.GetType();
         var config = EntityConfiguration.GetEntityConfiguration(entityType);
-        var entry = config.CreateEntry(ShadowPropertyStore, entity, state);
-        
+        var entry = config.CreateEntry(_propertyStore, entity, state);
+
         return entry;
     }
 
@@ -198,7 +198,7 @@ public sealed class ChangeTracker : IDisposable
         {
             try
             {
-                entry.BorrowShadowPropertiesFromStore();
+                entry.FetchJsonPropertiesFromSerializer();
             }
 
             catch

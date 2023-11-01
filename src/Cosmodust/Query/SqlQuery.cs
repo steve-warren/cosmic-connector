@@ -65,7 +65,9 @@ public class SqlQuery<TEntity>
         await foreach (var item in items)
         {
             Ensure.NotNull(item);
-            ChangeTracker.RegisterUnchanged(item, "");
+
+            ChangeTracker.RegisterUnchanged(item);
+
             yield return item;
         }
     }

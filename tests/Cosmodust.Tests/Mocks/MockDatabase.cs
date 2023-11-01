@@ -25,8 +25,7 @@ public sealed class MockDatabase : IDatabase
             Entity = entity,
             EntityType = typeof(TEntity),
             StatusCode = HttpStatusCode.OK,
-            Cost = 1_000,
-            ETag = "etag"
+            Cost = 1_000
         });
     }
 

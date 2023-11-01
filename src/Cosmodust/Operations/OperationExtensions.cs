@@ -7,7 +7,7 @@ internal static class OperationExtensions
     public static OperationResult ToOperationResult<TEntity>(
         this ItemResponse<TEntity> response)
     {
-        return new OperationResult()
+        return new OperationResult
         {
             EntityType = typeof(TEntity),
             Entity = response.Resource,
