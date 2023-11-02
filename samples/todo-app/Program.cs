@@ -1,8 +1,16 @@
+using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Samples.TodoApp.Infra;
+using Microsoft.Extensions.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+
+services.AddLogging(configure =>
+{
+    configure.AddConsole();
+});
 
 services.AddCosmodust(
     options =>
@@ -46,8 +54,13 @@ services.AddScoped<ITodoListRepository, CosmodustTodoListRepository>()
     .AddScoped<ITodoItemRepository, CosmodustTodoItemRepository>()
     .AddScoped<IUnitOfWork, CosmodustUnitOfWork>()
     .AddEndpointsApiExplorer()
-    .AddSwaggerGen()
-    .AddControllers();
+    .AddSwaggerGen();
+
+services.AddControllers()
+    .AddJsonOptions(configure =>
+    {
+        
+    });
 
 var app = builder.Build();
 
