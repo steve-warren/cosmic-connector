@@ -6,6 +6,7 @@ using Cosmodust.Session;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
@@ -69,7 +70,8 @@ public static class CosmodustServiceCollectionExtensions
                 return new QueryFacade(
                     sp.GetRequiredService<CosmosClient>(),
                     databaseName: options.DatabaseId,
-                    sp.GetRequiredService<SqlParameterObjectTypeCache>());
+                    sp.GetRequiredService<SqlParameterObjectTypeCache>(),
+                    sp.GetRequiredService<ILogger<QueryFacade>>());
             })
             .AddSingleton<DocumentStore>(sp =>
             {
