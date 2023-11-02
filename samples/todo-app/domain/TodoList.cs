@@ -16,7 +16,7 @@ public class TodoList
     public string OwnerId { get; private set; }
     public string Name { get; private set; }
     public int Count => Items.Count;
-    private List<string> Items { get; init; } = new();
+    public List<string> Items { get; private set; } = new();
     public ArchiveState ArchiveState { get; private set; }
 
     public void Rename(string newName)
@@ -35,18 +35,6 @@ public class TodoList
 
     public void RemoveItem(TodoItem item)
         => Items.Remove(item.Id);
-
-    public void ArrangeItem(string itemId, int position)
-    {
-        var currentIndex = Items.IndexOf(itemId);
-
-        if (currentIndex is -1) return;
-        if (position < 0 || position > Items.Count - 1)
-            throw new ArgumentOutOfRangeException(nameof(position));
-
-        Items.RemoveAt(currentIndex);
-        Items.Insert(index: position, itemId);
-    }
 
     public void Archive()
     {

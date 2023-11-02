@@ -14,14 +14,14 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         IDatabase database,
         EntityConfigurationProvider entityConfiguration,
         SqlParameterObjectTypeCache sqlParameterObjectTypeCache,
-        JsonSerializerPropertyStore jsonSerializerPropertyStore)
+        JsonPropertyStore jsonPropertyStore)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
         SqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
-            jsonSerializerPropertyStore);
+            jsonPropertyStore);
     }
 
     public ChangeTracker ChangeTracker { get; }

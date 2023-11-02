@@ -15,14 +15,14 @@ public class DocumentStore : IDocumentStore
     private readonly JsonSerializerOptions _options;
     private readonly EntityConfigurationProvider _entityConfiguration;
     private readonly SqlParameterObjectTypeCache _sqlParameterObjectTypeCache;
-    private readonly JsonSerializerPropertyStore _jsonSerializerPropertyStore;
+    private readonly JsonPropertyStore _jsonPropertyStore;
 
     public DocumentStore(
         IDatabase database,
         JsonSerializerOptions? options = default,
         EntityConfigurationProvider? entityConfiguration = default,
         SqlParameterObjectTypeCache? sqlParameterCache = default,
-        JsonSerializerPropertyStore? shadowPropertyStore = default)
+        JsonPropertyStore? shadowPropertyStore = default)
     {
         Ensure.NotNull(database);
 
@@ -32,8 +32,8 @@ public class DocumentStore : IDocumentStore
                                ?? new EntityConfigurationProvider();
         _sqlParameterObjectTypeCache = sqlParameterCache
                              ?? new SqlParameterObjectTypeCache();
-        _jsonSerializerPropertyStore = shadowPropertyStore
-                               ?? new JsonSerializerPropertyStore();
+        _jsonPropertyStore = shadowPropertyStore
+                               ?? new JsonPropertyStore();
     }
 
     public DocumentSession CreateSession()
@@ -42,7 +42,7 @@ public class DocumentStore : IDocumentStore
             _database,
             _entityConfiguration,
             _sqlParameterObjectTypeCache,
-            _jsonSerializerPropertyStore);
+            _jsonPropertyStore);
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ public class DocumentStore : IDocumentStore
     {
         Ensure.NotNull(builder);
 
-        var modelBuilder = new ModelBuilder(_options, _jsonSerializerPropertyStore);
+        var modelBuilder = new ModelBuilder(_options, _jsonPropertyStore);
         builder(modelBuilder);
 
         foreach (var configuration in modelBuilder.Build())

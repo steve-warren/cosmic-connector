@@ -24,14 +24,14 @@ public class ShadowPropertyJsonTypeModifier : IJsonTypeModifier
         if (!_entityConfigurationProvider.TryGetEntityConfiguration(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
-        foreach (var shadowProperty in entityConfiguration.ShadowProperties)
+        foreach (var shadowProperty in entityConfiguration.JsonProperties)
         {
             var shadowJsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(
                 shadowProperty.PropertyType,
                 shadowProperty.PropertyName);
 
-            shadowJsonPropertyInfo.Set = shadowProperty.WritePropertyToSharedStore;
-            shadowJsonPropertyInfo.Get = shadowProperty.ReadPropertyFromSharedStore;
+            shadowJsonPropertyInfo.Set = shadowProperty.WriteProperty;
+            shadowJsonPropertyInfo.Get = shadowProperty.ReadProperty;
 
             jsonTypeInfo.Properties.Add(shadowJsonPropertyInfo);
         }

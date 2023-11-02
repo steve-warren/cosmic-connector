@@ -23,14 +23,15 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var configuration = configurationTextFixture.Configuration;
 
         var entityConfiguration = new EntityConfigurationProvider();
-        var propertyStore = new JsonSerializerPropertyStore();
+        var propertyStore = new JsonPropertyStore();
         var serializer = new CosmodustJsonSerializer(new IJsonTypeModifier[]
         {
+            new TypeMetadataJsonTypeModifier(),
             new BackingFieldJsonTypeModifier(entityConfiguration),
             new PropertyJsonTypeModifier(entityConfiguration),
             new ShadowPropertyJsonTypeModifier(entityConfiguration),
             new PartitionKeyJsonTypeModifier(entityConfiguration),
-            new TypeMetadataJsonTypeModifier(),
+            new PropertyPrivateSetterJsonTypeModifier(entityConfiguration),
             new DocumentETagJsonTypeModifier(entityConfiguration, propertyStore)
         });
         

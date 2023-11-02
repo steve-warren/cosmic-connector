@@ -10,10 +10,10 @@ public sealed class EntityEntry
     public required string PartitionKey { get; init; }
     public required object Entity { get; init; }
     public required Type EntityType { get; init; }
-    public required JsonSerializerPropertyStore Store { get; init; }
+    public required JsonPropertyStore Store { get; init; }
     public string? ETag { get; set; }
     public IDictionary<string, object?> JsonPropertyValues { get; private set; }
-        = JsonSerializerPropertyStore.EmptyEntityPropertyEntry;
+        = JsonPropertyStore.EmptyEntityPropertyEntry;
     public EntityState State { get; set; } = EntityState.Detached;
 
     public bool IsModified => State == EntityState.Modified;
@@ -91,7 +91,7 @@ public sealed class EntityEntry
 
         finally
         {
-            JsonPropertyValues = JsonSerializerPropertyStore.EmptyEntityPropertyEntry;
+            JsonPropertyValues = JsonPropertyStore.EmptyEntityPropertyEntry;
         }
     }
 }

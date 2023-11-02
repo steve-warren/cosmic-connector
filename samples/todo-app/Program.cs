@@ -21,8 +21,6 @@ services.AddCosmodust(
                 modelBuilder.DefineEntity<TodoList>()
                     .WithId(e => e.Id)
                     .WithPartitionKey(e => e.OwnerId)
-                    .WithProperty("Items")
-                    .WithShadowProperty<long>("_ts")
                     .ToContainer("todo");
 
                 modelBuilder.DefineEntity<TodoItem>()
@@ -33,6 +31,13 @@ services.AddCosmodust(
                 modelBuilder.DefineEnumeration<ArchiveState>()
                     .DefineEnumeration<TodoItemCompletedState>()
                     .DefineEnumeration<TodoItemPriority>();
+            })
+            .WithJsonOptions(jsonOptions =>
+            {
+                jsonOptions.CamelCase()
+                    .SerializePrivateProperties()
+                    .SerializePrivateFields()
+                    .SerializeEntityTypeInfo();
             });
     });
 

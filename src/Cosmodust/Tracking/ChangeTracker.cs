@@ -7,14 +7,14 @@ namespace Cosmodust.Tracking;
 
 public sealed class ChangeTracker : IDisposable
 {
-    private readonly JsonSerializerPropertyStore _propertyStore;
+    private readonly JsonPropertyStore _propertyStore;
     private readonly List<EntityEntry> _entries = new();
     private readonly Dictionary<(Type Type, string Id), object> _entityByTypeId = new();
     private readonly Dictionary<object, EntityEntry> _entriesByEntity = new();
 
     public ChangeTracker(
         EntityConfigurationProvider entityConfiguration,
-        JsonSerializerPropertyStore propertyStore)
+        JsonPropertyStore propertyStore)
     {
         Ensure.NotNull(entityConfiguration);
         Ensure.NotNull(propertyStore);

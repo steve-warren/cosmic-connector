@@ -10,14 +10,14 @@ public class DocumentETagJsonTypeModifier : IJsonTypeModifier
     private const string ETagPropertyName = "_etag";
 
     private readonly EntityConfigurationProvider _entityConfigurationProvider;
-    private readonly JsonSerializerPropertyStore _jsonSerializerPropertyStore;
+    private readonly JsonPropertyStore _jsonPropertyStore;
 
     public DocumentETagJsonTypeModifier(
         EntityConfigurationProvider entityConfigurationProvider,
-        JsonSerializerPropertyStore jsonSerializerPropertyStore)
+        JsonPropertyStore jsonPropertyStore)
     {
         _entityConfigurationProvider = entityConfigurationProvider;
-        _jsonSerializerPropertyStore = jsonSerializerPropertyStore;
+        _jsonPropertyStore = jsonPropertyStore;
     }
 
     public void Modify(JsonTypeInfo jsonTypeInfo)
@@ -40,11 +40,11 @@ public class DocumentETagJsonTypeModifier : IJsonTypeModifier
 
     private void WriteETagToPropertyStore(object entity, object? value)
     {
-        _jsonSerializerPropertyStore.WritePropertyValue(entity, ETagPropertyName, value);
+        _jsonPropertyStore.WritePropertyValue(entity, ETagPropertyName, value);
     }
 
     private object? ReadETagFromPropertyStore(object entity)
     {
-        return _jsonSerializerPropertyStore.ReadPropertyValue(entity, ETagPropertyName);
+        return _jsonPropertyStore.ReadPropertyValue(entity, ETagPropertyName);
     }
 }

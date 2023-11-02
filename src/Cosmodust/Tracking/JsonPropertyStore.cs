@@ -6,7 +6,7 @@ namespace Cosmodust.Tracking;
 /// <summary>
 /// An in-memory store for storing entity properties, such as shadow properties. This class is thread-safe.
 /// </summary>
-public sealed class JsonSerializerPropertyStore : IDisposable
+public sealed class JsonPropertyStore : IDisposable
 {
     public static readonly IDictionary<string, object?> EmptyEntityPropertyEntry =
         new Dictionary<string, object?>(capacity: 0).AsReadOnly();
