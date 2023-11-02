@@ -13,10 +13,11 @@ public record EntityConfiguration(Type EntityType)
     public string PartitionKeyName { get; init; } = "";
     public IReadOnlyCollection<FieldAccessor> Fields { get; init; } = Array.Empty<FieldAccessor>();
     public IReadOnlyCollection<PropertyAccessor> Properties { get; init; } = Array.Empty<PropertyAccessor>();
-    public IReadOnlyCollection<ShadowProperty> ShadowProperties { get; init; } = Array.Empty<ShadowProperty>();
+    public IReadOnlyCollection<JsonProperty> JsonProperties { get; init; } = Array.Empty<JsonProperty>();
+    public bool IsPartitionKeyDefinedInEntity { get; set; }
 
     public EntityEntry CreateEntry(
-        JsonSerializerPropertyStore store,
+        JsonPropertyStore store,
         object entity,
         EntityState state)
     {
@@ -41,13 +42,13 @@ public record EntityConfiguration(Type EntityType)
             State = state
         };
 
-        entry.FetchJsonPropertiesFromSerializer();
+        entry.ReadJsonProperties();
 
         if (state != EntityState.Added)
             return entry;
 
-        foreach (var shadowProperty in ShadowProperties)
-            entry.WriteShadowProperty(shadowProperty.PropertyName, value: shadowProperty.DefaultValue);
+        foreach (var jsonProperty in JsonProperties)
+            entry.WriteJsonProperty(jsonProperty.PropertyName, value: jsonProperty.DefaultValue);
 
         return entry;
     }

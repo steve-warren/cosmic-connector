@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Memory;
-using Cosmodust.Store;
 using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Json;

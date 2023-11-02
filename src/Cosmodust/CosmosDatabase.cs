@@ -141,7 +141,7 @@ public sealed class CosmosDatabase : IDatabase
             if (entry.IsUnchanged)
                 continue;
 
-            entry.SendJsonPropertiesToSerializer();
+            entry.WriteJsonProperties();
 
             var operation = CreateWriteOperation(entry);
             var response = await operation.ExecuteAsync(cancellationToken);

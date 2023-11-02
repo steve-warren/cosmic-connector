@@ -1,6 +1,10 @@
+using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Store;
+using Newtonsoft.Json.Serialization;
 
 namespace Cosmodust.Json;
 
@@ -15,10 +19,10 @@ public sealed class PropertyJsonTypeModifier : IJsonTypeModifier
 
     public void Modify(JsonTypeInfo jsonTypeInfo)
     {
-        if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object)
-            return;
-
-        if (!_entityConfigurationProvider.TryGetEntityConfiguration(jsonTypeInfo.Type, out var entityConfiguration))
+        if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object
+            || !_entityConfigurationProvider.TryGetEntityConfiguration(
+                jsonTypeInfo.Type,
+                out var entityConfiguration))
             return;
 
         foreach (var property in entityConfiguration.Properties)

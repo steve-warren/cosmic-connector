@@ -11,7 +11,10 @@ public record PropertyAccessor(
 {
     public static PropertyAccessor Create(string propertyName, Type type)
     {
-        var propertyInfo = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new InvalidOperationException($"The type '{type.Name}' does not have a property named '{propertyName}'.");
+        var propertyInfo = type.GetProperty(
+            propertyName, 
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                           ?? throw new InvalidOperationException($"The type '{type.Name}' does not have a property named '{propertyName}'.");
 
         return Create(propertyInfo);
     }

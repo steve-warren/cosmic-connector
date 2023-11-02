@@ -54,7 +54,7 @@ public class TransactionalBatchOperation
         {
             // send the json properties to the store
             // for the json serializer to pick up
-            entry.SendJsonPropertiesToSerializer();
+            entry.WriteJsonProperties();
 
             _ = entry.State switch
             {
@@ -76,7 +76,7 @@ public class TransactionalBatchOperation
             var entry = entityEntries[i];
             var itemResponse = batchResponse[i];
 
-            entry.FetchJsonPropertiesFromSerializer();
+            entry.ReadJsonProperties();
             entry.UpdateETag(itemResponse.ETag);
         }
 

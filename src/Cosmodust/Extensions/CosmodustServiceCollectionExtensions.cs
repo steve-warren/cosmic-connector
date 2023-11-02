@@ -24,22 +24,23 @@ public static class CosmodustServiceCollectionExtensions
         Action<CosmodustOptions> cosmodustOptionsAction)
     {
         services.Configure(cosmodustOptionsAction)
-            .AddSingleton<JsonSerializerPropertyStore>()
+            .AddSingleton<JsonPropertyStore>()
             .AddSingleton<EntityConfigurationProvider>()
             .AddSingleton<SqlParameterObjectTypeCache>()
             .AddSingleton<CosmodustJsonSerializer>(sp =>
             {
                 var entityConfigurationProvider = sp.GetRequiredService<EntityConfigurationProvider>();
-                var jsonSerializerPropertyStore = sp.GetRequiredService<JsonSerializerPropertyStore>();
-                
+                var jsonSerializerPropertyStore = sp.GetRequiredService<JsonPropertyStore>();
+
                 return new CosmodustJsonSerializer(
                     new IJsonTypeModifier[]
                     {
+                        new TypeMetadataJsonTypeModifier(),
                         new BackingFieldJsonTypeModifier(entityConfigurationProvider),
                         new PropertyJsonTypeModifier(entityConfigurationProvider),
                         new PartitionKeyJsonTypeModifier(entityConfigurationProvider),
                         new ShadowPropertyJsonTypeModifier(entityConfigurationProvider),
-                        new TypeMetadataJsonTypeModifier(),
+                        new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider),
                         new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore)
                     });
             })
@@ -87,7 +88,7 @@ public static class CosmodustServiceCollectionExtensions
                     jsonSerializerOptions,
                     sp.GetRequiredService<EntityConfigurationProvider>(),
                     sqlParameterCache: sp.GetRequiredService<SqlParameterObjectTypeCache>(),
-                    shadowPropertyStore: sp.GetRequiredService<JsonSerializerPropertyStore>());
+                    shadowPropertyStore: sp.GetRequiredService<JsonPropertyStore>());
 
                 store.DefineModel(cosmodustOptions.ModelBuilder);
                 

@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using System.Reflection;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Shared;
@@ -11,17 +13,17 @@ namespace Cosmodust.Store;
 /// <typeparam name="TEntity">The type of entity to configure.</typeparam>
 public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 {
-    private readonly JsonSerializerPropertyStore _jsonSerializerPropertyStore;
+    private readonly JsonPropertyStore _jsonPropertyStore;
     private EntityConfiguration _entityConfiguration = new(typeof(TEntity));
     private readonly HashSet<FieldAccessor> _fields = new();
     private readonly HashSet<PropertyAccessor> _properties = new();
-    private readonly HashSet<ShadowProperty> _shadowProperties = new();
+    private readonly HashSet<JsonProperty> _shadowProperties = new();
 
-    public EntityBuilder(JsonSerializerPropertyStore jsonSerializerPropertyStore)
+    public EntityBuilder(JsonPropertyStore jsonPropertyStore)
     {
-        Ensure.NotNull(jsonSerializerPropertyStore);
+        Ensure.NotNull(jsonPropertyStore);
 
-        _jsonSerializerPropertyStore = jsonSerializerPropertyStore;
+        _jsonPropertyStore = jsonPropertyStore;
     }
 
     /// <summary>
@@ -43,14 +45,27 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// </summary>
     /// <param name="partitionKeySelector">A function that selects the partition key for the entity.</param>
     /// <returns>The entity builder instance.</returns>
-    public EntityBuilder<TEntity> WithPartitionKey(Func<TEntity, string> partitionKeySelector)
+    public EntityBuilder<TEntity> WithPartitionKey(Expression<Func<TEntity, string>> partitionKeySelector)
     {
         Ensure.NotNull(partitionKeySelector);
 
-        _entityConfiguration = _entityConfiguration with
+        if (partitionKeySelector.Body is MemberExpression { Member: PropertyInfo propertyInfo })
         {
-            PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector)
-        };
+            var propertyName = propertyInfo.Name;
+
+            var delegateFunc = partitionKeySelector.Compile();
+
+            _entityConfiguration = _entityConfiguration with
+            {
+                IsPartitionKeyDefinedInEntity = true,
+                PartitionKeyName = propertyName,
+                PartitionKeySelector = new StringSelector<TEntity>(delegateFunc)
+            };
+        }
+        else
+        {
+            throw new ArgumentException("Invalid partition key selector. Expected a property selector.");
+        }
 
         return this;
     }
@@ -64,6 +79,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 
         _entityConfiguration = _entityConfiguration with
         {
+            IsPartitionKeyDefinedInEntity = false,
             PartitionKeyName = partitionKeyName,
             PartitionKeySelector = new StringSelector<TEntity>(partitionKeySelector)
         };
@@ -102,11 +118,11 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     {
         Ensure.NotNullOrWhiteSpace(propertyName);
 
-        var shadowProperty = new ShadowProperty
+        var shadowProperty = new JsonProperty
         {
             PropertyType = typeof(TProperty),
             PropertyName = propertyName,
-            Store = _jsonSerializerPropertyStore
+            Store = _jsonPropertyStore
         };
 
         _shadowProperties.Add(shadowProperty);
@@ -131,7 +147,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         {
             Fields = _fields,
             Properties = _properties,
-            ShadowProperties = _shadowProperties
+            JsonProperties = _shadowProperties
         };
     }
 }

@@ -6,9 +6,9 @@ namespace Cosmodust.Tracking;
 /// <summary>
 /// An in-memory store for storing entity properties, such as shadow properties. This class is thread-safe.
 /// </summary>
-public sealed class JsonSerializerPropertyStore : IDisposable
+public sealed class JsonPropertyStore : IDisposable
 {
-    public static readonly IDictionary<string, object?> EmptyEntityPropertyEntry =
+    public static readonly IDictionary<string, object?> EmptyJsonProperties =
         new Dictionary<string, object?>(capacity: 0).AsReadOnly();
 
     private readonly ConcurrentDictionary<
@@ -42,15 +42,15 @@ public sealed class JsonSerializerPropertyStore : IDisposable
     }
 
     /// <summary>
-    /// Removes the given entity from the store and returns its associated properties.
+    /// Removes the given entity's JSON properties from the store.
     /// </summary>
     /// <param name="entity">The entity to remove from the cache.</param>
-    /// <returns>The properties associated with the entity, or an empty dictionary if none were found.</returns>
-    public IDictionary<string, object?> Borrow(object entity)
+    /// <returns>The JSON properties associated with the entity, or null if none were found.</returns>
+    public IDictionary<string, object?>? Borrow(object entity)
     {
         _store.TryRemove(entity, out var properties);
 
-        return properties ?? new Dictionary<string, object?>();
+        return properties;
     }
 
     public void Return(object entity, IDictionary<string, object?> properties)

@@ -3,11 +3,11 @@ namespace Cosmodust.Tracking;
 /// <summary>
 /// Represents a shadow property that can be used to store additional data for an entity.
 /// </summary>
-public class ShadowProperty
+public class JsonProperty
 {
     private readonly Lazy<object?> _defaultValue;
 
-    public ShadowProperty() =>
+    public JsonProperty() =>
         _defaultValue = new Lazy<object?>(valueFactory: () =>
             PropertyType == typeof(string)
                 ? default
@@ -15,7 +15,7 @@ public class ShadowProperty
 
     public required string PropertyName { get; init; }
     public required Type PropertyType { get; init; }
-    public required JsonSerializerPropertyStore Store { get; init; }
+    public required JsonPropertyStore Store { get; init; }
     public object? DefaultValue => _defaultValue.Value;
 
     /// <summary>
@@ -23,7 +23,7 @@ public class ShadowProperty
     /// </summary>
     /// <param name="entity">The entity that owns the shadow property.</param>
     /// <param name="value">The value of the shadow property.</param>
-    public void WritePropertyToSharedStore(object entity, object? value) =>
+    public void WriteProperty(object entity, object? value) =>
         Store.WritePropertyValue(entity, PropertyName, value);
 
     /// <summary>
@@ -31,6 +31,6 @@ public class ShadowProperty
     /// </summary>
     /// <param name="entity">The entity to read the shadow property value from.</param>
     /// <returns>The value of the shadow property.</returns>
-    public object? ReadPropertyFromSharedStore(object entity) =>
+    public object? ReadProperty(object entity) =>
         Store.ReadPropertyValue(entity, PropertyName);
 }

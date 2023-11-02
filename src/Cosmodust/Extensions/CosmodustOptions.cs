@@ -1,3 +1,4 @@
+using Cosmodust.Json;
 using Cosmodust.Shared;
 using Cosmodust.Store;
 
@@ -49,6 +50,13 @@ public class CosmodustOptions
         Ensure.NotNull(modelBuilder);
 
         ModelBuilder = modelBuilder;
+        return this;
+    }
+
+    public CosmodustOptions WithJsonOptions(
+        Action<CosmodustJsonOptions> jsonOptions)
+    {
+        Ensure.NotNull(jsonOptions);
         return this;
     }
 }

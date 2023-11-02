@@ -20,6 +20,9 @@ public sealed class PartitionKeyJsonTypeModifier : IJsonTypeModifier
         if (!_entityConfigurations.TryGetEntityConfiguration(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
+        if (entityConfiguration.IsPartitionKeyDefinedInEntity)
+            return;
+
         var partitionKeyName = JsonNamingPolicy.CamelCase.ConvertName(
             entityConfiguration.PartitionKeyName);
 
