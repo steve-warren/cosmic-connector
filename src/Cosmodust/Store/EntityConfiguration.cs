@@ -42,13 +42,13 @@ public record EntityConfiguration(Type EntityType)
             State = state
         };
 
-        entry.FetchJsonPropertiesFromSerializer();
+        entry.ReadJsonProperties();
 
         if (state != EntityState.Added)
             return entry;
 
-        foreach (var shadowProperty in JsonProperties)
-            entry.WriteShadowProperty(shadowProperty.PropertyName, value: shadowProperty.DefaultValue);
+        foreach (var jsonProperty in JsonProperties)
+            entry.WriteJsonProperty(jsonProperty.PropertyName, value: jsonProperty.DefaultValue);
 
         return entry;
     }

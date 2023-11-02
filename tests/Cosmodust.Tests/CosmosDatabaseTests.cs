@@ -333,12 +333,12 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             PostId = Guid.NewGuid().ToString()
         };
 
+        var shadowProperty = new { Name = "createdOn", Value = new DateTime(year: 2002, month: 12, day: 31) };
+
         writeSession.Store(comment);
 
-        var shadowProperty = new { Name = "createdOn", Value = new DateTime(year: 2000, month: 1, day: 1) };
-
         writeSession.Entity(comment)
-               !.WriteShadowProperty(shadowProperty.Name, shadowProperty.Value);
+               !.WriteJsonProperty(shadowProperty.Name, shadowProperty.Value);
 
         await writeSession.CommitAsync();
 
@@ -350,7 +350,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         readComment.Should().NotBeNull();
 
-        var readProperty = readSession.Entity(readComment!)!.ReadShadowProperty<DateTime>(shadowProperty.Name);
+        var readProperty = readSession.Entity(readComment!)!.ReadJsonProperty<DateTime>(shadowProperty.Name);
 
         readProperty.Should().Be(shadowProperty.Value);
     }

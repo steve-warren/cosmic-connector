@@ -59,9 +59,9 @@ public sealed class ChangeTracker : IDisposable
         var entry = CreateEntry(entity, EntityState.Unchanged);
 
         if (eTag is not null)
-            entry.WriteShadowProperty("_etag", eTag);
+            entry.WriteJsonProperty("_etag", eTag);
 
-        entry.ETag = eTag ?? entry.ReadShadowProperty<string>("_etag");
+        entry.ETag = eTag ?? entry.ReadJsonProperty<string>("_etag");
 
         TrackEntity(entry);
     }
@@ -198,7 +198,7 @@ public sealed class ChangeTracker : IDisposable
         {
             try
             {
-                entry.FetchJsonPropertiesFromSerializer();
+                entry.ReadJsonProperties();
             }
 
             catch

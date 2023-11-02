@@ -12,8 +12,8 @@ public sealed class EntityEntry
     public required Type EntityType { get; init; }
     public required JsonPropertyStore Store { get; init; }
     public string? ETag { get; set; }
-    public IDictionary<string, object?> JsonPropertyValues { get; private set; }
-        = JsonPropertyStore.EmptyEntityPropertyEntry;
+    public IDictionary<string, object?> JsonProperties { get; private set; }
+        = new Dictionary<string, object?>();
     public EntityState State { get; set; } = EntityState.Detached;
 
     public bool IsModified => State == EntityState.Modified;
@@ -52,46 +52,46 @@ public sealed class EntityEntry
     public void UpdateETag(string eTag)
     {
         ETag = eTag;
-        JsonPropertyValues["_etag"] = eTag;
+        JsonProperties["_etag"] = eTag;
     }
 
-    public TProperty? ReadShadowProperty<TProperty>(string shadowPropertyName) =>
-        JsonPropertyValues.TryGetValue(shadowPropertyName, out var shadowPropertyValue)
-            ? (TProperty?) shadowPropertyValue
+    public TProperty? ReadJsonProperty<TProperty>(string jsonPropertyName) =>
+        JsonProperties.TryGetValue(jsonPropertyName, out var value)
+            ? (TProperty?) value
             : default;
 
-    public void WriteShadowProperty<TProperty>(string shadowPropertyName, TProperty? value) =>
-        JsonPropertyValues[shadowPropertyName] = value;
+    public void WriteJsonProperty<TProperty>(string jsonPropertyName, TProperty? value) =>
+        JsonProperties[jsonPropertyName] = value;
 
-    public void WriteShadowProperty(string shadowPropertyName, object? value) =>
-        JsonPropertyValues[shadowPropertyName] = value;
+    public void WriteJsonProperty(string jsonPropertyName, object? value) =>
+        JsonProperties[jsonPropertyName] = value;
 
     /// <summary>
-    /// Borrows shadow properties from the store for the current entity.
+    /// Reads JSON properties from the store for the current entity.
     /// </summary>
-    public void FetchJsonPropertiesFromSerializer()
+    public void ReadJsonProperties()
     {
         Debug.Assert(Entity != null);
-        JsonPropertyValues = Store.Borrow(Entity);
+        JsonProperties = Store.Borrow(Entity) ?? JsonProperties;
         Debug.WriteLine($"Retrieved entity '{Id}' from the shadow property store.");
     }
 
     /// <summary>
-    /// Sends the JSON properties of the entity to the store for serialization.
+    /// Writes the JSON properties of the entity to the store for serialization.
     /// </summary>
-    public void SendJsonPropertiesToSerializer()
+    public void WriteJsonProperties()
     {
         Debug.Assert(Entity != null);
 
         try
         {
-            Store.Return(Entity, JsonPropertyValues);
+            Store.Return(Entity, JsonProperties);
             Debug.WriteLine($"Returned entity '{Id}' to the shadow property store.");
         }
 
         finally
         {
-            JsonPropertyValues = JsonPropertyStore.EmptyEntityPropertyEntry;
+            JsonProperties = JsonPropertyStore.EmptyJsonProperties;
         }
     }
 }
