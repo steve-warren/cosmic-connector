@@ -10,6 +10,8 @@ using Cosmodust.Serialization;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cosmodust.Tests;
 
@@ -72,10 +74,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                             .ToContainer("blogPosts");
                     });
 
+        var nullLoggerFactory = new NullLoggerFactory();
+        
         _queryFacade = new QueryFacade(
             client: cosmosClient,
             databaseName: "reminderdb",
-            sqlParameterObjectTypeCache: new SqlParameterObjectTypeCache());
+            sqlParameterObjectTypeCache: new SqlParameterObjectTypeCache(),
+            new Logger<QueryFacade>(nullLoggerFactory));
     }
 
     [Fact]
@@ -310,10 +315,10 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Use_Query_Facade()
     {
-        var pipe = new Pipe();
+        var stream = new MemoryStream();
 
         await _queryFacade.ExecuteQueryAsync(
-            writer: pipe.Writer,
+            outputStream: stream,
             containerName: "todo",
             partitionKey: "a_2X011ldw0dogcauAbw0oExAv21H",
             sql: "select * from c where c.ownerId = @ownerId",
