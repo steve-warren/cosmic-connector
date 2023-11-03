@@ -1,16 +1,14 @@
-using Cosmodust;
-using Cosmodust.Cosmos;
 using Cosmodust.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-// ReSharper disable once CheckNamespace
-namespace Microsoft.Extensions.DependencyInjection;
+namespace Cosmodust.Extensions;
 
 public static class CosmodustServiceCollectionExtensions
 {
@@ -71,7 +69,8 @@ public static class CosmodustServiceCollectionExtensions
                     sp.GetRequiredService<CosmosClient>(),
                     databaseName: options.DatabaseId,
                     sp.GetRequiredService<SqlParameterObjectTypeCache>(),
-                    sp.GetRequiredService<ILogger<QueryFacade>>());
+                    sp.GetRequiredService<ILogger<QueryFacade>>(),
+                    options: options.QueryOptions);
             })
             .AddSingleton<DocumentStore>(sp =>
             {

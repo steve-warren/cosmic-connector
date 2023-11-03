@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Samples.TodoApp.Infra;
@@ -46,6 +47,12 @@ services.AddCosmodust(
                     .SerializePrivateProperties()
                     .SerializePrivateFields()
                     .SerializeEntityTypeInfo();
+            })
+            .WithQueryOptions(queryOptions =>
+            {
+                queryOptions.ExcludeCosmosMetadata()
+                    .WithDocumentCollectionName()
+                    .IncludeETag();
             });
     });
 

@@ -1,4 +1,4 @@
-namespace Cosmodust.Json;
+namespace Cosmodust.Extensions;
 
 public class CosmodustJsonOptions
 {
