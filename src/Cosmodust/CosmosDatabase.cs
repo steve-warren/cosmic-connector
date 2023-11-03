@@ -15,7 +15,7 @@ namespace Cosmodust;
 /// </summary>
 public sealed class CosmosDatabase : IDatabase
 {
-    private readonly Dictionary<string, Container> _containers = new();
+    private readonly ContainerProvider _containerProvider;
     private readonly Database _database;
     private readonly CosmosLinqSerializerOptions _cosmosLinqSerializerOptions;
 
@@ -23,8 +23,12 @@ public sealed class CosmosDatabase : IDatabase
         Database database,
         CosmosLinqSerializerOptions cosmosLinqSerializerOptions)
     {
+        Ensure.NotNull(database);
+        Ensure.NotNull(cosmosLinqSerializerOptions);
+
         _database = database;
         _cosmosLinqSerializerOptions = cosmosLinqSerializerOptions;
+        _containerProvider = new ContainerProvider(database);
     }
 
     public string Name => _database.Id;
@@ -48,7 +52,7 @@ public sealed class CosmosDatabase : IDatabase
         Ensure.NotNullOrWhiteSpace(id);
         Ensure.NotNullOrWhiteSpace(partitionKey);
 
-        var container = GetContainer(containerName);
+        var container = _containerProvider.GetOrAddContainer(containerName);
 
         var operation = new ReadItemOperation<TEntity?>(container, id, partitionKey);
 
@@ -65,7 +69,7 @@ public sealed class CosmosDatabase : IDatabase
     {
         Ensure.NotNullOrWhiteSpace(containerName);
 
-        return GetContainer(containerName).GetItemLinqQueryable<TEntity>(
+        return _containerProvider.GetOrAddContainer(containerName).GetItemLinqQueryable<TEntity>(
             linqSerializerOptions: _cosmosLinqSerializerOptions);
     }
 
@@ -80,7 +84,7 @@ public sealed class CosmosDatabase : IDatabase
         var typedQueryDefinition = new QueryDefinition(query: typedQuerySql);
         typedQueryDefinition.WithParameter("@type", typeof(TEntity).Name);
 
-        var container = GetContainer(query.EntityConfiguration.ContainerName);
+        var container = _containerProvider.GetOrAddContainer(query.EntityConfiguration.ContainerName);
 
         var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
 
@@ -111,7 +115,7 @@ public sealed class CosmosDatabase : IDatabase
         foreach (var parameter in query.Parameters)
             queryDefinition.WithParameter(name: parameter.Name, value: parameter.Value);
 
-        var container = GetContainer(query.EntityConfiguration.ContainerName);
+        var container = _containerProvider.GetOrAddContainer(query.EntityConfiguration.ContainerName);
 
         var queryRequestOptions =
             new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
@@ -171,7 +175,7 @@ public sealed class CosmosDatabase : IDatabase
 
     private ICosmosWriteOperation CreateWriteOperation(EntityEntry entry)
     {
-        var container = GetContainer(entry.ContainerName);
+        var container = _containerProvider.GetOrAddContainer(entry.ContainerName);
 
         return entry.State switch
         {
@@ -180,17 +184,5 @@ public sealed class CosmosDatabase : IDatabase
             EntityState.Modified => new ReplaceItemOperation(container, entry.Entity, entry.Id, entry.PartitionKey),
             _ => throw new NotImplementedException()
         };
-    }
-
-    private Container GetContainer(string containerName)
-    {
-        if (_containers.TryGetValue(containerName, out var container))
-            return container;
-
-        container = _database.GetContainer(containerName);
-
-        _containers.Add(key: containerName, value: container);
-
-        return container;
     }
 }
