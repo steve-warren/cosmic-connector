@@ -315,7 +315,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     [Fact]
     public async Task Can_Use_Query_Facade()
     {
-        var stream = new MemoryStream();
+        var pipe = new Pipe();
 
         await _queryFacade.ExecuteQueryAsync(
             pipeWriter: pipe.Writer,
