@@ -2,43 +2,34 @@
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Text.Json;
+using Cosmodust.Extensions;
+using Cosmodust.Json;
 using Cosmodust.Serialization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 
-namespace Cosmodust.Cosmos;
+namespace Cosmodust;
 
 public class QueryFacade
 {
-    private const string ETagPropertyName = "_etag";
-
     private readonly Database _database;
     private readonly SqlParameterObjectTypeCache _sqlParameterObjectTypeCache;
     private readonly ILogger<QueryFacade> _logger;
-
-    private static readonly Dictionary<string, string?> s_cosmosDbMetadataFieldNames = new()
-    {
-        { "_rid", null },
-        { "_self", null },
-        { "_attachments", null },
-        { "_ts", null }
-    };
-
-    private static readonly Dictionary<string, string> s_dictionary = new()
-    {
-        { "Documents", "items" },
-        { "_count", "itemCount" }
-    };
+    private readonly CosmodustQueryOptions _options;
+    private readonly IReadOnlyList<IJsonPropertyConverter> _converters;
 
     public QueryFacade(
         CosmosClient client,
         string databaseName,
         SqlParameterObjectTypeCache sqlParameterObjectTypeCache,
-        ILogger<QueryFacade> logger)
+        ILogger<QueryFacade> logger,
+        CosmodustQueryOptions? options = null)
     {
         _database = client.GetDatabase(databaseName);
         _sqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
         _logger = logger;
+        _options = options ?? new CosmodustQueryOptions();
+        _converters = _options.BuildConverters();
     }
 
     public async ValueTask ExecuteQueryAsync(
@@ -49,11 +40,7 @@ public class QueryFacade
         string? partitionKey = default)
     {
         var container = _database.GetContainer(containerName);
-
-        var query = new QueryDefinition(sql);
-
-        foreach (var parameter in _sqlParameterObjectTypeCache.ExtractParametersFromObject(parameters))
-            query.WithParameter(parameter.Name, parameter.Value);
+        var query = BuildSqlQueryDefinition(sql, parameters);
 
         using var feed = container.GetItemQueryStreamIterator(query,
             requestOptions: new QueryRequestOptions
@@ -67,7 +54,7 @@ public class QueryFacade
         {
             await using var writer = new Utf8JsonWriter(pipeWriter, new JsonWriterOptions
             {
-                Indented = true,
+                Indented = _options.IndentJsonOutput,
                 SkipValidation = true
             });
 
@@ -76,19 +63,15 @@ public class QueryFacade
                 var readNextTask = feed.ReadNextAsync();
 
                 await flushTask.ConfigureAwait(false);
+
                 using var response = await readNextTask.ConfigureAwait(false);
-
-                Debug.WriteLine($"{response.Headers.RequestCharge} RUs");
-
-                // ReSharper disable once UseAwaitUsing
-                // underlying stream is MemoryStream
                 using var stream = response.Content as MemoryStream;
 
                 Debug.Assert(stream is not null);
 
                 var inputBuffer = new ReadOnlySequence<byte>(stream.GetBuffer(), 0, (int) stream.Length);
 
-                TransformJson(inputBuffer, writer);
+                TransformJson(_converters, inputBuffer, writer);
 
                 flushTask = writer.FlushAsync();
             }
@@ -101,8 +84,22 @@ public class QueryFacade
         }
     }
 
-    private static void TransformJson(ReadOnlySequence<byte> inputBuffer, Utf8JsonWriter writer)
+    private QueryDefinition BuildSqlQueryDefinition(string sql, object? parameters)
     {
+        var query = new QueryDefinition(sql);
+
+        foreach (var parameter in _sqlParameterObjectTypeCache.ExtractParametersFromObject(parameters))
+            query.WithParameter(parameter.Name, parameter.Value);
+        return query;
+    }
+
+    private static void TransformJson(
+        IReadOnlyList<IJsonPropertyConverter> propertyConverters,
+        ReadOnlySequence<byte> inputBuffer,
+        Utf8JsonWriter writer)
+    {
+        Debug.Assert(propertyConverters is not null);
+
         var readerOptions = new JsonReaderOptions { CommentHandling = JsonCommentHandling.Skip };
         var reader = new Utf8JsonReader(inputBuffer, readerOptions);
 
@@ -111,28 +108,22 @@ public class QueryFacade
             switch (reader.TokenType)
             {
                 case JsonTokenType.PropertyName:
-                    var originalPropertyName = reader.GetString();
+                    var propertyName = reader.GetString();
 
-                    Debug.Assert(originalPropertyName is not null);
+                    Debug.Assert(propertyName is not null);
 
-                    if (s_cosmosDbMetadataFieldNames.ContainsKey(originalPropertyName))
+                    var handled = false;
+
+                    foreach (var converter in propertyConverters)
                     {
-                        reader.Skip();
-                        break;
+                        handled = converter.Convert(propertyName, ref reader, writer);
+
+                        if (handled)
+                            break;
                     }
 
-                    var newPropertyName = s_dictionary.GetValueOrDefault(
-                        originalPropertyName, 
-                        originalPropertyName);
-                    writer.WritePropertyName(newPropertyName);
-
-                    if (originalPropertyName == ETagPropertyName)
-                    {
-                        reader.Read();
-
-                        var etagValue = reader.GetString();
-                        writer.WriteStringValue(etagValue);
-                    }
+                    if (!handled)
+                        writer.WritePropertyName(propertyName);
 
                     continue;
 

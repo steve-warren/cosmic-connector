@@ -1,5 +1,4 @@
-﻿using Cosmodust.Cosmos;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace Cosmodust.Samples.TodoApp.Endpoints;
 
