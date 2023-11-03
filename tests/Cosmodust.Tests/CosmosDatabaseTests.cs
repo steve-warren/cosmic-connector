@@ -318,7 +318,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var stream = new MemoryStream();
 
         await _queryFacade.ExecuteQueryAsync(
-            outputStream: stream,
+            pipeWriter: pipe.Writer,
             containerName: "todo",
             partitionKey: "a_2X011ldw0dogcauAbw0oExAv21H",
             sql: "select * from c where c.ownerId = @ownerId",

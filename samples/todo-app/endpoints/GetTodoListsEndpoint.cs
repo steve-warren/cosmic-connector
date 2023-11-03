@@ -14,9 +14,10 @@ public class GetTodoListsEndpoint : ControllerBase
         Response.ContentType = "application/json; charset=utf-8";
 
         await queryFacade.ExecuteQueryAsync(
-            outputStream: Response.Body,
+            pipeWriter: Response.BodyWriter,
             containerName: "todo",
             partitionKey: ownerId,
-            sql: @"select * from c where c.__type = 'TodoList'");
+            sql: @"select * from c where c.__type = 'TodoList' and c.ownerId = @ownerId",
+            parameters: new { ownerId = ownerId });
     }
 }

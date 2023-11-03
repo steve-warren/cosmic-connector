@@ -15,7 +15,7 @@ public class GetTodoItemsEndpoint : ControllerBase
         Response.ContentType = "application/json; charset=utf-8";
 
         await queryFacade.ExecuteQueryAsync(
-            outputStream: Response.Body,
+            pipeWriter: Response.BodyWriter,
             containerName: "todo",
             partitionKey: ownerId,
             sql: @"select * from c where c.__type = 'TodoItem' and c.listId = @listId",

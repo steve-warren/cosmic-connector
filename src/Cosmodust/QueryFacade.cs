@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
+using System.IO.Pipelines;
 using System.Text.Json;
 using Cosmodust.Serialization;
 using Microsoft.Azure.Cosmos;
@@ -9,13 +10,13 @@ namespace Cosmodust.Cosmos;
 
 public class QueryFacade
 {
-    private const string ETag = "_etag";
+    private const string ETagPropertyName = "_etag";
 
     private readonly Database _database;
     private readonly SqlParameterObjectTypeCache _sqlParameterObjectTypeCache;
     private readonly ILogger<QueryFacade> _logger;
 
-    private static readonly Dictionary<string, string?> s_skip = new()
+    private static readonly Dictionary<string, string?> s_cosmosDbMetadataFieldNames = new()
     {
         { "_rid", null },
         { "_self", null },
@@ -41,7 +42,7 @@ public class QueryFacade
     }
 
     public async ValueTask ExecuteQueryAsync(
-        Stream outputStream,
+        PipeWriter pipeWriter,
         string containerName,
         string sql,
         object? parameters = default,
@@ -64,12 +65,12 @@ public class QueryFacade
 
         try
         {
-            await using var writer = new Utf8JsonWriter(Stream.Null, new JsonWriterOptions
+            await using var writer = new Utf8JsonWriter(pipeWriter, new JsonWriterOptions
             {
                 Indented = true,
                 SkipValidation = true
             });
-            
+
             while (feed.HasMoreResults)
             {
                 var readNextTask = feed.ReadNextAsync();
@@ -82,15 +83,13 @@ public class QueryFacade
                 // ReSharper disable once UseAwaitUsing
                 // underlying stream is MemoryStream
                 using var stream = response.Content as MemoryStream;
-                
+
                 Debug.Assert(stream is not null);
-                
+
                 var inputBuffer = new ReadOnlySequence<byte>(stream.GetBuffer(), 0, (int) stream.Length);
 
-                writer.Reset(outputStream);
-                
-                TransformAndCopyJson(inputBuffer, writer);
-                
+                TransformJson(inputBuffer, writer);
+
                 flushTask = writer.FlushAsync();
             }
         }
@@ -102,7 +101,7 @@ public class QueryFacade
         }
     }
 
-    private static void TransformAndCopyJson(ReadOnlySequence<byte> inputBuffer, Utf8JsonWriter writer)
+    private static void TransformJson(ReadOnlySequence<byte> inputBuffer, Utf8JsonWriter writer)
     {
         var readerOptions = new JsonReaderOptions { CommentHandling = JsonCommentHandling.Skip };
         var reader = new Utf8JsonReader(inputBuffer, readerOptions);
@@ -115,8 +114,8 @@ public class QueryFacade
                     var originalPropertyName = reader.GetString();
 
                     Debug.Assert(originalPropertyName is not null);
-                    
-                    if (s_skip.ContainsKey(originalPropertyName))
+
+                    if (s_cosmosDbMetadataFieldNames.ContainsKey(originalPropertyName))
                     {
                         reader.Skip();
                         break;
@@ -127,28 +126,28 @@ public class QueryFacade
                         originalPropertyName);
                     writer.WritePropertyName(newPropertyName);
 
-                    if (originalPropertyName == ETag)
+                    if (originalPropertyName == ETagPropertyName)
                     {
                         reader.Read();
-                        
+
                         var etagValue = reader.GetString();
                         writer.WriteStringValue(etagValue);
                     }
 
                     continue;
-                
+
                 case JsonTokenType.StartObject:
                     writer.WriteStartObject();
                     break;
-                
+
                 case JsonTokenType.EndObject:
                     writer.WriteEndObject();
                     break;
-                
+
                 case JsonTokenType.StartArray:
                     writer.WriteStartArray();
                     break;
-                
+
                 case JsonTokenType.EndArray:
                     writer.WriteEndArray();
                     break;
