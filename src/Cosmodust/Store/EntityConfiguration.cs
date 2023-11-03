@@ -17,7 +17,7 @@ public record EntityConfiguration(Type EntityType)
     public bool IsPartitionKeyDefinedInEntity { get; set; }
 
     public EntityEntry CreateEntry(
-        JsonPropertyStore store,
+        JsonPropertyBroker broker,
         object entity,
         EntityState state)
     {
@@ -38,11 +38,11 @@ public record EntityConfiguration(Type EntityType)
             PartitionKey = partitionKey,
             Entity = entity,
             EntityType = EntityType,
-            Store = store,
+            Broker = broker,
             State = state
         };
 
-        entry.ReadJsonProperties();
+        entry.TakeJsonPropertiesFromBroker();
 
         if (state != EntityState.Added)
             return entry;

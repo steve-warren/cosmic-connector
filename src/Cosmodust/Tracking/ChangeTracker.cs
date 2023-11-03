@@ -7,20 +7,20 @@ namespace Cosmodust.Tracking;
 
 public sealed class ChangeTracker : IDisposable
 {
-    private readonly JsonPropertyStore _propertyStore;
+    private readonly JsonPropertyBroker _propertyBroker;
     private readonly List<EntityEntry> _entries = new();
     private readonly Dictionary<(Type Type, string Id), object> _entityByTypeId = new();
     private readonly Dictionary<object, EntityEntry> _entriesByEntity = new();
 
     public ChangeTracker(
         EntityConfigurationProvider entityConfiguration,
-        JsonPropertyStore propertyStore)
+        JsonPropertyBroker propertyBroker)
     {
         Ensure.NotNull(entityConfiguration);
-        Ensure.NotNull(propertyStore);
+        Ensure.NotNull(propertyBroker);
 
         EntityConfiguration = entityConfiguration;
-        _propertyStore = propertyStore;
+        _propertyBroker = propertyBroker;
     }
 
     public EntityConfigurationProvider EntityConfiguration { get; }
@@ -170,7 +170,7 @@ public sealed class ChangeTracker : IDisposable
 
         var entityType = entity.GetType();
         var config = EntityConfiguration.GetEntityConfiguration(entityType);
-        var entry = config.CreateEntry(_propertyStore, entity, state);
+        var entry = config.CreateEntry(_propertyBroker, entity, state);
 
         return entry;
     }
@@ -198,7 +198,7 @@ public sealed class ChangeTracker : IDisposable
         {
             try
             {
-                entry.ReadJsonProperties();
+                entry.TakeJsonPropertiesFromBroker();
             }
 
             catch

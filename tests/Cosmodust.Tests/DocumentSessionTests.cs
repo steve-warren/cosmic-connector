@@ -36,7 +36,7 @@ public class DocumentStoreTests
 
         Action action = () => session.Store<ReminderList>(null!);
 
-        action.Should().Throw<ArgumentNullException>(because: "we should not be able to store a null entity");
+        action.Should().Throw<ArgumentNullException>(because: "we should not be able to broker a null entity");
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class DocumentStoreTests
 
         Action action = () => session.Store(entity);
 
-        action.Should().Throw<InvalidOperationException>(because: "we should not be able to store an entity that has not been configured");
+        action.Should().Throw<InvalidOperationException>(because: "we should not be able to broker an entity that has not been configured");
     }
 
     [Fact]

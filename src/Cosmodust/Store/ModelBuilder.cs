@@ -13,18 +13,18 @@ namespace Cosmodust.Store;
 public class ModelBuilder
 {
     private readonly JsonSerializerOptions _options;
-    private readonly JsonPropertyStore _jsonPropertyStore;
+    private readonly JsonPropertyBroker _jsonPropertyBroker;
     private readonly List<IEntityBuilder> _entityBuilders = new();
 
     public ModelBuilder(
         JsonSerializerOptions options,
-        JsonPropertyStore jsonPropertyStore)
+        JsonPropertyBroker jsonPropertyBroker)
     {
         Ensure.NotNull(options);
-        Ensure.NotNull(jsonPropertyStore);
+        Ensure.NotNull(jsonPropertyBroker);
 
         _options = options;
-        _jsonPropertyStore = jsonPropertyStore;
+        _jsonPropertyBroker = jsonPropertyBroker;
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public class ModelBuilder
     /// <returns>An instance of <see cref="EntityBuilder{TEntity}"/>.</returns>
     public EntityBuilder<TEntity> DefineEntity<TEntity>() where TEntity : class
     {
-        var entityBuilder = new EntityBuilder<TEntity>(_jsonPropertyStore);
+        var entityBuilder = new EntityBuilder<TEntity>(_jsonPropertyBroker);
 
         _entityBuilders.Add(entityBuilder);
 

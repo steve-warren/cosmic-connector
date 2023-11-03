@@ -23,13 +23,13 @@ public static class CosmodustServiceCollectionExtensions
         Action<CosmodustOptions> cosmodustOptionsAction)
     {
         services.Configure(cosmodustOptionsAction)
-            .AddSingleton<JsonPropertyStore>()
+            .AddSingleton<JsonPropertyBroker>()
             .AddSingleton<EntityConfigurationProvider>()
-            .AddSingleton<SqlParameterObjectTypeCache>()
+            .AddSingleton<SqlParameterObjectTypeResolver>()
             .AddSingleton<CosmodustJsonSerializer>(sp =>
             {
                 var entityConfigurationProvider = sp.GetRequiredService<EntityConfigurationProvider>();
-                var jsonSerializerPropertyStore = sp.GetRequiredService<JsonPropertyStore>();
+                var jsonSerializerPropertyStore = sp.GetRequiredService<JsonPropertyBroker>();
 
                 return new CosmodustJsonSerializer(
                     new IJsonTypeModifier[]
@@ -68,7 +68,7 @@ public static class CosmodustServiceCollectionExtensions
                 return new QueryFacade(
                     sp.GetRequiredService<CosmosClient>(),
                     databaseName: options.DatabaseId,
-                    sp.GetRequiredService<SqlParameterObjectTypeCache>(),
+                    sp.GetRequiredService<SqlParameterObjectTypeResolver>(),
                     sp.GetRequiredService<ILogger<QueryFacade>>(),
                     options: options.QueryOptions);
             })
@@ -88,8 +88,8 @@ public static class CosmodustServiceCollectionExtensions
                     database,
                     jsonSerializerOptions,
                     sp.GetRequiredService<EntityConfigurationProvider>(),
-                    sqlParameterCache: sp.GetRequiredService<SqlParameterObjectTypeCache>(),
-                    shadowPropertyStore: sp.GetRequiredService<JsonPropertyStore>());
+                    sqlParameterCache: sp.GetRequiredService<SqlParameterObjectTypeResolver>(),
+                    shadowPropertyStore: sp.GetRequiredService<JsonPropertyBroker>());
 
                 store.DefineModel(cosmodustOptions.ModelBuilder);
                 
