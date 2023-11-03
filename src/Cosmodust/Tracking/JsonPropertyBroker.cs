@@ -4,16 +4,14 @@ using System.Diagnostics;
 namespace Cosmodust.Tracking;
 
 /// <summary>
-/// An in-memory store for storing entity properties, such as shadow properties. This class is thread-safe.
+/// An in-memory broker for exchanging entity properties, such as shadow properties. This class is thread-safe.
 /// </summary>
-public sealed class JsonPropertyStore : IDisposable
+public sealed class JsonPropertyBroker : IDisposable
 {
     public static readonly IDictionary<string, object?> EmptyJsonProperties =
         new Dictionary<string, object?>(capacity: 0).AsReadOnly();
 
-    private readonly ConcurrentDictionary<
-        object,
-        IDictionary<string, object?>> _store = new();
+    private readonly ConcurrentDictionary<object, IDictionary<string, object?>> _store = new();
 
     /// <summary>
     /// Sets the property value for the specified entity and property name.
@@ -42,18 +40,18 @@ public sealed class JsonPropertyStore : IDisposable
     }
 
     /// <summary>
-    /// Removes the given entity's JSON properties from the store.
+    /// Removes the given entity's JSON properties from the broker.
     /// </summary>
     /// <param name="entity">The entity to remove from the cache.</param>
     /// <returns>The JSON properties associated with the entity, or null if none were found.</returns>
-    public IDictionary<string, object?>? Borrow(object entity)
+    public IDictionary<string, object?>? TakeEntityProperties(object entity)
     {
         _store.TryRemove(entity, out var properties);
 
         return properties;
     }
 
-    public void Return(object entity, IDictionary<string, object?> properties)
+    public void SetEntityProperties(object entity, IDictionary<string, object?> properties)
     {
         var addResult = _store.TryAdd(entity, properties);
 

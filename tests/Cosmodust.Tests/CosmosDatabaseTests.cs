@@ -25,7 +25,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var configuration = configurationTextFixture.Configuration;
 
         var entityConfiguration = new EntityConfigurationProvider();
-        var propertyStore = new JsonPropertyStore();
+        var propertyStore = new JsonPropertyBroker();
         var serializer = new CosmodustJsonSerializer(new IJsonTypeModifier[]
         {
             new TypeMetadataJsonTypeModifier(),
@@ -79,7 +79,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         _queryFacade = new QueryFacade(
             client: cosmosClient,
             databaseName: "reminderdb",
-            sqlParameterObjectTypeCache: new SqlParameterObjectTypeCache(),
+            sqlParameterObjectTypeResolver: new SqlParameterObjectTypeResolver(),
             new Logger<QueryFacade>(nullLoggerFactory));
     }
 

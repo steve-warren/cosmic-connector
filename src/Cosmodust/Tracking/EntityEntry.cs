@@ -10,7 +10,7 @@ public sealed class EntityEntry
     public required string PartitionKey { get; init; }
     public required object Entity { get; init; }
     public required Type EntityType { get; init; }
-    public required JsonPropertyStore Store { get; init; }
+    public required JsonPropertyBroker Broker { get; init; }
     public string? ETag { get; set; }
     public IDictionary<string, object?> JsonProperties { get; private set; }
         = new Dictionary<string, object?>();
@@ -67,31 +67,31 @@ public sealed class EntityEntry
         JsonProperties[jsonPropertyName] = value;
 
     /// <summary>
-    /// Reads JSON properties from the store for the current entity.
+    /// Reads JSON properties from the broker for the current entity.
     /// </summary>
-    public void ReadJsonProperties()
+    public void TakeJsonPropertiesFromBroker()
     {
         Debug.Assert(Entity != null);
-        JsonProperties = Store.Borrow(Entity) ?? JsonProperties;
-        Debug.WriteLine($"Retrieved entity '{Id}' from the shadow property store.");
+        JsonProperties = Broker.TakeEntityProperties(Entity) ?? JsonProperties;
+        Debug.WriteLine($"Retrieved entity '{Id}' from the shadow property broker.");
     }
 
     /// <summary>
-    /// Writes the JSON properties of the entity to the store for serialization.
+    /// Writes the JSON properties of the entity to the broker for serialization.
     /// </summary>
-    public void WriteJsonProperties()
+    public void DetachJsonPropertiesAndSendToBroker()
     {
         Debug.Assert(Entity != null);
 
         try
         {
-            Store.Return(Entity, JsonProperties);
-            Debug.WriteLine($"Returned entity '{Id}' to the shadow property store.");
+            Broker.SetEntityProperties(Entity, JsonProperties);
+            Debug.WriteLine($"Returned entity '{Id}' to the shadow property broker.");
         }
 
         finally
         {
-            JsonProperties = JsonPropertyStore.EmptyJsonProperties;
+            JsonProperties = JsonPropertyBroker.EmptyJsonProperties;
         }
     }
 }

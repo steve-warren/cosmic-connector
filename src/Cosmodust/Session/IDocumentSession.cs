@@ -25,8 +25,8 @@ public interface IDocumentSession
     /// <summary>
     /// Stores the specified entity in the session.
     /// </summary>
-    /// <typeparam name="TEntity">The type of entity to store.</typeparam>
-    /// <param name="entity">The entity to store.</param>
+    /// <typeparam name="TEntity">The type of entity to broker.</typeparam>
+    /// <param name="entity">The entity to broker.</param>
     void Store<TEntity>(TEntity entity);
     /// <summary>
     /// Removes the specified entity from the session.

@@ -13,7 +13,7 @@ namespace Cosmodust;
 public class QueryFacade
 {
     private readonly Database _database;
-    private readonly SqlParameterObjectTypeCache _sqlParameterObjectTypeCache;
+    private readonly SqlParameterObjectTypeResolver _sqlParameterObjectTypeResolver;
     private readonly ILogger<QueryFacade> _logger;
     private readonly CosmodustQueryOptions _options;
     private readonly IReadOnlyList<IJsonPropertyConverter> _converters;
@@ -21,12 +21,12 @@ public class QueryFacade
     public QueryFacade(
         CosmosClient client,
         string databaseName,
-        SqlParameterObjectTypeCache sqlParameterObjectTypeCache,
+        SqlParameterObjectTypeResolver sqlParameterObjectTypeResolver,
         ILogger<QueryFacade> logger,
         CosmodustQueryOptions? options = null)
     {
         _database = client.GetDatabase(databaseName);
-        _sqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
+        _sqlParameterObjectTypeResolver = sqlParameterObjectTypeResolver;
         _logger = logger;
         _options = options ?? new CosmodustQueryOptions();
         _converters = _options.BuildConverters();
@@ -88,7 +88,7 @@ public class QueryFacade
     {
         var query = new QueryDefinition(sql);
 
-        foreach (var parameter in _sqlParameterObjectTypeCache.ExtractParametersFromObject(parameters))
+        foreach (var parameter in _sqlParameterObjectTypeResolver.ExtractParametersFromObject(parameters))
             query.WithParameter(parameter.Name, parameter.Value);
         return query;
     }

@@ -13,21 +13,21 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     internal DocumentSession(
         IDatabase database,
         EntityConfigurationProvider entityConfiguration,
-        SqlParameterObjectTypeCache sqlParameterObjectTypeCache,
-        JsonPropertyStore jsonPropertyStore)
+        SqlParameterObjectTypeResolver sqlParameterObjectTypeResolver,
+        JsonPropertyBroker jsonPropertyBroker)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
-        SqlParameterObjectTypeCache = sqlParameterObjectTypeCache;
+        SqlParameterObjectTypeResolver = sqlParameterObjectTypeResolver;
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
-            jsonPropertyStore);
+            jsonPropertyBroker);
     }
 
     public ChangeTracker ChangeTracker { get; }
     public IDatabase Database { get; }
     public EntityConfigurationProvider EntityConfiguration { get; }
-    public SqlParameterObjectTypeCache SqlParameterObjectTypeCache { get; }
+    public SqlParameterObjectTypeResolver SqlParameterObjectTypeResolver { get; }
 
     /// <inheritdoc />
     public async ValueTask<TEntity?> FindAsync<TEntity>(
@@ -104,7 +104,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
             entityConfiguration: config,
             sql: sql,
             partitionKey: partitionKey,
-            parameters: SqlParameterObjectTypeCache.ExtractParametersFromObject(parameters));
+            parameters: SqlParameterObjectTypeResolver.ExtractParametersFromObject(parameters));
     }
 
     /// <inheritdoc />

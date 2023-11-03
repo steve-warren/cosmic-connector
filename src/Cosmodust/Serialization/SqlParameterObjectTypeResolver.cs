@@ -8,11 +8,11 @@ namespace Cosmodust.Serialization;
 /// <summary>
 /// Provides a cache for storing and retrieving SQL parameter values for a given type. This class is thread-safe.
 /// </summary>
-public sealed class SqlParameterObjectTypeCache
+public sealed class SqlParameterObjectTypeResolver
 {
     private readonly ConcurrentDictionary<Type, ReadOnlyDictionary<string, Func<object, object?>>> _typeCache;
 
-    public SqlParameterObjectTypeCache(
+    public SqlParameterObjectTypeResolver(
         ConcurrentDictionary<Type, ReadOnlyDictionary<string, Func<object, object?>>>? typeCache = default)
     {
         _typeCache = typeCache ??
