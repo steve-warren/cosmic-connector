@@ -10,27 +10,11 @@ public sealed class CosmodustJsonSerializer : CosmosSerializer
     private readonly IMemoryStreamProvider _memoryStreamProvider;
 
     public CosmodustJsonSerializer(
-        IEnumerable<IJsonTypeModifier> jsonTypeModifiers,
+        JsonSerializerOptions options,
         IMemoryStreamProvider? memoryStreamProvider = default)
     {
-        Options = BuildOptions(jsonTypeModifiers);
+        Options = options;
         _memoryStreamProvider = memoryStreamProvider ?? DefaultMemoryStreamProvider.Instance;
-    }
-
-    private static JsonSerializerOptions BuildOptions(
-        IEnumerable<IJsonTypeModifier> jsonTypeModifiers)
-    {
-        var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
-
-        foreach (var action in jsonTypeModifiers)
-            jsonTypeInfoResolver.Modifiers.Add(action.Modify);
-
-        return new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            TypeInfoResolver = jsonTypeInfoResolver
-        };
     }
     
     public JsonSerializerOptions Options { get; }

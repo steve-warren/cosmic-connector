@@ -1,4 +1,6 @@
 using System.IO.Pipelines;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos;
 using Cosmodust.Cosmos.Tests;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
@@ -24,19 +26,34 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     {
         var configuration = configurationTextFixture.Configuration;
 
-        var entityConfiguration = new EntityConfigurationProvider();
-        var propertyStore = new JsonPropertyBroker();
-        var serializer = new CosmodustJsonSerializer(new IJsonTypeModifier[]
+        var entityConfigurationProvider = new EntityConfigurationProvider();
+        var jsonSerializerPropertyStore = new JsonPropertyBroker();
+        var jsonNamingPolicy = JsonNamingPolicy.CamelCase;
+
+        var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
+        var jsonTypeModifiers = new IJsonTypeModifier[]
         {
             new TypeMetadataJsonTypeModifier(),
-            new BackingFieldJsonTypeModifier(entityConfiguration),
-            new PropertyJsonTypeModifier(entityConfiguration),
-            new ShadowPropertyJsonTypeModifier(entityConfiguration),
-            new PartitionKeyJsonTypeModifier(entityConfiguration),
-            new PropertyPrivateSetterJsonTypeModifier(entityConfiguration),
-            new DocumentETagJsonTypeModifier(entityConfiguration, propertyStore)
-        });
-        
+            new BackingFieldJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
+            new PropertyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
+            new PartitionKeyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
+            new ShadowPropertyJsonTypeModifier(entityConfigurationProvider),
+            new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider),
+            new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore)
+        };
+
+        foreach (var action in jsonTypeModifiers)
+            jsonTypeInfoResolver.Modifiers.Add(action.Modify);
+
+        var jsonSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            TypeInfoResolver = jsonTypeInfoResolver
+        };
+
+        var serializer = new CosmodustJsonSerializer(jsonSerializerOptions);
+
         var cosmosClient = new CosmosClient(configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
         {
             Serializer = serializer
@@ -50,8 +67,8 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                     PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
                 }),
                 serializer.Options,
-                entityConfiguration,
-                shadowPropertyStore: propertyStore)
+                entityConfigurationProvider,
+                shadowPropertyStore: jsonSerializerPropertyStore)
                     .DefineModel(builder =>
                     {
                         builder.DefineEntity<AccountPlan>()

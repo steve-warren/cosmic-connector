@@ -49,7 +49,7 @@ public class SerializationTests
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 TypeInfoResolver = new DefaultJsonTypeInfoResolver()
                 {
-                    Modifiers = { new BackingFieldJsonTypeModifier(configuration).Modify }
+                    Modifiers = { new BackingFieldJsonTypeModifier(configuration, JsonNamingPolicy.CamelCase).Modify }
                 }
             });
 
