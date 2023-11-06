@@ -11,10 +11,14 @@ namespace Cosmodust.Json;
 public sealed class PropertyJsonTypeModifier : IJsonTypeModifier
 {
     private readonly EntityConfigurationProvider _entityConfigurationProvider;
+    private readonly JsonNamingPolicy _jsonNamingPolicy;
 
-    public PropertyJsonTypeModifier(EntityConfigurationProvider entityConfigurationProvider)
+    public PropertyJsonTypeModifier(
+        EntityConfigurationProvider entityConfigurationProvider,
+        JsonNamingPolicy jsonNamingPolicy)
     {
         _entityConfigurationProvider = entityConfigurationProvider;
+        _jsonNamingPolicy = jsonNamingPolicy;
     }
 
     public void Modify(JsonTypeInfo jsonTypeInfo)
@@ -27,7 +31,7 @@ public sealed class PropertyJsonTypeModifier : IJsonTypeModifier
 
         foreach (var property in entityConfiguration.Properties)
         {
-            var fieldName = JsonNamingPolicy.CamelCase.ConvertName(property.PropertyName);
+            var fieldName = _jsonNamingPolicy.ConvertName(property.PropertyName);
             var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(property.PropertyType, fieldName);
             jsonPropertyInfo.Get = property.Getter;
             jsonPropertyInfo.Set = property.Setter;
