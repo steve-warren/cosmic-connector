@@ -23,7 +23,7 @@ public class CosmodustTodoItemRepository : ITodoItemRepository
     {
         var query = _session.Query<TodoItem>(
             partitionKey: ownerId,
-            sql: "select * from c where c.listId = @listId AND c.__type = 'TodoItem'",
+            sql: "select * from c where c.listId = @listId AND c._type = 'TodoItem'",
             parameters: new { id = listId });
 
         return query.ToListAsync();
