@@ -12,6 +12,7 @@ public class CosmodustOptions
     internal string DatabaseId { get; private set; } = "";
     internal Action<ModelBuilder> ModelBuilder { get; private set; } = _ => { };
     internal CosmodustQueryOptions? QueryOptions { get; private set; }
+    internal CosmodustJsonOptions? JsonOptions { get; private set; }
 
     /// <summary>
     /// Sets the connection string to be used by the Cosmodust client.
@@ -56,6 +57,11 @@ public class CosmodustOptions
         Action<CosmodustJsonOptions> jsonOptions)
     {
         Ensure.NotNull(jsonOptions);
+
+        JsonOptions = new CosmodustJsonOptions();
+
+        jsonOptions(JsonOptions);
+
         return this;
     }
 

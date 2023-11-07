@@ -69,6 +69,10 @@ public class SerializationTests
         using var stream = new MemoryStream();
         var entity = new EmptyType();
 
+        var entityConfigurationProvider = new EntityConfigurationProvider();
+        entityConfigurationProvider.AddEntityConfiguration(
+            new EntityConfiguration(typeof(EmptyType)));
+
         JsonSerializer.Serialize(stream, entity, typeof(EmptyType),
             new JsonSerializerOptions
             {
@@ -76,7 +80,7 @@ public class SerializationTests
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 TypeInfoResolver = new DefaultJsonTypeInfoResolver()
                 {
-                    Modifiers = { new TypeMetadataJsonTypeModifier().Modify }
+                    Modifiers = { new TypeMetadataJsonTypeModifier(entityConfigurationProvider).Modify }
                 }
             });
 
@@ -85,7 +89,7 @@ public class SerializationTests
         var reader = new StreamReader(stream);
         var json = reader.ReadLine();
 
-        json.Should().Be("""{"__type":"EmptyType"}""", because: "we should be able to serialize the object's type.");
+        json.Should().Be("""{"_type":"EmptyType"}""", because: "we should be able to serialize the object's type.");
     }
 
     public record ArchiveState

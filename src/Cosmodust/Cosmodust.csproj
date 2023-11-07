@@ -4,9 +4,17 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.1.1</Version>
+    <Title>Cosmodust ORM</Title>
+    <Authors>Steve Warren</Authors>
+    <Copyright>2023 Steve Warren</Copyright>
+    <PackageProjectUrl>https://github.com/steve-warren/cosmo-dust</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/steve-warren/cosmo-dust</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />

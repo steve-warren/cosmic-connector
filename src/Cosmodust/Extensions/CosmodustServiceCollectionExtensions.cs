@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Json;
+using Cosmodust.Memory;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Store;
@@ -25,6 +26,7 @@ public static class CosmodustServiceCollectionExtensions
         Action<CosmodustOptions> cosmodustOptionsAction)
     {
         services.Configure(cosmodustOptionsAction)
+            .AddSingleton<IMemoryStreamProvider, RecyclableMemoryStreamProvider>()
             .AddSingleton<JsonPropertyBroker>()
             .AddSingleton<EntityConfigurationProvider>()
             .AddSingleton<SqlParameterObjectTypeResolver>()
@@ -33,30 +35,23 @@ public static class CosmodustServiceCollectionExtensions
                 var entityConfigurationProvider = sp.GetRequiredService<EntityConfigurationProvider>();
                 var jsonSerializerPropertyStore = sp.GetRequiredService<JsonPropertyBroker>();
 
-                var jsonNamingPolicy = JsonNamingPolicy.CamelCase;
-                var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
-                var jsonTypeModifiers = new IJsonTypeModifier[]
+                var jsonOptions = sp.GetRequiredService<IOptions<CosmodustOptions>>().Value.JsonOptions;
+
+                foreach(var jsonTypeModifier in new IJsonTypeModifier[]
                 {
-                    new TypeMetadataJsonTypeModifier(),
-                    new BackingFieldJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
-                    new PropertyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
-                    new PartitionKeyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
+                    new TypeMetadataJsonTypeModifier(entityConfigurationProvider),
+                    new BackingFieldJsonTypeModifier(entityConfigurationProvider, JsonNamingPolicy.CamelCase),
+                    new PropertyJsonTypeModifier(entityConfigurationProvider, JsonNamingPolicy.CamelCase),
+                    new PartitionKeyJsonTypeModifier(entityConfigurationProvider, JsonNamingPolicy.CamelCase),
                     new ShadowPropertyJsonTypeModifier(entityConfigurationProvider),
                     new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider),
                     new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore)
-                };
-
-                foreach (var action in jsonTypeModifiers)
-                    jsonTypeInfoResolver.Modifiers.Add(action.Modify);
-
-                var jsonSerializerOptions = new JsonSerializerOptions
+                })
                 {
-                    PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    TypeInfoResolver = jsonTypeInfoResolver
-                };
-
-                return new CosmodustJsonSerializer(jsonSerializerOptions);
+                    jsonOptions.WithJsonTypeModifier(jsonTypeModifier);
+                }
+                
+                return new CosmodustJsonSerializer(jsonOptions.Build());
             })
             .AddSingleton<CosmosClient>(sp =>
             {
