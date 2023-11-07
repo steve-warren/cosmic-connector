@@ -80,7 +80,7 @@ public sealed class CosmosDatabase : IDatabase
         Ensure.NotNull(query);
 
         var originalQueryDefinition = query.DatabaseLinqQuery.ToQueryDefinition();
-        var typedQuerySql = originalQueryDefinition.QueryText + " AND root.__type = @type";
+        var typedQuerySql = originalQueryDefinition.QueryText + " AND root._type = @type";
         var typedQueryDefinition = new QueryDefinition(query: typedQuerySql);
         typedQueryDefinition.WithParameter("@type", typeof(TEntity).Name);
 

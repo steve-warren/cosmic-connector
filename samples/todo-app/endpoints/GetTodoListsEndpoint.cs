@@ -16,7 +16,7 @@ public class GetTodoListsEndpoint : ControllerBase
             pipeWriter: Response.BodyWriter,
             containerName: "todo",
             partitionKey: ownerId,
-            sql: @"select * from c where c.__type = 'TodoList' and c.ownerId = @ownerId",
+            sql: @"select * from c where c._type = 'TodoList' and c.ownerId = @ownerId",
             parameters: new { ownerId = ownerId });
     }
 }

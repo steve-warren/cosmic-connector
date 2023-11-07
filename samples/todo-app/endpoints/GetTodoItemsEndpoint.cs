@@ -17,7 +17,7 @@ public class GetTodoItemsEndpoint : ControllerBase
             pipeWriter: Response.BodyWriter,
             containerName: "todo",
             partitionKey: ownerId,
-            sql: @"select * from c where c.__type = 'TodoItem' and c.listId = @listId",
+            sql: @"select * from c where c._type = 'TodoItem' and c.listId = @listId",
             parameters: new { listId = listId });
     }
 }
