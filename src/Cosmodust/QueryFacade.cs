@@ -1,7 +1,9 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
+using System.Text;
 using System.Text.Json;
+using CommunityToolkit.HighPerformance.Buffers;
 using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Serialization;
@@ -12,6 +14,12 @@ namespace Cosmodust;
 
 public class QueryFacade
 {
+    private static readonly JsonReaderOptions s_readerOptions = new()
+    {
+        CommentHandling = JsonCommentHandling.Skip
+    };
+
+    private readonly JsonWriterOptions _jsonWriterOptions;
     private readonly Database _database;
     private readonly SqlParameterObjectTypeResolver _sqlParameterObjectTypeResolver;
     private readonly ILogger<QueryFacade> _logger;
@@ -30,6 +38,11 @@ public class QueryFacade
         _logger = logger;
         _options = options ?? new CosmodustQueryOptions();
         _converters = _options.BuildConverters();
+        _jsonWriterOptions = new JsonWriterOptions
+        {
+            Indented = _options.IndentJsonOutput,
+            SkipValidation = true
+        };
     }
 
     public async ValueTask ExecuteQueryAsync(
@@ -52,11 +65,7 @@ public class QueryFacade
 
         try
         {
-            await using var writer = new Utf8JsonWriter(pipeWriter, new JsonWriterOptions
-            {
-                Indented = _options.IndentJsonOutput,
-                SkipValidation = true
-            });
+            await using var writer = new Utf8JsonWriter(pipeWriter, _jsonWriterOptions);
 
             while (feed.HasMoreResults)
             {
@@ -100,22 +109,21 @@ public class QueryFacade
     {
         Debug.Assert(propertyConverters is not null);
 
-        var readerOptions = new JsonReaderOptions { CommentHandling = JsonCommentHandling.Skip };
-        var reader = new Utf8JsonReader(inputBuffer, readerOptions);
+        var reader = new Utf8JsonReader(inputBuffer, s_readerOptions);
 
         while (reader.Read())
         {
             switch (reader.TokenType)
             {
                 case JsonTokenType.PropertyName:
-                    var propertyName = reader.GetString();
-
-                    Debug.Assert(propertyName is not null);
+                    var propertyName = StringPool.Shared.GetOrAdd(reader.ValueSpan, Encoding.UTF8);
 
                     var handled = false;
 
-                    foreach (var converter in propertyConverters)
+                    // ReSharper disable once ForCanBeConvertedToForeach
+                    for (var i = 0; i < propertyConverters.Count; i++)
                     {
+                        var converter = propertyConverters[i];
                         handled = converter.Convert(propertyName, ref reader, writer);
 
                         if (handled)

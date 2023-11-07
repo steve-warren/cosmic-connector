@@ -1,7 +1,8 @@
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Memory;
 using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Cosmodust.Json;
 
@@ -16,13 +17,17 @@ public sealed class CosmodustJsonSerializer : CosmosSerializer
         Options = options;
         _memoryStreamProvider = memoryStreamProvider ?? DefaultMemoryStreamProvider.Instance;
     }
-    
+
     public JsonSerializerOptions Options { get; }
 
     public override T FromStream<T>(Stream stream)
     {
         using (stream)
-            return stream.Length == 0 ? default! : JsonSerializer.Deserialize<T>(stream, Options)!;
+            return stream.Length switch
+            {
+                0 => default,
+                _ => JsonSerializer.Deserialize<T>(stream, Options)
+            } ?? throw new JsonSerializationException(message: "Object cannot be null.");
     }
 
     public override Stream ToStream<T>(T input)

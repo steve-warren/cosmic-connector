@@ -6,6 +6,9 @@ namespace Cosmodust.Extensions;
 
 public class CosmodustJsonOptions
 {
+    private readonly HashSet<IJsonTypeModifier> _jsonTypeModifiers = new();
+    private JsonNamingPolicy _jsonNamingPolicy = JsonNamingPolicy.CamelCase;
+
     public CosmodustJsonOptions SerializePrivateProperties()
     {
         return this;
@@ -26,18 +29,24 @@ public class CosmodustJsonOptions
         return this;
     }
 
-    internal JsonSerializerOptions Build(
-        IEnumerable<IJsonTypeModifier> jsonTypeModifiers)
+    public CosmodustJsonOptions WithJsonTypeModifier(IJsonTypeModifier jsonTypeModifier)
+    {
+        _jsonTypeModifiers.Add(jsonTypeModifier);
+
+        return this;
+    }
+
+    internal JsonSerializerOptions Build()
     {
         var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
-        foreach (var action in jsonTypeModifiers)
+        foreach (var action in _jsonTypeModifiers)
             jsonTypeInfoResolver.Modifiers.Add(action.Modify);
 
         return new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = _jsonNamingPolicy,
             TypeInfoResolver = jsonTypeInfoResolver
         };
     }
