@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Json;
 using Cosmodust.Session;
 using Cosmodust.Shared;
@@ -15,6 +17,8 @@ public class ModelBuilder
     private readonly JsonSerializerOptions _options;
     private readonly JsonPropertyBroker _jsonPropertyBroker;
     private readonly List<IEntityBuilder> _entityBuilders = new();
+    private readonly HashSet<JsonConverter> _jsonConverters = new();
+    private readonly Lazy<PolymorphicDerivedTypeModifier> _polymorphicDerivedTypeModifier = new();
 
     public ModelBuilder(
         JsonSerializerOptions options,
@@ -65,7 +69,22 @@ public class ModelBuilder
     {
         var jsonConverter = new ValueObjectJsonConverter<TEnumeration>();
 
-        _options.Converters.Add(jsonConverter);
+        _jsonConverters.Add(jsonConverter);
+        
+        return this;
+    }
+
+    /// <summary>
+    /// Defines a polymorphic type for the specified interface and derived types.
+    /// </summary>
+    /// <typeparam name="TInterfaceType">The interface type.</typeparam>
+    /// <typeparam name="TDerivedType">The derived type.</typeparam>
+    /// <returns>The current instance of the <see cref="ModelBuilder"/> class.</returns>
+    public ModelBuilder DefinePolymorphicType<TInterfaceType, TDerivedType>() where TDerivedType : TInterfaceType
+    {
+        _polymorphicDerivedTypeModifier.Value.AddPolymorphicDerivedType(
+            new PolymorphicDerivedType(interfaceType: typeof(TInterfaceType),
+                derivedType: typeof(TDerivedType)));
 
         return this;
     }
@@ -87,6 +106,18 @@ public class ModelBuilder
 
     internal IReadOnlyList<EntityConfiguration> Build()
     {
+        foreach(var converter in _jsonConverters)
+            _options.Converters.Add(converter);
+
+        if (_polymorphicDerivedTypeModifier.IsValueCreated)
+        {
+            var defaultResolver = _options.TypeInfoResolver as DefaultJsonTypeInfoResolver;
+            
+            Ensure.NotNull(defaultResolver, "DefaultJsonTypeInfoResolver required.");
+            
+            defaultResolver.Modifiers.Add(_polymorphicDerivedTypeModifier.Value.Modify);
+        }
+
         return _entityBuilders
             .Select(entityBuilder => entityBuilder.Build())
             .ToList();

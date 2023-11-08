@@ -14,7 +14,7 @@ public record EntityConfiguration(Type EntityType)
     public IReadOnlyCollection<FieldAccessor> Fields { get; init; } = Array.Empty<FieldAccessor>();
     public IReadOnlyCollection<PropertyAccessor> Properties { get; init; } = Array.Empty<PropertyAccessor>();
     public IReadOnlyCollection<JsonProperty> JsonProperties { get; init; } = Array.Empty<JsonProperty>();
-    public bool IsPartitionKeyDefinedInEntity { get; set; }
+    public bool IsPartitionKeyDefinedInEntity { get; init; }
 
     public EntityEntry CreateEntry(
         JsonPropertyBroker broker,

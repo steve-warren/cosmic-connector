@@ -92,7 +92,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// </summary>
     /// <param name="fieldName">The name of the field to add.</param>
     /// <returns>The entity builder instance.</returns>
-    public EntityBuilder<TEntity> HasField(string fieldName)
+    public EntityBuilder<TEntity> WithField(string fieldName)
     {
         Ensure.NotNullOrWhiteSpace(fieldName);
 

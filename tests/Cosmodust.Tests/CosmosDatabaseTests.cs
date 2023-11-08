@@ -1,8 +1,6 @@
 using System.IO.Pipelines;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Cosmodust.Cosmos;
 using Cosmodust.Cosmos.Tests;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
@@ -35,33 +33,34 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
         var jsonTypeModifiers = new IJsonTypeModifier[]
         {
+            new PolymorphicDerivedTypeModifier(),
             new TypeMetadataJsonTypeModifier(entityConfigurationProvider),
             new BackingFieldJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
             new PropertyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
             new PartitionKeyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
             new ShadowPropertyJsonTypeModifier(entityConfigurationProvider),
             new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider),
-            new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore)
+            new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore),
         };
 
         foreach (var action in jsonTypeModifiers)
             jsonTypeInfoResolver.Modifiers.Add(action.Modify);
 
-        jsonTypeInfoResolver.Modifiers.Add(typeInfo =>
-        {
-            if (typeInfo.Type == typeof(TodoItem.ICompletionState))
-            {
-                typeInfo.PolymorphismOptions = new()
-                {
-                    IgnoreUnrecognizedTypeDiscriminators = false,
-                    TypeDiscriminatorPropertyName = "$type",
-                    UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FailSerialization,
-                };
-
-                typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(TodoItem.IncompleteState), "IncompleteState"));
-                typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(TodoItem.CompletedState), "CompletedState"));
-            }
-        });
+        // jsonTypeInfoResolver.Modifiers.Add(typeInfo =>
+        // {
+        //     if (typeInfo.Type == typeof(TodoItem.ICompletionState))
+        //     {
+        //         typeInfo.PolymorphismOptions = new()
+        //         {
+        //             IgnoreUnrecognizedTypeDiscriminators = false,
+        //             TypeDiscriminatorPropertyName = "_type",
+        //             UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FailSerialization,
+        //         };
+        //
+        //         typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(TodoItem.IncompleteState), "IncompleteState"));
+        //         typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(TodoItem.CompletedState), "CompletedState"));
+        //     }
+        // });
         
         var jsonSerializerOptions = new JsonSerializerOptions
         {
@@ -99,7 +98,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                         builder.DefineEntity<BlogPost>()
                             .WithId(e => e.Id)
                             .WithPartitionKey(e => e.Id, "postId")
-                            .HasField("_likes")
+                            .WithField("_likes")
                             .ToContainer("blogPosts");
 
                         builder.DefineEntity<BlogPostComment>()
@@ -112,6 +111,9 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                             .WithId(e => e.Id)
                             .WithPartitionKey(e => e.Id, "partitionKey")
                             .ToContainer("todo_poly");
+
+                        builder.DefinePolymorphicType<TodoItem.ICompletionState, TodoItem.IncompleteState>()
+                            .DefinePolymorphicType<TodoItem.ICompletionState, TodoItem.CompletedState>();
                     });
 
         var nullLoggerFactory = new NullLoggerFactory();
@@ -501,19 +503,34 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     {
         var writeSession = _store.CreateSession();
 
-        var todo = new TodoItem()
-        {
-            Id = Guid.NewGuid().ToString()
-        };
+        var todo = new TodoItem(Guid.NewGuid().ToString());
 
         writeSession.Store(todo);
 
         await writeSession.CommitAsync();
 
+        var updateSession = _store.CreateSession();
+
+        var updateItem = await updateSession.FindAsync<TodoItem>(todo.Id, todo.Id);
+
+        Ensure.NotNull(updateItem);
+        
+        var incomplete = (TodoItem.IncompleteState) updateItem.CompletionState;
+        var completed = incomplete.Complete(DateTimeOffset.Now);
+        
+        updateItem.ChangeCompletionState(completed);
+        
+        updateSession.Update(updateItem);
+
+        await updateSession.CommitAsync();
+
         var readSession = _store.CreateSession();
 
         var readItem = await readSession.FindAsync<TodoItem>(todo.Id, todo.Id);
 
-        readItem.Should().NotBeNull();
+        Ensure.NotNull(readItem);
+        
+        readItem.CompletionState.Should()
+            .BeOfType<TodoItem.CompletedState>(because: "the item should be in the completed state.");
     }
 }
