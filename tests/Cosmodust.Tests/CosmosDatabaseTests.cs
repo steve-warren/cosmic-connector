@@ -4,6 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Tests;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
+using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Query;
@@ -45,22 +46,6 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         foreach (var action in jsonTypeModifiers)
             jsonTypeInfoResolver.Modifiers.Add(action.Modify);
-
-        // jsonTypeInfoResolver.Modifiers.Add(typeInfo =>
-        // {
-        //     if (typeInfo.Type == typeof(TodoItem.ICompletionState))
-        //     {
-        //         typeInfo.PolymorphismOptions = new()
-        //         {
-        //             IgnoreUnrecognizedTypeDiscriminators = false,
-        //             TypeDiscriminatorPropertyName = "_type",
-        //             UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FailSerialization,
-        //         };
-        //
-        //         typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(TodoItem.IncompleteState), "IncompleteState"));
-        //         typeInfo.PolymorphismOptions.DerivedTypes.Add(new JsonDerivedType(typeof(TodoItem.CompletedState), "CompletedState"));
-        //     }
-        // });
         
         var jsonSerializerOptions = new JsonSerializerOptions
         {
@@ -122,7 +107,13 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             client: cosmosClient,
             databaseName: "reminderdb",
             sqlParameterObjectTypeResolver: new SqlParameterObjectTypeResolver(),
-            new Logger<QueryFacade>(nullLoggerFactory));
+            new Logger<QueryFacade>(nullLoggerFactory),
+            new CosmodustQueryOptions
+            {
+                ExcludeCosmosMetadata = false,
+                IncludeETag = false,
+                RenameDocumentCollectionProperties = false
+            });
     }
 
     [Fact]
@@ -363,7 +354,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             pipeWriter: pipe.Writer,
             containerName: "todo",
             partitionKey: "a_2X011ldw0dogcauAbw0oExAv21H",
-            sql: "select * from c where c.ownerId = @ownerId",
+            sql: "select top 1 * from c where c.ownerId = @ownerId",
             parameters: new { ownerId = "a_2X011ldw0dogcauAbw0oExAv21H" });
     }
 

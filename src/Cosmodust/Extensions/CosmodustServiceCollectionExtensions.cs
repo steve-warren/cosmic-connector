@@ -80,7 +80,7 @@ public static class CosmodustServiceCollectionExtensions
                     databaseName: options.DatabaseId,
                     sp.GetRequiredService<SqlParameterObjectTypeResolver>(),
                     sp.GetRequiredService<ILogger<QueryFacade>>(),
-                    options: options.QueryOptions);
+                    queryOptions: options.QueryOptions);
             })
             .AddSingleton<DocumentStore>(sp =>
             {
