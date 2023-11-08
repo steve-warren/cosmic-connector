@@ -1,6 +1,6 @@
 namespace Cosmodust.Samples.TodoApp.Domain;
 
-public class TodoList
+public partial class TodoList
 {
     public TodoList(string id,
                     string name,
@@ -10,6 +10,7 @@ public class TodoList
         Name = name;
         OwnerId = ownerId;
         ArchiveState = ArchiveState.NotArchived;
+        CompletionState = new IncompleteState();
     }
 
     public string Id { get; private set; }
@@ -18,7 +19,13 @@ public class TodoList
     public int Count => Items.Count;
     public List<string> Items { get; private set; } = new();
     public ArchiveState ArchiveState { get; private set; }
-
+    public ICompletionState CompletionState { get; private set; }
+    
+    public void SetState(ICompletionState completionState)
+    {
+        CompletionState = completionState;
+    }
+    
     public void Rename(string newName)
     {
         Name = newName;
