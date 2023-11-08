@@ -50,9 +50,10 @@ services.AddCosmodust(
             })
             .WithQueryOptions(queryOptions =>
             {
-                queryOptions.ExcludeCosmosMetadata()
-                    .WithDocumentCollectionName()
-                    .IncludeETag();
+                queryOptions.ExcludeCosmosMetadata = true;
+                queryOptions.IncludeETag = true;
+                queryOptions.IndentJsonOutput = false;
+                queryOptions.RenameDocumentCollectionProperties = true;
             });
     });
 

@@ -5,7 +5,6 @@ using System.Text;
 using System.Text.Json;
 using CommunityToolkit.HighPerformance.Buffers;
 using Cosmodust.Extensions;
-using Cosmodust.Json;
 using Cosmodust.Serialization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
@@ -14,33 +13,54 @@ namespace Cosmodust;
 
 public class QueryFacade
 {
-    private static readonly JsonReaderOptions s_readerOptions = new()
+    private readonly JsonReaderOptions _readerOptions = new()
     {
         CommentHandling = JsonCommentHandling.Skip
     };
 
+    private readonly Dictionary<string, string> _propertyRename = new();
     private readonly JsonWriterOptions _jsonWriterOptions;
     private readonly Database _database;
     private readonly SqlParameterObjectTypeResolver _sqlParameterObjectTypeResolver;
     private readonly ILogger<QueryFacade> _logger;
-    private readonly CosmodustQueryOptions _options;
-    private readonly IReadOnlyList<IJsonPropertyConverter> _converters;
+    private readonly Dictionary<string, JsonModifierType> _jsonModifiers = new();
 
     public QueryFacade(
         CosmosClient client,
         string databaseName,
         SqlParameterObjectTypeResolver sqlParameterObjectTypeResolver,
         ILogger<QueryFacade> logger,
-        CosmodustQueryOptions? options = null)
+        CosmodustQueryOptions? queryOptions = null)
     {
         _database = client.GetDatabase(databaseName);
         _sqlParameterObjectTypeResolver = sqlParameterObjectTypeResolver;
         _logger = logger;
-        _options = options ?? new CosmodustQueryOptions();
-        _converters = _options.BuildConverters();
+        
+        var options = queryOptions ?? new CosmodustQueryOptions();
+
+        if (options.RenameDocumentCollectionProperties)
+        {
+            _jsonModifiers.Add("Documents", JsonModifierType.RenameProperty);
+            _jsonModifiers.Add("_count", JsonModifierType.RenameProperty);
+            _propertyRename.Add("Documents", options.DocumentCollectionPropertyName);
+            _propertyRename.Add("_count", options.DocumentCollectionCountPropertyName);
+        }
+
+        if (options.ExcludeCosmosMetadata)
+        {
+            _jsonModifiers.Add("_rid", JsonModifierType.SkipProperty);
+            _jsonModifiers.Add("_self", JsonModifierType.SkipProperty);
+            _jsonModifiers.Add("_attachments", JsonModifierType.SkipProperty);
+            _jsonModifiers.Add("_ts", JsonModifierType.SkipProperty);
+        }
+        
+        _jsonModifiers.Add("_etag", options.IncludeETag 
+            ? JsonModifierType.EscapeStringValue 
+            : JsonModifierType.SkipProperty);
+        
         _jsonWriterOptions = new JsonWriterOptions
         {
-            Indented = _options.IndentJsonOutput,
+            Indented = options.IndentJsonOutput,
             SkipValidation = true
         };
     }
@@ -77,10 +97,8 @@ public class QueryFacade
                 using var stream = response.Content as MemoryStream;
 
                 Debug.Assert(stream is not null);
-
-                var inputBuffer = new ReadOnlySequence<byte>(stream.GetBuffer(), 0, (int) stream.Length);
-
-                TransformJson(_converters, inputBuffer, writer);
+                
+                TransformJson(_jsonModifiers, _propertyRename, stream, _readerOptions, writer);
 
                 flushTask = writer.FlushAsync();
             }
@@ -99,17 +117,18 @@ public class QueryFacade
 
         foreach (var parameter in _sqlParameterObjectTypeResolver.ExtractParametersFromObject(parameters))
             query.WithParameter(parameter.Name, parameter.Value);
+
         return query;
     }
 
     private static void TransformJson(
-        IReadOnlyList<IJsonPropertyConverter> propertyConverters,
-        ReadOnlySequence<byte> inputBuffer,
+        Dictionary<string, JsonModifierType> jsonModifiers,
+        Dictionary<string, string> propertyRename,
+        MemoryStream stream,
+        JsonReaderOptions jsonReaderOptions,
         Utf8JsonWriter writer)
     {
-        Debug.Assert(propertyConverters is not null);
-
-        var reader = new Utf8JsonReader(inputBuffer, s_readerOptions);
+        var reader = new Utf8JsonReader(stream.GetBuffer().AsSpan(0, (int) stream.Length), jsonReaderOptions);
 
         while (reader.Read())
         {
@@ -118,45 +137,52 @@ public class QueryFacade
                 case JsonTokenType.PropertyName:
                     var propertyName = StringPool.Shared.GetOrAdd(reader.ValueSpan, Encoding.UTF8);
 
-                    var handled = false;
+                    if (!jsonModifiers.TryGetValue(propertyName, out var jsonModifier))
+                        writer.WritePropertyName(reader.ValueSpan);
 
-                    // ReSharper disable once ForCanBeConvertedToForeach
-                    for (var i = 0; i < propertyConverters.Count; i++)
+                    else switch (jsonModifier)
                     {
-                        var converter = propertyConverters[i];
-                        handled = converter.Convert(propertyName, ref reader, writer);
-
-                        if (handled)
-                            break;
+                        case JsonModifierType.SkipProperty:
+                            reader.Skip();
+                            continue;
+                        case JsonModifierType.EscapeStringValue:
+                            {
+                                var etagValue = reader.GetString(); // todo perf - avoid string alloc?
+                                writer.WritePropertyName(propertyName);
+                                writer.WriteStringValue(etagValue);
+                                continue;
+                            }
+                        case JsonModifierType.RenameProperty:
+                            writer.WritePropertyName(propertyRename[propertyName]);
+                            continue;
+                        default:
+                            throw new JsonException("Unable to modify property.");
                     }
-
-                    if (!handled)
-                        writer.WritePropertyName(propertyName);
-
+                    
                     continue;
 
                 case JsonTokenType.StartObject:
                     writer.WriteStartObject();
-                    break;
+                    continue;
 
                 case JsonTokenType.EndObject:
                     writer.WriteEndObject();
-                    break;
+                    continue;
 
                 case JsonTokenType.StartArray:
                     writer.WriteStartArray();
-                    break;
+                    continue;
 
                 case JsonTokenType.EndArray:
                     writer.WriteEndArray();
-                    break;
+                    continue;
 
                 case JsonTokenType.String:
                     writer.WriteStringValue(reader.ValueSpan);
-                    break;
+                    continue;
                 case JsonTokenType.Null:
                     writer.WriteNullValue();
-                    break;
+                    continue;
                 case JsonTokenType.None:
                 case JsonTokenType.Comment:
                 case JsonTokenType.Number:
@@ -164,8 +190,16 @@ public class QueryFacade
                 case JsonTokenType.False:
                 default:
                     writer.WriteRawValue(reader.ValueSpan, skipInputValidation: true);
-                    break;
+                    continue;
             }
         }
     }
+}
+
+internal enum JsonModifierType
+{
+    None,
+    SkipProperty,
+    EscapeStringValue,
+    RenameProperty
 }
