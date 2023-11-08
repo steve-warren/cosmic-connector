@@ -5,12 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Title>Cosmodust ORM</Title>
     <Authors>Steve Warren</Authors>
     <Copyright>2023 Steve Warren</Copyright>
     <PackageProjectUrl>https://github.com/steve-warren/cosmo-dust</PackageProjectUrl>
     <RepositoryUrl>https://github.com/steve-warren/cosmo-dust</RepositoryUrl>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
