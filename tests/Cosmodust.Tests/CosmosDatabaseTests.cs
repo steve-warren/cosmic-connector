@@ -1,7 +1,6 @@
 using System.IO.Pipelines;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using Cosmodust.Cosmos.Tests;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
 using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Extensions;
@@ -11,6 +10,7 @@ using Cosmodust.Query;
 using Cosmodust.Serialization;
 using Cosmodust.Store;
 using Cosmodust.Tests.Domain.Todo;
+using Cosmodust.Tests.Fixtures;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
