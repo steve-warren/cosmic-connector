@@ -2,11 +2,11 @@ namespace Cosmodust.Store;
 
 internal sealed class StringSelector<TEntity> : IStringSelector
 {
-    private readonly Func<TEntity, string> _partitionKeySelector;
+    private readonly Func<TEntity, string> _func;
 
-    public StringSelector(Func<TEntity, string> partitionKeySelector)
+    public StringSelector(Func<TEntity, string> func)
     {
-        _partitionKeySelector = partitionKeySelector;
+        _func = func;
     }
 
     public string GetString(object entity)
@@ -14,6 +14,6 @@ internal sealed class StringSelector<TEntity> : IStringSelector
         if (entity is not TEntity typedEntity)
             throw new ArgumentException($"Entity must be of type {typeof(TEntity).Name}", nameof(entity));
 
-        return _partitionKeySelector(typedEntity);
+        return _func(typedEntity);
     }
 }

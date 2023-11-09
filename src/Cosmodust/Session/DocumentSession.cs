@@ -22,8 +22,12 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
             jsonPropertyBroker);
-    }
 
+        Id = Guid.NewGuid();
+    }
+    
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
+    public Guid Id { get; }
     public ChangeTracker ChangeTracker { get; }
     public IDatabase Database { get; }
     public EntityConfigurationProvider EntityConfiguration { get; }

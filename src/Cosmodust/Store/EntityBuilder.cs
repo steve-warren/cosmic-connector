@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using Cosmodust.Serialization;
-using Cosmodust.Session;
 using Cosmodust.Shared;
 using Cosmodust.Tracking;
 
@@ -31,11 +30,30 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     /// </summary>
     /// <param name="idSelector">A function that extracts the ID value from an entity instance.</param>
     /// <returns>The entity builder instance.</returns>
-    public EntityBuilder<TEntity> WithId(Func<TEntity, string> idSelector)
+    public EntityBuilder<TEntity> WithId(Expression<Func<TEntity, string>> idSelector)
     {
         Ensure.NotNull(idSelector);
+        
+        if (idSelector.Body is MemberExpression { Member: PropertyInfo propertyInfo })
+        {
+            var propertyName = propertyInfo.Name;
+            var func = idSelector.Compile();
 
-        _entityConfiguration = _entityConfiguration with { IdSelector = new StringSelector<TEntity>(idSelector) };
+            _entityConfiguration = _entityConfiguration with
+            {
+                IsIdPropertyDefinedInEntity = string.Equals(
+                    "id",
+                    propertyName,
+                    StringComparison.InvariantCultureIgnoreCase),
+                IdPropertyName = propertyName,
+                IdSelector = new StringSelector<TEntity>(func)
+            };
+        }
+
+        else
+        {
+            throw new ArgumentException("Invalid id selector. Expected a property selector.");
+        }
 
         return this;
     }
@@ -52,14 +70,13 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         if (partitionKeySelector.Body is MemberExpression { Member: PropertyInfo propertyInfo })
         {
             var propertyName = propertyInfo.Name;
-
-            var delegateFunc = partitionKeySelector.Compile();
+            var func = partitionKeySelector.Compile();
 
             _entityConfiguration = _entityConfiguration with
             {
                 IsPartitionKeyDefinedInEntity = true,
                 PartitionKeyName = propertyName,
-                PartitionKeySelector = new StringSelector<TEntity>(delegateFunc)
+                PartitionKeySelector = new StringSelector<TEntity>(func)
             };
         }
         else
