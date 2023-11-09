@@ -11,6 +11,8 @@ public record EntityConfiguration(Type EntityType)
     public IStringSelector IdSelector { get; init; } = NullStringSelector.Instance;
     public IStringSelector PartitionKeySelector { get; init; } = NullStringSelector.Instance;
     public string PartitionKeyName { get; init; } = "";
+    public string IdPropertyName { get; init; } = "";
+    internal bool IsIdPropertyDefinedInEntity { get; init; }
     public IReadOnlyCollection<FieldAccessor> Fields { get; init; } = Array.Empty<FieldAccessor>();
     public IReadOnlyCollection<PropertyAccessor> Properties { get; init; } = Array.Empty<PropertyAccessor>();
     public IReadOnlyCollection<JsonProperty> JsonProperties { get; init; } = Array.Empty<JsonProperty>();
@@ -31,6 +33,10 @@ public record EntityConfiguration(Type EntityType)
             argument: partitionKey,
             message: "Partition key is empty.");
 
+        Ensure.NotNullOrWhiteSpace(
+            argument: id,
+            message: "Id is empty.");
+        
         var entry = new EntityEntry
         {
             Id = id,
@@ -44,11 +50,13 @@ public record EntityConfiguration(Type EntityType)
 
         entry.TakeJsonPropertiesFromBroker();
 
-        if (state != EntityState.Added)
-            return entry;
+        if (state == EntityState.Added)
+        {
+            foreach (var jsonProperty in JsonProperties)
+                entry.WriteJsonProperty(jsonProperty.PropertyName, value: jsonProperty.DefaultValue);
 
-        foreach (var jsonProperty in JsonProperties)
-            entry.WriteJsonProperty(jsonProperty.PropertyName, value: jsonProperty.DefaultValue);
+            return entry;
+        }
 
         return entry;
     }

@@ -73,6 +73,11 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                 shadowPropertyStore: jsonSerializerPropertyStore)
                     .DefineModel(builder =>
                     {
+                        builder.DefineEntity<Account>()
+                            .WithId(e => e.Username)
+                            .WithPartitionKey(e => "account", "partitionKey")
+                            .ToContainer("accounts");
+
                         builder.DefineEntity<AccountPlan>()
                             .WithId(e => e.Id)
                             .WithPartitionKey(
@@ -490,6 +495,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     }
 
     [Fact]
+    [Trait("gh_feature", "100")]
     public async Task Can_Serialize_Interface()
     {
         var writeSession = _store.CreateSession();
@@ -523,5 +529,28 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         
         readItem.CompletionState.Should()
             .BeOfType<TodoItem.CompletedState>(because: "the item should be in the completed state.");
+    }
+
+    [Fact]
+    [Trait("gh_feature", "104")]
+    public async Task Can_Have_Entity_With_Id_Mapped_To_Different_Property()
+    {
+        var writeSession = _store.CreateSession();
+        
+        var account = new Account { Email = "michael_scott@contoso", Username = "mg_scott_" + Guid.NewGuid() };
+        
+        writeSession.Store(account);
+
+        await writeSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+
+        var readAccount = await readSession.FindAsync<Account>(
+            id: account.Username,
+            partitionKey: "account");
+
+        readAccount.Should().NotBeNull();
+        
+        Ensure.NotNull(readAccount);
     }
 }
