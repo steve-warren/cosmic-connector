@@ -5,13 +5,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.2</Version>
-    <Title>Cosmodust ORM</Title>
+    <Version>0.1.3</Version>
+    <Title>Cosmodust</Title>
     <Authors>Steve Warren</Authors>
     <Copyright>2023 Steve Warren</Copyright>
     <PackageProjectUrl>https://github.com/steve-warren/cosmo-dust</PackageProjectUrl>
     <RepositoryUrl>https://github.com/steve-warren/cosmo-dust</RepositoryUrl>
     <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <DocumentationFile>bin\Release\Cosmodust.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
