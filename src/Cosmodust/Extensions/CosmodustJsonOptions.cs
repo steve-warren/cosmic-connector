@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Json;
 
@@ -8,6 +9,8 @@ public class CosmodustJsonOptions
 {
     private readonly HashSet<IJsonTypeModifier> _jsonTypeModifiers = new();
     private JsonNamingPolicy _jsonNamingPolicy = JsonNamingPolicy.CamelCase;
+
+    public bool SerializeEnumsToStrings { get; set; }
 
     public CosmodustJsonOptions SerializePrivateProperties()
     {
@@ -36,18 +39,23 @@ public class CosmodustJsonOptions
         return this;
     }
 
-    internal JsonSerializerOptions Build()
+    public JsonSerializerOptions Build()
     {
         var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
         foreach (var action in _jsonTypeModifiers)
             jsonTypeInfoResolver.Modifiers.Add(action.Modify);
 
-        return new JsonSerializerOptions
+        var options =  new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = _jsonNamingPolicy,
             TypeInfoResolver = jsonTypeInfoResolver
         };
+
+        if (SerializeEnumsToStrings)
+            options.Converters.Add(new JsonStringEnumConverter(_jsonNamingPolicy));
+
+        return options;
     }
 }
