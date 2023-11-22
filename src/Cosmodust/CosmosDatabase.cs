@@ -79,17 +79,26 @@ public sealed class CosmosDatabase : IDatabase
     {
         Ensure.NotNull(query);
 
-        var originalQueryDefinition = query.DatabaseLinqQuery.ToQueryDefinition();
-        var typedQuerySql = originalQueryDefinition.QueryText + " AND root._type = @type";
-        var typedQueryDefinition = new QueryDefinition(query: typedQuerySql);
-        typedQueryDefinition.WithParameter("@type", typeof(TEntity).Name);
+        var queryDefinition = query.DatabaseLinqQuery.ToQueryDefinition();
+
+        if (queryDefinition is null)
+            queryDefinition = new QueryDefinition(
+                "select * from root where root._type = @type");
+
+        else
+        {
+            var typedQuerySql = queryDefinition.QueryText + " AND root._type = @type";
+            queryDefinition = new QueryDefinition(query: typedQuerySql);
+        }
+
+        queryDefinition.WithParameter("@type", typeof(TEntity).Name);
 
         var container = _containerProvider.GetOrAddContainer(query.EntityConfiguration.ContainerName);
 
         var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
 
         using var feed = container.GetItemQueryIterator<TEntity>(
-            typedQueryDefinition,
+            queryDefinition,
             continuationToken: null,
             queryRequestOptions);
 
