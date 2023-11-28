@@ -189,13 +189,13 @@ public class SerializationTests
         parameters[2].Should().Be(("@" + nameof(type.TimeStamp), type.TimeStamp), because: "the id property name and value must match.");
     }
 
-    public enum ZeroOrOne
+    private enum ZeroOrOne
     {
         Zero = 0,
         One = 1,
     }
 
-    public record EnumRecord(string Id, ZeroOrOne ZeroOrOne);
+    private record EnumRecord(string Id, ZeroOrOne ZeroOrOne);
 
     [Fact]
     public void Should_Serialize_Enum_To_String()

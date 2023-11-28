@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Operations;
 using Cosmodust.Query;
@@ -156,7 +157,7 @@ public sealed class CosmosDatabase : IDatabase
             if (entry.IsUnchanged)
                 continue;
 
-            entry.DetachJsonPropertiesAndSendToBroker();
+            entry.AddJsonPropertiesToBroker();
 
             var operation = CreateWriteOperation(entry);
             var response = await operation
@@ -165,6 +166,31 @@ public sealed class CosmosDatabase : IDatabase
 
             Debug.WriteLine(
                 $"Write operation HTTP {response.StatusCode} - {response.Cost} RUs");
+
+            foreach(var domainEvent in
+                    entry.DomainEventAccessor.GetDomainEvents(entry.Entity))
+            {
+                var eventEntry = new Dictionary<string, object>
+                {
+                    { "id", entry.DomainEventAccessor.NextId() },
+                    { entry.PartitionKeyName, entry.PartitionKey },
+                    { "domainEvent", domainEvent }
+                };
+
+                var container = _containerProvider.GetOrAddContainer(entry.ContainerName);
+
+                var createItemOperation = new CreateItemOperation(
+                    container,
+                    eventEntry,
+                    entry.PartitionKey);
+
+                response = await createItemOperation
+                    .ExecuteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                Debug.WriteLine(
+                    $"Write operation HTTP {response.StatusCode} - {response.Cost} RUs");
+            }
         }
     }
 
