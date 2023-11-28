@@ -90,7 +90,9 @@ public static class CosmodustServiceCollectionExtensions
                 {
                     PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
                 };
-                var database = new CosmosDatabase(client.GetDatabase(id: cosmodustOptions.DatabaseId),linqSerializerOptions);
+                var database = new CosmosDatabase(
+                    client.GetDatabase(id: cosmodustOptions.DatabaseId),
+                    linqSerializerOptions);
                 var jsonSerializerOptions = sp.GetRequiredService<CosmodustJsonSerializer>().Options;
                 
                 var store = new DocumentStore(

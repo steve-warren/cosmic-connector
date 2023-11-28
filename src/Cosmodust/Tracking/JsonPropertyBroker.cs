@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Cosmodust.Tracking;
 
 /// <summary>
-/// An in-memory broker for exchanging entity properties, such as shadow properties. This class is thread-safe.
+/// An in-memory broker for exchanging entity JSON properties. This class is thread-safe.
 /// </summary>
 public sealed class JsonPropertyBroker : IDisposable
 {
@@ -44,14 +44,14 @@ public sealed class JsonPropertyBroker : IDisposable
     /// </summary>
     /// <param name="entity">The entity to remove from the cache.</param>
     /// <returns>The JSON properties associated with the entity, or null if none were found.</returns>
-    public IDictionary<string, object?>? TakeEntityProperties(object entity)
+    public IDictionary<string, object?>? RemoveEntityProperties(object entity)
     {
         _store.TryRemove(entity, out var properties);
 
         return properties;
     }
 
-    public void SetEntityProperties(object entity, IDictionary<string, object?> properties)
+    public void AddEntityProperties(object entity, IDictionary<string, object?> properties)
     {
         var addResult = _store.TryAdd(entity, properties);
 

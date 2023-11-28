@@ -1,7 +1,11 @@
 ﻿namespace Cosmodust.Samples.TodoApp.Domain;
 
+public interface IDomainEvent { }
+
 public class Account
 {
+    private readonly HashSet<IDomainEvent> _domainEvents = new();
+
     public Account(string id)
     {
         Id = id;

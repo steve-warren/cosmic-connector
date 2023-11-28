@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Cosmodust.Json;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
 
@@ -47,36 +48,55 @@ public class TransactionalBatchOperation
         var container = _database.GetContainer(containerName);
 
         var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
+        var batchOptions = new TransactionalBatchItemRequestOptions
+            { EnableContentResponseOnWrite = false };
 
         var entityEntries = entries.ToList();
+        var domainEvents = new List<Dictionary<string, object>>();
 
         foreach (var entry in entityEntries)
         {
             // send the json properties to the broker
             // for the json serializer to pick up
-            entry.DetachJsonPropertiesAndSendToBroker();
+            entry.AddJsonPropertiesToBroker();
 
             _ = entry.State switch
             {
-                EntityState.Added => batch.CreateItem(entry.Entity),
-                EntityState.Removed => batch.DeleteItem(entry.Id),
-                EntityState.Modified => batch.ReplaceItem(entry.Id, entry.Entity),
+                EntityState.Added => batch.CreateItem(entry.Entity, batchOptions),
+                EntityState.Removed => batch.DeleteItem(entry.Id, batchOptions),
+                EntityState.Modified => batch.ReplaceItem(entry.Id, entry.Entity, batchOptions),
                 EntityState.Unchanged or
                     EntityState.Detached => batch,
                 _ => throw new InvalidOperationException()
             };
+
+            foreach(var domainEvent in
+                    entry.DomainEventAccessor.GetDomainEvents(entry.Entity))
+            {
+                var eventEntry = new Dictionary<string, object>
+                {
+                    { "id", entry.DomainEventAccessor.NextId() },
+                    { entry.PartitionKeyName, entry.PartitionKey },
+                    { "domainEvent", domainEvent }
+                };
+
+                domainEvents.Add(eventEntry);
+            }
         }
 
-        var batchResponse = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var eventEntry in domainEvents)
+            batch.CreateItem(eventEntry, batchOptions);
 
-        Debug.Assert(batchResponse.Count == entityEntries.Count);
+        var batchResponse = await batch
+            .ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         for(var i = 0; i < entityEntries.Count; i ++)
         {
             var entry = entityEntries[i];
             var itemResponse = batchResponse[i];
 
-            entry.TakeJsonPropertiesFromBroker();
+            entry.RemoveJsonPropertiesFromBroker();
             entry.UpdateETag(itemResponse.ETag);
         }
 

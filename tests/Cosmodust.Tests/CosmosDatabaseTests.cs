@@ -9,9 +9,11 @@ using Cosmodust.Linq;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
 using Cosmodust.Store;
+using Cosmodust.Tests.Domain.Accounts;
 using Cosmodust.Tests.Domain.Todo;
 using Cosmodust.Tests.Fixtures;
 using Cosmodust.Tracking;
+using KsuidDotNet;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -76,6 +78,9 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
                         builder.DefineEntity<Account>()
                             .WithId(e => e.Username)
                             .WithPartitionKey(e => "account", "partitionKey")
+                            .WithDomainEvents(
+                                "_domainEvents",
+                                () => Ksuid.NewKsuid("ev_"))
                             .ToContainer("accounts");
 
                         builder.DefineEntity<AccountPlan>()
@@ -93,7 +98,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
                         builder.DefineEntity<BlogPostComment>()
                             .WithId(e => e.Id)
-                            .WithShadowProperty<DateTime>("createdOn")
+                            .WithJsonProperty<DateTime>("createdOn")
                             .WithPartitionKey(e => e.PostId)
                             .ToContainer("blogPosts");
 
@@ -585,5 +590,21 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         readAccount.Should().NotBeNull();
         
         Ensure.NotNull(readAccount);
+    }
+
+    [Fact]
+    public async Task Can_Raise_Domain_Events()
+    {
+        var writeSession = _store.CreateSession();
+
+        var account = new Account { Email = "michael_scott@contoso", Username = "mg_scott_" + Guid.NewGuid() };
+
+        var newAccountEvent = new { Name = "AccountCreated", account.Email, account.Username };
+
+        account.RaiseEvent(newAccountEvent);
+
+        writeSession.Store(account);
+
+        await writeSession.CommitTransactionAsync();
     }
 }
