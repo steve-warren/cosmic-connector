@@ -42,6 +42,7 @@ public static class CosmodustServiceCollectionExtensions
                     new BackingFieldJsonTypeModifier(entityConfigurationProvider, JsonNamingPolicy.CamelCase),
                     new PropertyJsonTypeModifier(entityConfigurationProvider, JsonNamingPolicy.CamelCase),
                     new PartitionKeyJsonTypeModifier(entityConfigurationProvider, JsonNamingPolicy.CamelCase),
+                    new IdJsonTypeModifier(entityConfigurationProvider, JsonNamingPolicy.CamelCase),
                     new ShadowPropertyJsonTypeModifier(entityConfigurationProvider),
                     new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider),
                     new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore)

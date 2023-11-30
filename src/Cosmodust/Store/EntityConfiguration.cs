@@ -8,7 +8,8 @@ namespace Cosmodust.Store;
 public record EntityConfiguration(Type EntityType)
 {
     public string ContainerName { get; init; } = string.Empty;
-    public IStringSelector IdSelector { get; init; } = NullStringSelector.Instance;
+    public IStringSelector IdGetter { get; init; } = NullStringSelector.Instance;
+    public IStringSetter IdSetter { get; init; } = NullStringSetter.Instance;
     public IStringSelector PartitionKeySelector { get; init; } = NullStringSelector.Instance;
     internal DomainEventAccessor DomainEventAccessor { get; init; } = DomainEventAccessor.Null;
     public string PartitionKeyName { get; init; } = "";
@@ -27,7 +28,7 @@ public record EntityConfiguration(Type EntityType)
         Ensure.NotNull(entity);
         Ensure.Equals(entity.GetType(), EntityType, "Entity types must match.");
 
-        var id = IdSelector.GetString(entity);
+        var id = IdGetter.GetString(entity);
         var partitionKey = PartitionKeySelector.GetString(entity);
 
         Ensure.NotNullOrWhiteSpace(
