@@ -71,7 +71,7 @@ public sealed class ChangeTracker : IDisposable
         Ensure.NotNull(entity);
 
         var config = EntityConfiguration.GetEntityConfiguration(entity.GetType());
-        var id = config.IdSelector.GetString(entity);
+        var id = config.IdGetter.GetString(entity);
 
         if (_entityByTypeId.TryGetValue((Type: entity.GetType(), Id: id), out var trackedEntity))
             return trackedEntity;

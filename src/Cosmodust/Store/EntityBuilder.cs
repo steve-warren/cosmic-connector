@@ -37,7 +37,25 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         if (idSelector.Body is MemberExpression { Member: PropertyInfo propertyInfo })
         {
             var propertyName = propertyInfo.Name;
-            var func = idSelector.Compile();
+            
+            var getter = idSelector.Compile();
+
+            IStringSetter stringSetter = NullStringSetter.Instance;
+
+            if (propertyInfo.CanWrite)
+            {
+                var instance = Expression.Parameter(typeof(TEntity), "instance");
+                var value = Expression.Parameter(typeof(string), "value");
+
+                Ensure.NotNull(propertyInfo.DeclaringType);
+
+                var setter = Expression.Lambda<Action<TEntity, string?>>(
+                    Expression.Assign(
+                        Expression.Property(instance, propertyInfo),
+                        value), instance, value).Compile();
+
+                stringSetter = new StringSetter<TEntity>(setter);
+            }
 
             _entityConfiguration = _entityConfiguration with
             {
@@ -46,7 +64,8 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
                     propertyName,
                     StringComparison.InvariantCultureIgnoreCase),
                 IdPropertyName = propertyName,
-                IdSelector = new StringSelector<TEntity>(func)
+                IdGetter = new StringSelector<TEntity>(getter),
+                IdSetter = stringSetter
             };
         }
 
@@ -83,6 +102,23 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         {
             throw new ArgumentException("Invalid partition key selector. Expected a property selector.");
         }
+
+        return this;
+    }
+
+    public EntityBuilder<TEntity> WithPartitionKey(
+        string partitionKeyValue,
+        string partitionKeyName)
+    {
+        Ensure.NotNullOrWhiteSpace(partitionKeyValue);
+        Ensure.NotNullOrWhiteSpace(partitionKeyName);
+
+        _entityConfiguration = _entityConfiguration with
+        {
+            IsPartitionKeyDefinedInEntity = false,
+            PartitionKeyName = partitionKeyName,
+            PartitionKeySelector = new StringValueSelector(partitionKeyValue)
+        };
 
         return this;
     }
