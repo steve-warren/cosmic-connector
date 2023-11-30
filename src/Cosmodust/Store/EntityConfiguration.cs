@@ -11,6 +11,7 @@ public record EntityConfiguration(Type EntityType)
     public IStringSelector IdGetter { get; init; } = NullStringSelector.Instance;
     public IStringSetter IdSetter { get; init; } = NullStringSetter.Instance;
     public IStringSelector PartitionKeySelector { get; init; } = NullStringSelector.Instance;
+    internal DomainEventAccessor DomainEventAccessor { get; init; } = DomainEventAccessor.Null;
     public string PartitionKeyName { get; init; } = "";
     public string IdPropertyName { get; init; } = "";
     internal bool IsIdPropertyDefinedInEntity { get; init; }
@@ -37,19 +38,21 @@ public record EntityConfiguration(Type EntityType)
         Ensure.NotNullOrWhiteSpace(
             argument: id,
             message: "Id is empty.");
-        
+
         var entry = new EntityEntry
         {
             Id = id,
             ContainerName = ContainerName,
             PartitionKey = partitionKey,
+            PartitionKeyName = PartitionKeyName,
             Entity = entity,
             EntityType = EntityType,
             Broker = broker,
-            State = state
+            State = state,
+            DomainEventAccessor = DomainEventAccessor
         };
 
-        entry.TakeJsonPropertiesFromBroker();
+        entry.RemoveJsonPropertiesFromBroker();
 
         if (state == EntityState.Added)
         {

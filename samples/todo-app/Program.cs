@@ -1,9 +1,7 @@
-using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Extensions;
-using Cosmodust.Json;
 using Cosmodust.Samples.TodoApp.Domain;
 using Cosmodust.Samples.TodoApp.Infra;
-using Microsoft.Extensions.Logging.Console;
+using KsuidDotNet;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -25,6 +23,8 @@ services.AddCosmodust(
                     .WithPartitionKey(
                         e => e.Id,
                         "ownerId")
+                    .WithDomainEvents("_domainEvents",
+                        () => Ksuid.NewKsuid("event_"))
                     .ToContainer("todo");
 
                 modelBuilder.DefineEntity<TodoList>()

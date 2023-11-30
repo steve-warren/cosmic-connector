@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Store;
@@ -147,7 +148,7 @@ public class SerializationTests
 
         json.Should().Be("""{"id":"123","state":"Archived"}""", because: "we should be able to serialize the value type.");
     }
-    
+
     [Fact]
     public void Can_Deserialize_ValueObject()
     {
@@ -186,5 +187,31 @@ public class SerializationTests
         parameters[0].Should().Be(("@" + nameof(type.Id), type.Id), because: "the id property name and value must match.");
         parameters[1].Should().Be(("@" + nameof(type.NumberOfItems), type.NumberOfItems), because: "the id property name and value must match.");
         parameters[2].Should().Be(("@" + nameof(type.TimeStamp), type.TimeStamp), because: "the id property name and value must match.");
+    }
+
+    private enum ZeroOrOne
+    {
+        Zero = 0,
+        One = 1,
+    }
+
+    private record EnumRecord(string Id, ZeroOrOne ZeroOrOne);
+
+    [Fact]
+    public void Should_Serialize_Enum_To_String()
+    {
+        var instance = new EnumRecord(Id: "123", ZeroOrOne.One);
+
+        var jsonOptionsWithoutEnumToString = new CosmodustJsonOptions
+            { SerializeEnumsToStrings = false }.Build();
+
+        JsonSerializer.Serialize(instance, jsonOptionsWithoutEnumToString)
+            .Should().Be("""{"id":"123","zeroOrOne":1}""");
+
+        var jsonOptionsWithEnumToString = new CosmodustJsonOptions
+            { SerializeEnumsToStrings = true }.Build();
+
+        JsonSerializer.Serialize(instance, jsonOptionsWithEnumToString)
+            .Should().Be("""{"id":"123","zeroOrOne":"one"}""");
     }
 }

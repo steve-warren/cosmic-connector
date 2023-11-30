@@ -147,6 +147,11 @@ public sealed class ChangeTracker : IDisposable
         {
             var entry = _entries[i];
 
+            EntityConfiguration
+                .GetEntityConfiguration(entry.EntityType)
+                .DomainEventAccessor
+                .ClearDomainEvents(entry.Entity);
+
             switch (entry.State)
             {
                 case EntityState.Added:
@@ -198,7 +203,7 @@ public sealed class ChangeTracker : IDisposable
         {
             try
             {
-                entry.TakeJsonPropertiesFromBroker();
+                entry.RemoveJsonPropertiesFromBroker();
             }
 
             catch

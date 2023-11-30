@@ -16,7 +16,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     private EntityConfiguration _entityConfiguration = new(typeof(TEntity));
     private readonly HashSet<FieldAccessor> _fields = new();
     private readonly HashSet<PropertyAccessor> _properties = new();
-    private readonly HashSet<JsonProperty> _shadowProperties = new();
+    private readonly HashSet<JsonProperty> _jsonProperties = new();
 
     public EntityBuilder(JsonPropertyBroker jsonPropertyBroker)
     {
@@ -33,7 +33,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     public EntityBuilder<TEntity> WithId(Expression<Func<TEntity, string>> idSelector)
     {
         Ensure.NotNull(idSelector);
-        
+
         if (idSelector.Body is MemberExpression { Member: PropertyInfo propertyInfo })
         {
             var propertyName = propertyInfo.Name;
@@ -71,7 +71,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
 
         else
         {
-            throw new ArgumentException("Invalid id selector. Expected a property selector.");
+            throw new ArgumentException("Invalid id eventsEnumerableSelector. Expected a property eventsEnumerableSelector.");
         }
 
         return this;
@@ -100,12 +100,18 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         }
         else
         {
-            throw new ArgumentException("Invalid partition key selector. Expected a property selector.");
+            throw new ArgumentException("Invalid partition key eventsEnumerableSelector. Expected a property eventsEnumerableSelector.");
         }
 
         return this;
     }
 
+    /// <summary>
+    /// Sets the partition key for the entity using the specified partition key selector and partition key name.
+    /// </summary>
+    /// <param name="partitionKeySelector">The function that selects the partition key from the entity.</param>
+    /// <param name="partitionKeyName">The name of the partition key.</param>
+    /// <returns>The updated instance of the <see cref="EntityBuilder{TEntity}"/> class.</returns>
     public EntityBuilder<TEntity> WithPartitionKey(
         string partitionKeyValue,
         string partitionKeyName)
@@ -156,6 +162,11 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return this;
     }
 
+    /// <summary>
+    /// Adds a property to the entity builder.
+    /// </summary>
+    /// <param name="propertyName">The name of the property to add.</param>
+    /// <returns>The entity builder instance.</returns>
     public EntityBuilder<TEntity> WithProperty(string propertyName)
     {
         Ensure.NotNullOrWhiteSpace(propertyName);
@@ -167,18 +178,44 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         return this;
     }
 
-    public EntityBuilder<TEntity> WithShadowProperty<TProperty>(string propertyName)
+    /// <summary>
+    /// Adds a JSON property to the entity builder.
+    /// </summary>
+    /// <typeparam name="TProperty">The type of the property.</typeparam>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <returns>The entity builder instance.</returns>
+    public EntityBuilder<TEntity> WithJsonProperty<TProperty>(string propertyName)
     {
         Ensure.NotNullOrWhiteSpace(propertyName);
 
-        var shadowProperty = new JsonProperty
+        var jsonProperty = new JsonProperty
         {
             PropertyType = typeof(TProperty),
             PropertyName = propertyName,
             Broker = _jsonPropertyBroker
         };
 
-        _shadowProperties.Add(shadowProperty);
+        _jsonProperties.Add(jsonProperty);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the domain event configuration for the entity being built.
+    /// </summary>
+    /// <param name="domainEventCollectionFieldName">The name of the field that stores the domain event collection.</param>
+    /// <param name="eventIdFactory">A function that generates the event ID.</param>
+    /// <returns>The entity builder instance.</returns>
+    public EntityBuilder<TEntity> WithDomainEvents(
+        string domainEventCollectionFieldName,
+        Func<string> eventIdFactory)
+    {
+        _entityConfiguration = _entityConfiguration with
+        {
+            DomainEventAccessor = DomainEventAccessor.Create<TEntity>(
+                domainEventCollectionFieldName,
+                eventIdFactory)
+        };
 
         return this;
     }
@@ -200,7 +237,7 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
         {
             Fields = _fields,
             Properties = _properties,
-            JsonProperties = _shadowProperties
+            JsonProperties = _jsonProperties
         };
     }
 }

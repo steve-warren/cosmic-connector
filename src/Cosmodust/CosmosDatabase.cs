@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Operations;
 using Cosmodust.Query;
@@ -79,17 +80,26 @@ public sealed class CosmosDatabase : IDatabase
     {
         Ensure.NotNull(query);
 
-        var originalQueryDefinition = query.DatabaseLinqQuery.ToQueryDefinition();
-        var typedQuerySql = originalQueryDefinition.QueryText + " AND root._type = @type";
-        var typedQueryDefinition = new QueryDefinition(query: typedQuerySql);
-        typedQueryDefinition.WithParameter("@type", typeof(TEntity).Name);
+        var queryDefinition = query.DatabaseLinqQuery.ToQueryDefinition();
+
+        if (queryDefinition is null)
+            queryDefinition = new QueryDefinition(
+                "select * from root where root._type = @type");
+
+        else
+        {
+            var typedQuerySql = queryDefinition.QueryText + " AND root._type = @type";
+            queryDefinition = new QueryDefinition(query: typedQuerySql);
+        }
+
+        queryDefinition.WithParameter("@type", typeof(TEntity).Name);
 
         var container = _containerProvider.GetOrAddContainer(query.EntityConfiguration.ContainerName);
 
         var queryRequestOptions = new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
 
         using var feed = container.GetItemQueryIterator<TEntity>(
-            typedQueryDefinition,
+            queryDefinition,
             continuationToken: null,
             queryRequestOptions);
 
@@ -147,7 +157,7 @@ public sealed class CosmosDatabase : IDatabase
             if (entry.IsUnchanged)
                 continue;
 
-            entry.DetachJsonPropertiesAndSendToBroker();
+            entry.AddJsonPropertiesToBroker();
 
             var operation = CreateWriteOperation(entry);
             var response = await operation
@@ -156,6 +166,31 @@ public sealed class CosmosDatabase : IDatabase
 
             Debug.WriteLine(
                 $"Write operation HTTP {response.StatusCode} - {response.Cost} RUs");
+
+            foreach(var domainEvent in
+                    entry.DomainEventAccessor.GetDomainEvents(entry.Entity))
+            {
+                var eventEntry = new Dictionary<string, object>
+                {
+                    { "id", entry.DomainEventAccessor.NextId() },
+                    { entry.PartitionKeyName, entry.PartitionKey },
+                    { "domainEvent", domainEvent }
+                };
+
+                var container = _containerProvider.GetOrAddContainer(entry.ContainerName);
+
+                var createItemOperation = new CreateItemOperation(
+                    container,
+                    eventEntry,
+                    entry.PartitionKey);
+
+                response = await createItemOperation
+                    .ExecuteAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                Debug.WriteLine(
+                    $"Write operation HTTP {response.StatusCode} - {response.Cost} RUs");
+            }
         }
     }
 
