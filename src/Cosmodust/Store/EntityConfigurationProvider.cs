@@ -22,7 +22,7 @@ public class EntityConfigurationProvider
 
     public bool HasEntityConfiguration(Type type) =>
         _mappings.ContainsKey(type);
-    
-    public void Build() =>
+
+    internal void Build() =>
         _mappings = _mappings.AsReadOnly();
 }

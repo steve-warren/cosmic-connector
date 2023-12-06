@@ -2,13 +2,31 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Json;
+using Cosmodust.Shared;
+using Cosmodust.Store;
+using Cosmodust.Tracking;
 
 namespace Cosmodust.Extensions;
 
 public class CosmodustJsonOptions
 {
+    private readonly HashSet<JsonConverter> _jsonConverters = new();
+    private readonly Lazy<PolymorphicDerivedTypeModifier> _polymorphicDerivedTypeModifier = new();
     private readonly HashSet<IJsonTypeModifier> _jsonTypeModifiers = new();
-    private JsonNamingPolicy _jsonNamingPolicy = JsonNamingPolicy.CamelCase;
+    private readonly JsonNamingPolicy _jsonNamingPolicy = JsonNamingPolicy.CamelCase;
+
+    public CosmodustJsonOptions(
+        EntityConfigurationProvider entityConfigurationProvider,
+        JsonPropertyBroker jsonPropertyBroker)
+    {
+        WithJsonTypeModifier(new TypeMetadataJsonTypeModifier(entityConfigurationProvider));
+        WithJsonTypeModifier(new BackingFieldJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
+        WithJsonTypeModifier(new PropertyJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
+        WithJsonTypeModifier(new PartitionKeyJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
+        WithJsonTypeModifier(new ShadowPropertyJsonTypeModifier(entityConfigurationProvider));
+        WithJsonTypeModifier(new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider));
+        WithJsonTypeModifier(new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonPropertyBroker));
+    }
 
     public bool SerializeEnumsToStrings { get; set; }
 
@@ -39,12 +57,31 @@ public class CosmodustJsonOptions
         return this;
     }
 
+    public CosmodustJsonOptions WithConverter(JsonConverter jsonConverter)
+    {
+        _jsonConverters.Add(jsonConverter);
+
+        return this;
+    }
+
+    public CosmodustJsonOptions WithPolymorphicType<TInterfaceType, TDerivedType>() where TDerivedType : TInterfaceType
+    {
+        _polymorphicDerivedTypeModifier.Value.AddPolymorphicDerivedType(
+            new PolymorphicDerivedType(interfaceType: typeof(TInterfaceType),
+                derivedType: typeof(TDerivedType)));
+
+        return this;
+    }
+
     public JsonSerializerOptions Build()
     {
         var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
         foreach (var action in _jsonTypeModifiers)
             jsonTypeInfoResolver.Modifiers.Add(action.Modify);
+
+        if (_polymorphicDerivedTypeModifier.IsValueCreated)
+            jsonTypeInfoResolver.Modifiers.Add(_polymorphicDerivedTypeModifier.Value.Modify);
 
         var options =  new JsonSerializerOptions
         {
@@ -55,6 +92,9 @@ public class CosmodustJsonOptions
 
         if (SerializeEnumsToStrings)
             options.Converters.Add(new JsonStringEnumConverter(_jsonNamingPolicy));
+
+        foreach(var converter in _jsonConverters)
+            options.Converters.Add(converter);
 
         return options;
     }

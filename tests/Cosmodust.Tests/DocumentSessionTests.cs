@@ -1,4 +1,6 @@
+using Cosmodust.Extensions;
 using Cosmodust.Linq;
+using Cosmodust.Serialization;
 using Cosmodust.Store;
 using Cosmodust.Tracking;
 
@@ -9,11 +11,41 @@ public class DocumentStoreTests
     private record ReminderList(string Id);
     private record Reminder(string Id);
 
+    private static DocumentStore CreateStore(Action<ModelBuilder> modelBuilder)
+    {
+        return CreateStore(new MockDatabase(), modelBuilder);
+    }
+
+    private static DocumentStore CreateStore(
+        MockDatabase database,
+        Action<ModelBuilder> modelBuilder)
+    {
+        var entityConfigurationProvider = new EntityConfigurationProvider();
+        var broker = new JsonPropertyBroker();
+
+        var builder = new ModelBuilder(
+            new CosmodustJsonOptions(
+                entityConfigurationProvider,
+                broker),
+            broker,
+            entityConfigurationProvider);
+
+        modelBuilder(builder);
+
+        builder.Build();
+
+        var store = new DocumentStore(database,
+            entityConfigurationProvider,
+            new SqlParameterObjectTypeResolver(),
+            broker);
+
+        return store;
+    }
+
     [Fact]
     public void Can_Create_Session()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database);
+        var documentStore = CreateStore(_ => { });
 
         var session = documentStore.CreateSession();
 
@@ -23,9 +55,7 @@ public class DocumentStoreTests
     [Fact]
     public void Storing_Null_Entity_Throws()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -34,7 +64,7 @@ public class DocumentStoreTests
 
         var session = documentStore.CreateSession();
 
-        Action action = () => session.Store<ReminderList>(null!);
+        var action = () => session.Store<ReminderList>(null!);
 
         action.Should().Throw<ArgumentNullException>(because: "we should not be able to broker a null entity");
     }
@@ -42,9 +72,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Finding_Entity_By_Id_Should_Return_Same_Instance()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -66,9 +94,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Entity_Not_Found_Should_Return_Null()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -85,9 +111,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Can_Store_Entities_Of_Different_Types()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -118,8 +142,7 @@ public class DocumentStoreTests
     [Fact]
     public void Given_Unregistered_Entity_Type_Then_Store_Should_Throw()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database);
+        var documentStore = CreateStore(_ => { });
 
         var session = documentStore.CreateSession();
 
@@ -133,8 +156,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Given_Unregistered_Entity_Type_Then_Find_Should_Throw()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database);
+        var documentStore = CreateStore(_ => { });
 
         var session = documentStore.CreateSession();
 
@@ -146,9 +168,7 @@ public class DocumentStoreTests
     [Fact]
     public void Stored_Entity_Should_Be_In_Added_State()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore =CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -169,9 +189,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Call_To_SaveChanges_Should_Transition_Added_Entity_To_Unmodified_State()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -194,9 +212,7 @@ public class DocumentStoreTests
     [Fact]
     public void Updated_Entity_Should_Be_In_Modified_State()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -218,9 +234,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Removed_Entity_Should_Be_In_Deleted_State_And_Removed_From_Tracking()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -249,9 +263,7 @@ public class DocumentStoreTests
     [Fact]
     public async Task Removed_Entity_Should_Be_Removed_From_IdentityMap()
     {
-        var database = new MockDatabase();
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -280,8 +292,7 @@ public class DocumentStoreTests
         var database = new MockDatabase();
         database.Add("id", entity);
 
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(database, builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -304,8 +315,7 @@ public class DocumentStoreTests
         var database = new MockDatabase();
         database.Add("id", entity);
 
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(database, builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -330,8 +340,7 @@ public class DocumentStoreTests
         var database = new MockDatabase();
         database.Add("id", entity);
 
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(database, builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)
@@ -356,8 +365,7 @@ public class DocumentStoreTests
         database.Add("id1", new ReminderList("id1"));
         database.Add("id2", new ReminderList("id2"));
 
-        var documentStore = new DocumentStore(database)
-            .DefineModel(builder =>
+        var documentStore = CreateStore(database, builder =>
             {
                 builder.DefineEntity<ReminderList>()
                        .WithId(e => e.Id)

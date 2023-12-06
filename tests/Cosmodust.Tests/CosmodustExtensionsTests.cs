@@ -61,6 +61,9 @@ public class CosmodustExtensionsTests : IClassFixture<CosmosTextFixture>
 
         var serviceProvider = services.BuildServiceProvider();
 
+        serviceProvider.GetService<CosmodustOptions>().Should().NotBeNull(
+            because: "cosmodust options should be registered.");
+
         serviceProvider.GetService<IMemoryStreamProvider>().Should().NotBeNull(
             because: "the memory stream provider should be registered.");
         serviceProvider.GetService<JsonPropertyBroker>().Should().NotBeNull(
@@ -71,18 +74,18 @@ public class CosmodustExtensionsTests : IClassFixture<CosmosTextFixture>
             because: "the sql parameter object type resolver should be registered.");
         serviceProvider.GetService<CosmodustJsonSerializer>().Should().NotBeNull(
             because: "the cosmodust json serializer should be registered.");
-        
-        serviceProvider.GetService<IOptions<CosmodustOptions>>().Should().NotBeNull(
-            because: "cosmodust options should be registered.");
-        
+
+        serviceProvider.GetService<CosmodustJsonOptions>().Should().NotBeNull(
+            because: "the cosmodust json options should be registered.");
+
         serviceProvider.GetService<CosmosClient>().Should().NotBeNull(
             because: "the cosmos db client should be registered.");
+        serviceProvider.GetService<DocumentStore>().Should().NotBeNull(
+            because: "the document store should be registered.");
         serviceProvider.GetService<DocumentSession>().Should().NotBeNull(
             because: "the document session should be registered.");
         serviceProvider.GetService<QueryFacade>().Should().NotBeNull(
             because: "the query facade should be registered.");
-        serviceProvider.GetService<DocumentStore>().Should().NotBeNull(
-            because: "the document store should be registered.");
 
         serviceProvider.GetService<ILogger<QueryFacade>>().Should().NotBeNull(
             because: "the query facade's logger should be registered.");

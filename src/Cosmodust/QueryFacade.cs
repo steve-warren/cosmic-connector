@@ -26,6 +26,21 @@ public class QueryFacade
     private readonly Dictionary<string, JsonModifierType> _jsonModifiers = new();
 
     public QueryFacade(
+        CosmodustOptions options,
+        CosmosClient client,
+        SqlParameterObjectTypeResolver sqlParameterObjectTypeResolver,
+        ILogger<QueryFacade> logger)
+        : this(
+            client,
+            options.DatabaseId,
+            sqlParameterObjectTypeResolver,
+            logger,
+            options.QueryOptions)
+    {
+
+    }
+
+    public QueryFacade(
         CosmosClient client,
         string databaseName,
         SqlParameterObjectTypeResolver sqlParameterObjectTypeResolver,
