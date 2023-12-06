@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cosmodust.Extensions;
 using Cosmodust.Memory;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
@@ -11,10 +12,10 @@ public sealed class CosmodustJsonSerializer : CosmosSerializer
     private readonly IMemoryStreamProvider _memoryStreamProvider;
 
     public CosmodustJsonSerializer(
-        JsonSerializerOptions options,
+        CosmodustJsonOptions options,
         IMemoryStreamProvider? memoryStreamProvider = default)
     {
-        Options = options;
+        Options = options.Build();
         _memoryStreamProvider = memoryStreamProvider ?? DefaultMemoryStreamProvider.Instance;
     }
 

@@ -25,7 +25,7 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
 
         Id = Guid.NewGuid();
     }
-    
+
     // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public Guid Id { get; }
     public ChangeTracker ChangeTracker { get; }

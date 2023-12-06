@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Session;
 using Cosmodust.Shared;
@@ -14,21 +15,22 @@ namespace Cosmodust.Store;
 /// </summary>
 public class ModelBuilder
 {
-    private readonly JsonSerializerOptions _options;
+    private readonly CosmodustJsonOptions _jsonOptions;
     private readonly JsonPropertyBroker _jsonPropertyBroker;
+    private readonly EntityConfigurationProvider _entityConfigurationProvider;
     private readonly List<IEntityBuilder> _entityBuilders = new();
-    private readonly HashSet<JsonConverter> _jsonConverters = new();
-    private readonly Lazy<PolymorphicDerivedTypeModifier> _polymorphicDerivedTypeModifier = new();
 
     public ModelBuilder(
-        JsonSerializerOptions options,
-        JsonPropertyBroker jsonPropertyBroker)
+        CosmodustJsonOptions jsonOptions,
+        JsonPropertyBroker jsonPropertyBroker,
+        EntityConfigurationProvider entityConfigurationProvider)
     {
-        Ensure.NotNull(options);
+        Ensure.NotNull(jsonOptions);
         Ensure.NotNull(jsonPropertyBroker);
 
-        _options = options;
+        _jsonOptions = jsonOptions;
         _jsonPropertyBroker = jsonPropertyBroker;
+        _entityConfigurationProvider = entityConfigurationProvider;
     }
 
     /// <summary>
@@ -69,8 +71,8 @@ public class ModelBuilder
     {
         var jsonConverter = new ValueObjectJsonConverter<TEnumeration>();
 
-        _jsonConverters.Add(jsonConverter);
-        
+        _jsonOptions.WithConverter(jsonConverter);
+
         return this;
     }
 
@@ -82,9 +84,7 @@ public class ModelBuilder
     /// <returns>The current instance of the <see cref="ModelBuilder"/> class.</returns>
     public ModelBuilder DefinePolymorphicType<TInterfaceType, TDerivedType>() where TDerivedType : TInterfaceType
     {
-        _polymorphicDerivedTypeModifier.Value.AddPolymorphicDerivedType(
-            new PolymorphicDerivedType(interfaceType: typeof(TInterfaceType),
-                derivedType: typeof(TDerivedType)));
+        _jsonOptions.WithPolymorphicType<TInterfaceType, TDerivedType>();
 
         return this;
     }
@@ -104,22 +104,14 @@ public class ModelBuilder
         throw new NotImplementedException();
     }
 
-    internal IReadOnlyList<EntityConfiguration> Build()
+    public void Build()
     {
-        foreach(var converter in _jsonConverters)
-            _options.Converters.Add(converter);
-
-        if (_polymorphicDerivedTypeModifier.IsValueCreated)
+        foreach (var builder in _entityBuilders)
         {
-            var defaultResolver = _options.TypeInfoResolver as DefaultJsonTypeInfoResolver;
-            
-            Ensure.NotNull(defaultResolver, "DefaultJsonTypeInfoResolver required.");
-            
-            defaultResolver.Modifiers.Add(_polymorphicDerivedTypeModifier.Value.Modify);
+            var config = builder.Build();
+            _entityConfigurationProvider.AddEntityConfiguration(config);
         }
 
-        return _entityBuilders
-            .Select(entityBuilder => entityBuilder.Build())
-            .ToList();
+        _entityConfigurationProvider.Build();
     }
 }

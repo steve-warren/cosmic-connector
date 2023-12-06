@@ -29,90 +29,74 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     {
         var configuration = configurationTextFixture.Configuration;
 
+        var sqlParameterCache = new SqlParameterObjectTypeResolver();
         var entityConfigurationProvider = new EntityConfigurationProvider();
-        var jsonSerializerPropertyStore = new JsonPropertyBroker();
-        var jsonNamingPolicy = JsonNamingPolicy.CamelCase;
+        var jsonPropertyBroker = new JsonPropertyBroker();
+        var jsonOptions = new CosmodustJsonOptions(
+            entityConfigurationProvider,
+            jsonPropertyBroker);
 
-        var jsonTypeInfoResolver = new DefaultJsonTypeInfoResolver();
-        var jsonTypeModifiers = new IJsonTypeModifier[]
-        {
-            new PolymorphicDerivedTypeModifier(),
-            new TypeMetadataJsonTypeModifier(entityConfigurationProvider),
-            new BackingFieldJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
-            new PropertyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
-            new PartitionKeyJsonTypeModifier(entityConfigurationProvider, jsonNamingPolicy),
-            new ShadowPropertyJsonTypeModifier(entityConfigurationProvider),
-            new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider),
-            new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonSerializerPropertyStore),
-        };
+        var modelBuilder = new ModelBuilder(
+            jsonOptions,
+            jsonPropertyBroker,
+            entityConfigurationProvider);
 
-        foreach (var action in jsonTypeModifiers)
-            jsonTypeInfoResolver.Modifiers.Add(action.Modify);
-        
-        var jsonSerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            TypeInfoResolver = jsonTypeInfoResolver
-        };
+        modelBuilder.DefineEntity<Account>()
+            .WithId(e => e.Username)
+            .WithPartitionKey(e => "account", "partitionKey")
+            .WithDomainEvents(
+                "_domainEvents",
+                () => Ksuid.NewKsuid("ev_"))
+            .ToContainer("accounts");
 
-        var serializer = new CosmodustJsonSerializer(jsonSerializerOptions);
+        modelBuilder.DefineEntity<AccountPlan>()
+            .WithId(e => e.Id)
+            .WithPartitionKey(
+                e => e.Id,
+                "ownerId")
+            .ToContainer("accountPlans");
+
+        modelBuilder.DefineEntity<BlogPost>()
+            .WithId(e => e.Id)
+            .WithPartitionKey(e => e.Id, "postId")
+            .WithField("_likes")
+            .ToContainer("blogPosts");
+
+        modelBuilder.DefineEntity<BlogPostComment>()
+            .WithId(e => e.Id)
+            .WithJsonProperty<DateTime>("createdOn")
+            .WithPartitionKey(e => e.PostId)
+            .ToContainer("blogPosts");
+
+        modelBuilder.DefineEntity<TodoItem>()
+            .WithId(e => e.Id)
+            .WithPartitionKey(e => e.Id, "partitionKey")
+            .ToContainer("todo_poly");
+
+        modelBuilder.DefinePolymorphicType<TodoItem.ICompletionState, TodoItem.IncompleteState>()
+            .DefinePolymorphicType<TodoItem.ICompletionState, TodoItem.CompletedState>();
+
+        modelBuilder.Build();
+
+        var cosmodustOptions = new CosmodustOptions(
+            jsonOptions,
+            modelBuilder).WithDatabase("reminderdb");
+
+        var serializer = new CosmodustJsonSerializer(jsonOptions);
 
         var cosmosClient = new CosmosClient(configuration["COSMOSDB_CONNECTIONSTRING"], new CosmosClientOptions()
         {
             Serializer = serializer
         });
 
-        var db = cosmosClient.GetDatabase("reminderdb");
-
         _store = new DocumentStore(
-                new CosmosDatabase(db, new CosmosLinqSerializerOptions
-                {
-                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
-                }),
-                serializer.Options,
-                entityConfigurationProvider,
-                shadowPropertyStore: jsonSerializerPropertyStore)
-                    .DefineModel(builder =>
-                    {
-                        builder.DefineEntity<Account>()
-                            .WithId(e => e.Username)
-                            .WithPartitionKey(e => "account", "partitionKey")
-                            .WithDomainEvents(
-                                "_domainEvents",
-                                () => Ksuid.NewKsuid("ev_"))
-                            .ToContainer("accounts");
-
-                        builder.DefineEntity<AccountPlan>()
-                            .WithId(e => e.Id)
-                            .WithPartitionKey(
-                                e => e.Id,
-                                "ownerId")
-                            .ToContainer("accountPlans");
-
-                        builder.DefineEntity<BlogPost>()
-                            .WithId(e => e.Id)
-                            .WithPartitionKey(e => e.Id, "postId")
-                            .WithField("_likes")
-                            .ToContainer("blogPosts");
-
-                        builder.DefineEntity<BlogPostComment>()
-                            .WithId(e => e.Id)
-                            .WithJsonProperty<DateTime>("createdOn")
-                            .WithPartitionKey(e => e.PostId)
-                            .ToContainer("blogPosts");
-
-                        builder.DefineEntity<TodoItem>()
-                            .WithId(e => e.Id)
-                            .WithPartitionKey(e => e.Id, "partitionKey")
-                            .ToContainer("todo_poly");
-
-                        builder.DefinePolymorphicType<TodoItem.ICompletionState, TodoItem.IncompleteState>()
-                            .DefinePolymorphicType<TodoItem.ICompletionState, TodoItem.CompletedState>();
-                    });
+            new CosmosDatabase(cosmosClient, cosmodustOptions),
+            entityConfigurationProvider,
+            sqlParameterCache,
+            jsonPropertyBroker);
 
         var nullLoggerFactory = new NullLoggerFactory();
-        
+
         _queryFacade = new QueryFacade(
             client: cosmosClient,
             databaseName: "reminderdb",

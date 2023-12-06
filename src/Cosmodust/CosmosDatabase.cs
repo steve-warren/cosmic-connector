@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Linq;
 using Cosmodust.Operations;
@@ -21,15 +22,19 @@ public sealed class CosmosDatabase : IDatabase
     private readonly CosmosLinqSerializerOptions _cosmosLinqSerializerOptions;
 
     public CosmosDatabase(
-        Database database,
-        CosmosLinqSerializerOptions cosmosLinqSerializerOptions)
+        CosmosClient cosmosClient,
+        CosmodustOptions options,
+        CosmosLinqSerializerOptions? cosmosLinqSerializerOptions = null)
     {
-        Ensure.NotNull(database);
-        Ensure.NotNull(cosmosLinqSerializerOptions);
+        Ensure.NotNull(cosmosClient);
+        Ensure.NotNullOrWhiteSpace(options.DatabaseId);
 
-        _database = database;
-        _cosmosLinqSerializerOptions = cosmosLinqSerializerOptions;
-        _containerProvider = new ContainerProvider(database);
+        _database = cosmosClient.GetDatabase(options.DatabaseId);
+        _cosmosLinqSerializerOptions = cosmosLinqSerializerOptions ?? new CosmosLinqSerializerOptions
+        {
+            PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+        };
+        _containerProvider = new ContainerProvider(_database);
     }
 
     public string Name => _database.Id;

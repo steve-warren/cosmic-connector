@@ -6,6 +6,7 @@ using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Serialization;
 using Cosmodust.Store;
+using Cosmodust.Tracking;
 
 namespace Cosmodust.Tests;
 
@@ -200,15 +201,22 @@ public class SerializationTests
     [Fact]
     public void Should_Serialize_Enum_To_String()
     {
+        var entityConfigurationProvider = new EntityConfigurationProvider();
+        var jsonPropertyBroker = new JsonPropertyBroker();
+
         var instance = new EnumRecord(Id: "123", ZeroOrOne.One);
 
-        var jsonOptionsWithoutEnumToString = new CosmodustJsonOptions
+        var jsonOptionsWithoutEnumToString = new CosmodustJsonOptions(
+                entityConfigurationProvider,
+                jsonPropertyBroker)
             { SerializeEnumsToStrings = false }.Build();
 
         JsonSerializer.Serialize(instance, jsonOptionsWithoutEnumToString)
             .Should().Be("""{"id":"123","zeroOrOne":1}""");
 
-        var jsonOptionsWithEnumToString = new CosmodustJsonOptions
+        var jsonOptionsWithEnumToString = new CosmodustJsonOptions(
+                entityConfigurationProvider,
+                jsonPropertyBroker)
             { SerializeEnumsToStrings = true }.Build();
 
         JsonSerializer.Serialize(instance, jsonOptionsWithEnumToString)
