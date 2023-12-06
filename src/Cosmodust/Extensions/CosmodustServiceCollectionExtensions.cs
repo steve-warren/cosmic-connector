@@ -43,7 +43,6 @@ public static class CosmodustServiceCollectionExtensions
         services.AddSingleton<CosmodustJsonOptions>();
         services.AddSingleton<CosmodustJsonSerializer>();
         services.AddSingleton<ModelBuilder>();
-
         services.AddSingleton<CosmosClient>(sp =>
             {
                 var options = sp.GetRequiredService<CosmodustOptions>();

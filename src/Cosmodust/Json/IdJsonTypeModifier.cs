@@ -1,22 +1,21 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Store;
 
 namespace Cosmodust.Json;
 
-public sealed class PartitionKeyJsonTypeModifier : IJsonTypeModifier
+public sealed class IdJsonTypeModifier : IJsonTypeModifier
 {
     private readonly EntityConfigurationProvider _entityConfigurations;
     private readonly JsonNamingPolicy _jsonNamingPolicy;
 
-    public PartitionKeyJsonTypeModifier(
+    public IdJsonTypeModifier(
         EntityConfigurationProvider entityConfigurations,
         JsonNamingPolicy jsonNamingPolicy)
     {
         _entityConfigurations = entityConfigurations;
         _jsonNamingPolicy = jsonNamingPolicy;
     }
-
     public void Modify(JsonTypeInfo jsonTypeInfo)
     {
         if (jsonTypeInfo.Kind != JsonTypeInfoKind.Object)
@@ -25,17 +24,18 @@ public sealed class PartitionKeyJsonTypeModifier : IJsonTypeModifier
         if (!_entityConfigurations.TryGetEntityConfiguration(jsonTypeInfo.Type, out var entityConfiguration))
             return;
 
-        if (entityConfiguration.IsPartitionKeyDefinedInEntity)
+        if (entityConfiguration.IsIdPropertyDefinedInEntity)
             return;
 
-        var partitionKeyName = _jsonNamingPolicy.ConvertName(
-            entityConfiguration.PartitionKeyName);
+        var idName = _jsonNamingPolicy.ConvertName(
+            entityConfiguration.IdPropertyName);
 
         var jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(
             propertyType: typeof(string),
-            name: partitionKeyName);
+            name: "id");
 
-        jsonPropertyInfo.Get = entityConfiguration.PartitionKeySelector.GetString;
+        jsonPropertyInfo.Get = entityConfiguration.IdGetter.GetString;
+        jsonPropertyInfo.Set = entityConfiguration.IdSetter.SetString;
 
         jsonTypeInfo.Properties.Add(jsonPropertyInfo);
     }

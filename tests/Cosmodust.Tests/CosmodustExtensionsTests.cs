@@ -5,6 +5,7 @@ using Cosmodust.Memory;
 using Cosmodust.Serialization;
 using Cosmodust.Session;
 using Cosmodust.Store;
+using Cosmodust.Tests.Domain.Accounts;
 using Cosmodust.Tests.Fixtures;
 using Cosmodust.Tracking;
 using Microsoft.Azure.Cosmos;
@@ -88,5 +89,48 @@ public class CosmodustExtensionsTests : IClassFixture<CosmosTextFixture>
 
         serviceProvider.GetService<ILogger<QueryFacade>>().Should().NotBeNull(
             because: "the query facade's logger should be registered.");
+    }
+    
+    [Fact]
+    [Trait("gh_bugfix", "111")]
+    public async Task Foo()
+    {
+        var connectionString = _configurationTextFixture.Configuration["COSMOSDB_CONNECTIONSTRING"];
+        
+        Ensure.NotNullOrWhiteSpace(connectionString, "connection string not configured.");
+        
+        var services = new ServiceCollection();
+        services.AddSingleton<ILogger<QueryFacade>>(NullLogger<QueryFacade>.Instance);
+
+        services.AddCosmodust(
+            options =>
+            {
+                options.WithConnectionString(connectionString)
+                    .WithDatabase("reminderdb")
+                    .WithModel(modelBuilder =>
+                    {
+                        modelBuilder.DefineEntity<Username>()
+                            .WithId(e => e.Value)
+                            .WithPartitionKey(
+                                e => "account",
+                                "partitionKey")
+                            .ToContainer("accounts");
+                    }).WithJsonOptions(jsonOptions =>
+                    {
+                        jsonOptions.CamelCase();
+                        jsonOptions.SerializePrivateFields();
+                        jsonOptions.SerializePrivateProperties();
+                        jsonOptions.SerializeEntityTypeInfo();
+                    });
+            });
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        var store = serviceProvider.GetService<DocumentStore>();
+        var session = store.CreateSession();
+
+        var value = await session.FindAsync<Username>("mg_scott", "account");
+
+        value.Should().NotBeNull();
     }
 }
