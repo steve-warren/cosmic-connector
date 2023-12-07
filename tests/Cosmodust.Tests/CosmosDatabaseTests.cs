@@ -31,7 +31,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         var sqlParameterCache = new SqlParameterObjectTypeResolver();
         var entityConfigurationProvider = new EntityConfigurationProvider();
-        var jsonPropertyBroker = new JsonPropertyBroker();
+        var jsonPropertyBroker = new ShadowPropertyProvider();
         var jsonOptions = new CosmodustJsonOptions(
             entityConfigurationProvider,
             jsonPropertyBroker);
@@ -403,7 +403,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         writeSession.Store(comment);
 
         writeSession.Entity(comment)
-               !.WriteJsonProperty(shadowProperty.Name, shadowProperty.Value);
+               !.WriteShadowProperty(shadowProperty.Name, shadowProperty.Value);
 
         await writeSession.CommitAsync();
 
@@ -415,7 +415,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         readComment.Should().NotBeNull();
 
-        var readProperty = readSession.Entity(readComment!)!.ReadJsonProperty<DateTime>(shadowProperty.Name);
+        var readProperty = readSession.Entity(readComment!)!.ReadShadowProperty<DateTime>(shadowProperty.Name);
 
         readProperty.Should().Be(shadowProperty.Value);
     }

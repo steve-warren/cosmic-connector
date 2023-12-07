@@ -162,7 +162,7 @@ public sealed class CosmosDatabase : IDatabase
             if (entry.IsUnchanged)
                 continue;
 
-            entry.AddJsonPropertiesToBroker();
+            entry.WriteShadowProperties();
 
             var operation = CreateWriteOperation(entry);
             var response = await operation
@@ -170,7 +170,7 @@ public sealed class CosmosDatabase : IDatabase
                 .ConfigureAwait(false);
 
             Debug.WriteLine(
-                $"Write operation HTTP {response.StatusCode} - {response.Cost} RUs");
+                $"AddOrUpdate operation HTTP {response.StatusCode} - {response.Cost} RUs");
 
             foreach(var domainEvent in
                     entry.DomainEventAccessor.GetDomainEvents(entry.Entity))
@@ -194,7 +194,7 @@ public sealed class CosmosDatabase : IDatabase
                     .ConfigureAwait(false);
 
                 Debug.WriteLine(
-                    $"Write operation HTTP {response.StatusCode} - {response.Cost} RUs");
+                    $"AddOrUpdate operation HTTP {response.StatusCode} - {response.Cost} RUs");
             }
         }
     }

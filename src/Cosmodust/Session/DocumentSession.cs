@@ -14,14 +14,14 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
         IDatabase database,
         EntityConfigurationProvider entityConfiguration,
         SqlParameterObjectTypeResolver sqlParameterObjectTypeResolver,
-        JsonPropertyBroker jsonPropertyBroker)
+        ShadowPropertyProvider shadowPropertyProvider)
     {
         Database = database;
         EntityConfiguration = entityConfiguration;
         SqlParameterObjectTypeResolver = sqlParameterObjectTypeResolver;
         ChangeTracker = new ChangeTracker(
             entityConfiguration,
-            jsonPropertyBroker);
+            shadowPropertyProvider);
 
         Id = Guid.NewGuid();
     }

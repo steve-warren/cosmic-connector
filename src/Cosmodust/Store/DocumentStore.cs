@@ -14,20 +14,20 @@ public class DocumentStore : IDocumentStore
     private readonly IDatabase _database;
     private readonly EntityConfigurationProvider _entityConfiguration;
     private readonly SqlParameterObjectTypeResolver _sqlParameterObjectTypeResolver;
-    private readonly JsonPropertyBroker _jsonPropertyBroker;
+    private readonly ShadowPropertyProvider _shadowPropertyProvider;
 
     public DocumentStore(
         IDatabase database,
         EntityConfigurationProvider entityConfiguration,
         SqlParameterObjectTypeResolver sqlParameterCache,
-        JsonPropertyBroker shadowPropertyStore)
+        ShadowPropertyProvider shadowPropertyStore)
     {
         Ensure.NotNull(database);
 
         _database = database;
         _entityConfiguration = entityConfiguration;
         _sqlParameterObjectTypeResolver = sqlParameterCache;
-        _jsonPropertyBroker = shadowPropertyStore;
+        _shadowPropertyProvider = shadowPropertyStore;
     }
 
     public DocumentSession CreateSession()
@@ -36,6 +36,6 @@ public class DocumentStore : IDocumentStore
             _database,
             _entityConfiguration,
             _sqlParameterObjectTypeResolver,
-            _jsonPropertyBroker);
+            _shadowPropertyProvider);
     }
 }
