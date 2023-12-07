@@ -66,8 +66,8 @@ public class CosmodustExtensionsTests : IClassFixture<CosmosTextFixture>
 
         serviceProvider.GetService<IMemoryStreamProvider>().Should().NotBeNull(
             because: "the memory stream provider should be registered.");
-        serviceProvider.GetService<JsonPropertyBroker>().Should().NotBeNull(
-            because: "the json property broker provider should be registered.");
+        serviceProvider.GetService<ShadowPropertyProvider>().Should().NotBeNull(
+            because: "the json property provider provider should be registered.");
         serviceProvider.GetService<EntityConfigurationProvider>().Should().NotBeNull(
             because: "the entity configuration provider should be registered.");
         serviceProvider.GetService<SqlParameterObjectTypeResolver>().Should().NotBeNull(

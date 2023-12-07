@@ -12,10 +12,10 @@ public sealed class EntityEntry
     public required string PartitionKeyName { get; init; }
     public required object Entity { get; init; }
     public required Type EntityType { get; init; }
-    public required JsonPropertyBroker Broker { get; init; }
+    public required ShadowPropertyProvider Provider { get; init; }
     public required DomainEventAccessor DomainEventAccessor { get; init; }
     public string? ETag { get; set; }
-    public IDictionary<string, object?> JsonProperties { get; private set; }
+    public IDictionary<string, object?> ShadowProperties { get; private set; }
         = new Dictionary<string, object?>();
     public EntityState State { get; set; } = EntityState.Detached;
 
@@ -55,46 +55,46 @@ public sealed class EntityEntry
     public void UpdateETag(string eTag)
     {
         ETag = eTag;
-        JsonProperties["_etag"] = eTag;
+        ShadowProperties["_etag"] = eTag;
     }
 
-    public TProperty? ReadJsonProperty<TProperty>(string jsonPropertyName) =>
-        JsonProperties.TryGetValue(jsonPropertyName, out var value)
+    public TProperty? ReadShadowProperty<TProperty>(string shadowPropertyName) =>
+        ShadowProperties.TryGetValue(shadowPropertyName, out var value)
             ? (TProperty?) value
             : default;
 
-    public void WriteJsonProperty<TProperty>(string jsonPropertyName, TProperty? value) =>
-        JsonProperties[jsonPropertyName] = value;
+    public void WriteShadowProperty<TProperty>(string shadowPropertyName, TProperty? value) =>
+        ShadowProperties[shadowPropertyName] = value;
 
-    public void WriteJsonProperty(string jsonPropertyName, object? value) =>
-        JsonProperties[jsonPropertyName] = value;
+    public void WriteShadowProperty(string shadowPropertyName, object? value) =>
+        ShadowProperties[shadowPropertyName] = value;
 
     /// <summary>
-    /// Reads JSON properties from the broker for the current entity.
+    /// Reads JSON properties from the provider for the current entity.
     /// </summary>
-    public void RemoveJsonPropertiesFromBroker()
+    public void ReadShadowProperties()
     {
         Debug.Assert(Entity != null);
-        JsonProperties = Broker.RemoveEntityProperties(Entity) ?? JsonProperties;
-        Debug.WriteLine($"Retrieved entity '{Id}' from the shadow property broker.");
+        ShadowProperties = Provider.RemoveAll(Entity) ?? ShadowProperties;
+        Debug.WriteLine($"Retrieved entity '{Id}' from the shadow property provider.");
     }
 
     /// <summary>
-    /// Writes the JSON properties of the entity to the broker for serialization.
+    /// Writes the JSON properties of the entity to the provider for serialization.
     /// </summary>
-    public void AddJsonPropertiesToBroker()
+    public void WriteShadowProperties()
     {
         Debug.Assert(Entity != null);
 
         try
         {
-            Broker.AddEntityProperties(Entity, JsonProperties);
-            Debug.WriteLine($"Returned entity '{Id}' to the shadow property broker.");
+            Provider.AddAll(Entity, ShadowProperties);
+            Debug.WriteLine($"Returned entity '{Id}' to the shadow property provider.");
         }
 
         finally
         {
-            JsonProperties = JsonPropertyBroker.EmptyJsonProperties;
+            ShadowProperties = ShadowPropertyProvider.EmptyShadowProperties;
         }
     }
 }

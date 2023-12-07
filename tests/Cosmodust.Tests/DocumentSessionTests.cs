@@ -21,7 +21,7 @@ public class DocumentStoreTests
         Action<ModelBuilder> modelBuilder)
     {
         var entityConfigurationProvider = new EntityConfigurationProvider();
-        var broker = new JsonPropertyBroker();
+        var broker = new ShadowPropertyProvider();
 
         var builder = new ModelBuilder(
             new CosmodustJsonOptions(
@@ -66,7 +66,7 @@ public class DocumentStoreTests
 
         var action = () => session.Store<ReminderList>(null!);
 
-        action.Should().Throw<ArgumentNullException>(because: "we should not be able to broker a null entity");
+        action.Should().Throw<ArgumentNullException>(because: "we should not be able to provider a null entity");
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class DocumentStoreTests
 
         Action action = () => session.Store(entity);
 
-        action.Should().Throw<InvalidOperationException>(because: "we should not be able to broker an entity that has not been configured");
+        action.Should().Throw<InvalidOperationException>(because: "we should not be able to provider an entity that has not been configured");
     }
 
     [Fact]

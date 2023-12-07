@@ -4,11 +4,11 @@ using System.Diagnostics;
 namespace Cosmodust.Tracking;
 
 /// <summary>
-/// An in-memory broker for exchanging entity JSON properties. This class is thread-safe.
+/// An in-memory provider for exchanging entity JSON properties. This class is thread-safe.
 /// </summary>
-public sealed class JsonPropertyBroker : IDisposable
+public sealed class ShadowPropertyProvider : IDisposable
 {
-    public static readonly IDictionary<string, object?> EmptyJsonProperties =
+    public static readonly IDictionary<string, object?> EmptyShadowProperties =
         new Dictionary<string, object?>(capacity: 0).AsReadOnly();
 
     private readonly ConcurrentDictionary<object, IDictionary<string, object?>> _store = new();
@@ -19,7 +19,7 @@ public sealed class JsonPropertyBroker : IDisposable
     /// <param name="entity">The entity to set the property for.</param>
     /// <param name="propertyName">The name of the property to set.</param>
     /// <param name="value">The value to set the property to.</param>
-    public void WritePropertyValue(object entity, string propertyName, object? value)
+    public void AddOrUpdate(object entity, string propertyName, object? value)
     {
         _store.AddOrUpdate(
             key: entity,
@@ -30,7 +30,7 @@ public sealed class JsonPropertyBroker : IDisposable
             });
     }
 
-    public object? ReadPropertyValue(object entity, string propertyName)
+    public object? GetValue(object entity, string propertyName)
     {
         return _store.TryGetValue(entity, out var shadowProperties)
             ? shadowProperties.TryGetValue(propertyName, out var value)
@@ -40,18 +40,18 @@ public sealed class JsonPropertyBroker : IDisposable
     }
 
     /// <summary>
-    /// Removes the given entity's JSON properties from the broker.
+    /// Removes the given entity's JSON properties from the provider.
     /// </summary>
     /// <param name="entity">The entity to remove from the cache.</param>
     /// <returns>The JSON properties associated with the entity, or null if none were found.</returns>
-    public IDictionary<string, object?>? RemoveEntityProperties(object entity)
+    public IDictionary<string, object?>? RemoveAll(object entity)
     {
         _store.TryRemove(entity, out var properties);
 
         return properties;
     }
 
-    public void AddEntityProperties(object entity, IDictionary<string, object?> properties)
+    public void AddAll(object entity, IDictionary<string, object?> properties)
     {
         var addResult = _store.TryAdd(entity, properties);
 

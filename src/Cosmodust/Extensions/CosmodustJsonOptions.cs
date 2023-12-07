@@ -17,15 +17,16 @@ public class CosmodustJsonOptions
 
     public CosmodustJsonOptions(
         EntityConfigurationProvider entityConfigurationProvider,
-        JsonPropertyBroker jsonPropertyBroker)
+        ShadowPropertyProvider shadowPropertyProvider)
     {
-        WithJsonTypeModifier(new TypeMetadataJsonTypeModifier(entityConfigurationProvider));
         WithJsonTypeModifier(new BackingFieldJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
-        WithJsonTypeModifier(new PropertyJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
+        WithJsonTypeModifier(new DocumentETagJsonTypeModifier(entityConfigurationProvider, shadowPropertyProvider));
+        WithJsonTypeModifier(new IdJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
         WithJsonTypeModifier(new PartitionKeyJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
-        WithJsonTypeModifier(new ShadowPropertyJsonTypeModifier(entityConfigurationProvider));
+        WithJsonTypeModifier(new PropertyJsonTypeModifier(entityConfigurationProvider, _jsonNamingPolicy));
         WithJsonTypeModifier(new PropertyPrivateSetterJsonTypeModifier(entityConfigurationProvider));
-        WithJsonTypeModifier(new DocumentETagJsonTypeModifier(entityConfigurationProvider, jsonPropertyBroker));
+        WithJsonTypeModifier(new ShadowPropertyJsonTypeModifier(entityConfigurationProvider));
+        WithJsonTypeModifier(new TypeMetadataJsonTypeModifier(entityConfigurationProvider));
     }
 
     public bool SerializeEnumsToStrings { get; set; }

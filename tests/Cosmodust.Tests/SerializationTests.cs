@@ -202,7 +202,7 @@ public class SerializationTests
     public void Should_Serialize_Enum_To_String()
     {
         var entityConfigurationProvider = new EntityConfigurationProvider();
-        var jsonPropertyBroker = new JsonPropertyBroker();
+        var jsonPropertyBroker = new ShadowPropertyProvider();
 
         var instance = new EnumRecord(Id: "123", ZeroOrOne.One);
 

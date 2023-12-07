@@ -17,11 +17,11 @@ public record EntityConfiguration(Type EntityType)
     internal bool IsIdPropertyDefinedInEntity { get; init; }
     public IReadOnlyCollection<FieldAccessor> Fields { get; init; } = Array.Empty<FieldAccessor>();
     public IReadOnlyCollection<PropertyAccessor> Properties { get; init; } = Array.Empty<PropertyAccessor>();
-    public IReadOnlyCollection<JsonProperty> JsonProperties { get; init; } = Array.Empty<JsonProperty>();
+    public IReadOnlyCollection<ShadowProperty> JsonProperties { get; init; } = Array.Empty<ShadowProperty>();
     public bool IsPartitionKeyDefinedInEntity { get; init; }
 
     public EntityEntry CreateEntry(
-        JsonPropertyBroker broker,
+        ShadowPropertyProvider provider,
         object entity,
         EntityState state)
     {
@@ -47,17 +47,17 @@ public record EntityConfiguration(Type EntityType)
             PartitionKeyName = PartitionKeyName,
             Entity = entity,
             EntityType = EntityType,
-            Broker = broker,
+            Provider = provider,
             State = state,
             DomainEventAccessor = DomainEventAccessor
         };
 
-        entry.RemoveJsonPropertiesFromBroker();
+        entry.ReadShadowProperties();
 
         if (state == EntityState.Added)
         {
             foreach (var jsonProperty in JsonProperties)
-                entry.WriteJsonProperty(jsonProperty.PropertyName, value: jsonProperty.DefaultValue);
+                entry.WriteShadowProperty(jsonProperty.PropertyName, value: jsonProperty.DefaultValue);
 
             return entry;
         }

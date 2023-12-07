@@ -7,20 +7,20 @@ namespace Cosmodust.Tracking;
 
 public sealed class ChangeTracker : IDisposable
 {
-    private readonly JsonPropertyBroker _propertyBroker;
+    private readonly ShadowPropertyProvider _propertyProvider;
     private readonly List<EntityEntry> _entries = new();
     private readonly Dictionary<(Type Type, string Id), object> _entityByTypeId = new();
     private readonly Dictionary<object, EntityEntry> _entriesByEntity = new();
 
     public ChangeTracker(
         EntityConfigurationProvider entityConfiguration,
-        JsonPropertyBroker propertyBroker)
+        ShadowPropertyProvider propertyProvider)
     {
         Ensure.NotNull(entityConfiguration);
-        Ensure.NotNull(propertyBroker);
+        Ensure.NotNull(propertyProvider);
 
         EntityConfiguration = entityConfiguration;
-        _propertyBroker = propertyBroker;
+        _propertyProvider = propertyProvider;
     }
 
     public EntityConfigurationProvider EntityConfiguration { get; }
@@ -59,9 +59,9 @@ public sealed class ChangeTracker : IDisposable
         var entry = CreateEntry(entity, EntityState.Unchanged);
 
         if (eTag is not null)
-            entry.WriteJsonProperty("_etag", eTag);
+            entry.WriteShadowProperty("_etag", eTag);
 
-        entry.ETag = eTag ?? entry.ReadJsonProperty<string>("_etag");
+        entry.ETag = eTag ?? entry.ReadShadowProperty<string>("_etag");
 
         TrackEntity(entry);
     }
@@ -175,7 +175,7 @@ public sealed class ChangeTracker : IDisposable
 
         var entityType = entity.GetType();
         var config = EntityConfiguration.GetEntityConfiguration(entityType);
-        var entry = config.CreateEntry(_propertyBroker, entity, state);
+        var entry = config.CreateEntry(_propertyProvider, entity, state);
 
         return entry;
     }
@@ -203,7 +203,7 @@ public sealed class ChangeTracker : IDisposable
         {
             try
             {
-                entry.RemoveJsonPropertiesFromBroker();
+                entry.ReadShadowProperties();
             }
 
             catch

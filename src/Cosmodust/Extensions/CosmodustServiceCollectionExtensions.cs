@@ -37,7 +37,7 @@ public static class CosmodustServiceCollectionExtensions
             return options;
         });
         services.AddSingleton<IMemoryStreamProvider, RecyclableMemoryStreamProvider>();
-        services.AddSingleton<JsonPropertyBroker>();
+        services.AddSingleton<ShadowPropertyProvider>();
         services.AddSingleton<EntityConfigurationProvider>();
         services.AddSingleton<SqlParameterObjectTypeResolver>();
         services.AddSingleton<CosmodustJsonOptions>();
