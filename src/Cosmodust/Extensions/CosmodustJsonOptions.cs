@@ -68,7 +68,7 @@ public class CosmodustJsonOptions
     public CosmodustJsonOptions WithPolymorphicType<TInterfaceType, TDerivedType>() where TDerivedType : TInterfaceType
     {
         _polymorphicDerivedTypeModifier.Value.AddPolymorphicDerivedType(
-            new PolymorphicDerivedType(interfaceType: typeof(TInterfaceType),
+            new PolymorphicDerivedType(baseOrInterfaceType: typeof(TInterfaceType),
                 derivedType: typeof(TDerivedType)));
 
         return this;

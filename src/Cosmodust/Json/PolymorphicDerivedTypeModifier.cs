@@ -10,8 +10,8 @@ public class PolymorphicDerivedTypeModifier : IJsonTypeModifier
 
     public void AddPolymorphicDerivedType(PolymorphicDerivedType polymorphicDerivedType)
     {
-        if (!_polymorphicDerivedTypes.TryGetValue(polymorphicDerivedType.InterfaceType, out var derivedTypes))
-            _polymorphicDerivedTypes.Add(polymorphicDerivedType.InterfaceType,
+        if (!_polymorphicDerivedTypes.TryGetValue(polymorphicDerivedType.BaseOrInterfaceType, out var derivedTypes))
+            _polymorphicDerivedTypes.Add(polymorphicDerivedType.BaseOrInterfaceType,
                 new HashSet<PolymorphicDerivedType>() { polymorphicDerivedType });
 
         else
