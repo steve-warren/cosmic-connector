@@ -222,4 +222,29 @@ public class SerializationTests
         JsonSerializer.Serialize(instance, jsonOptionsWithEnumToString)
             .Should().Be("""{"id":"123","zeroOrOne":"one"}""");
     }
+
+    public abstract class AccountStatus
+    {
+        protected AccountStatus()
+        {
+            Name = GetType().Name;
+        }
+
+        public string Name { get; }
+
+        public sealed class Inactive : AccountStatus
+        {
+
+        }
+}
+
+    [Fact]
+    [Trait("gh_feature", "123")]
+    public void PolymorphicDerivedType_Should_Allow_Base_Types()
+    {
+        var polymorphicDerivedType = new PolymorphicDerivedType(typeof(AccountStatus), typeof(AccountStatus.Inactive));
+
+        polymorphicDerivedType.BaseOrInterfaceType.Should().Be(typeof(AccountStatus));
+        polymorphicDerivedType.DerivedType.Should().Be(typeof(AccountStatus.Inactive));
+    }
 }
