@@ -11,10 +11,13 @@ services.AddLogging(configure =>
     configure.AddConsole();
 });
 
+var connectionString = builder.Configuration["ConnectionStrings:CosmosDB"] ??
+                       throw new ArgumentException("Expected connection string from configuration file.");
+
 services.AddCosmodust(
     options =>
     {
-        options.WithConnectionString(builder.Configuration["ConnectionStrings:CosmosDB"])
+        options.WithConnectionString(connectionString)
             .WithDatabase("reminderdb")
             .WithModel(modelBuilder =>
             {

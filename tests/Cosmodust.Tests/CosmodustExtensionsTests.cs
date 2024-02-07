@@ -93,7 +93,7 @@ public class CosmodustExtensionsTests : IClassFixture<CosmosTextFixture>
     
     [Fact]
     [Trait("gh_bugfix", "111")]
-    public async Task Foo()
+    public async Task Allow_Mapping_Of_Entity_Id_To_Different_Property()
     {
         var connectionString = _configurationTextFixture.Configuration["COSMOSDB_CONNECTIONSTRING"];
         
@@ -127,6 +127,9 @@ public class CosmodustExtensionsTests : IClassFixture<CosmosTextFixture>
         var serviceProvider = services.BuildServiceProvider();
 
         var store = serviceProvider.GetService<DocumentStore>();
+        
+        Ensure.NotNull(store);
+        
         var session = store.CreateSession();
 
         var value = await session.FindAsync<Username>("mg_scott", "account");

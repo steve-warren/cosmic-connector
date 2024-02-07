@@ -1,4 +1,5 @@
 using System.IO.Pipelines;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Cosmodust.Cosmos.Tests.Domain.Accounts;
@@ -105,7 +106,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             new CosmodustQueryOptions
             {
                 ExcludeCosmosMetadata = false,
-                IncludeETag = false,
+                IncludeETag = true,
                 RenameDocumentCollectionProperties = false
             });
     }
@@ -373,7 +374,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
     }
 
     [Fact]
-    public async Task Can_Use_Query_Facade()
+    public async Task Query_Facade_Returns_Json_Document()
     {
         var pipe = new Pipe();
 
@@ -383,6 +384,20 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
             partitionKey: "a_2X011ldw0dogcauAbw0oExAv21H",
             sql: "select top 1 * from c where c.ownerId = @ownerId",
             parameters: new { ownerId = "a_2X011ldw0dogcauAbw0oExAv21H" });
+
+        await pipe.Writer.CompleteAsync();
+        
+        var readResult = await pipe.Reader.ReadAsync();
+
+        var document = JsonDocument.Parse(readResult.Buffer);
+
+        document.RootElement
+            .GetProperty("Documents")
+            .EnumerateArray()
+            .First()
+            .GetProperty("ownerId")
+            .GetString()
+            .Should().Be("a_2X011ldw0dogcauAbw0oExAv21H");
     }
 
     [Fact]

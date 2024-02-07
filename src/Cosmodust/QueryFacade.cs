@@ -1,6 +1,4 @@
-﻿using System.Buffers;
-using System.Diagnostics;
-using System.IO.Pipelines;
+﻿using System.IO.Pipelines;
 using System.Text;
 using System.Text.Json;
 using CommunityToolkit.HighPerformance.Buffers;
@@ -68,10 +66,9 @@ public class QueryFacade
             _jsonModifiers.Add("_attachments", JsonModifierType.SkipProperty);
             _jsonModifiers.Add("_ts", JsonModifierType.SkipProperty);
         }
-        
-        _jsonModifiers.Add("_etag", options.IncludeETag 
-            ? JsonModifierType.EscapeStringValue 
-            : JsonModifierType.SkipProperty);
+
+        if (options.IncludeETag == false)
+            _jsonModifiers.Add("_etag", JsonModifierType.SkipProperty);
         
         _jsonWriterOptions = new JsonWriterOptions
         {
@@ -109,10 +106,8 @@ public class QueryFacade
                 await flushTask.ConfigureAwait(false);
 
                 using var response = await readNextTask.ConfigureAwait(false);
-                using var stream = response.Content as MemoryStream;
+                using var stream = (MemoryStream) response.Content;
 
-                Debug.Assert(stream is not null);
-                
                 TransformJson(_jsonModifiers, _propertyRename, stream, _readerOptions, writer);
 
                 flushTask = writer.FlushAsync();
@@ -160,13 +155,6 @@ public class QueryFacade
                         case JsonModifierType.SkipProperty:
                             reader.Skip();
                             continue;
-                        case JsonModifierType.EscapeStringValue:
-                            {
-                                var etagValue = reader.GetString(); // todo perf - avoid string alloc?
-                                writer.WritePropertyName(propertyName);
-                                writer.WriteStringValue(etagValue);
-                                continue;
-                            }
                         case JsonModifierType.RenameProperty:
                             writer.WritePropertyName(propertyRename[propertyName]);
                             continue;
@@ -215,6 +203,5 @@ internal enum JsonModifierType
 {
     None,
     SkipProperty,
-    EscapeStringValue,
     RenameProperty
 }

@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Cosmodust.Shared;
 using Cosmodust.Store;
 
 namespace Cosmodust.Json;
@@ -35,6 +36,8 @@ public class PropertyPrivateSetterJsonTypeModifier : IJsonTypeModifier
 
             if (setMethod is null || setMethod.IsPublic)
                 continue;
+            
+            Ensure.NotNull(propertyInfo);
 
             Debug.WriteLine($"Found property {propertyInfo.Name} on type {jsonTypeInfo.Type.Name} having a private setter.");
 
