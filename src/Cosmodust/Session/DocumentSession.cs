@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Cosmodust.Linq;
+using Cosmodust.Operations;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
 using Cosmodust.Shared;
@@ -119,6 +120,15 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     }
 
     /// <inheritdoc />
+    public void Attach<TEntity>(
+        TEntity entity,
+        string? eTag = null)
+    {
+        Ensure.NotNull(entity);
+        ChangeTracker.RegisterUnchanged(entity, eTag);
+    }
+
+    /// <inheritdoc />
     public void Update<TEntity>(TEntity entity)
     {
         Ensure.NotNull(entity);
@@ -133,17 +143,39 @@ public sealed class DocumentSession : IDocumentSession, IDisposable
     }
 
     /// <inheritdoc />
-    public async Task CommitAsync(CancellationToken cancellationToken = default)
+    public async Task<IDocumentOperationResult> CommitAsync(CancellationToken cancellationToken = default)
     {
-        await Database.CommitAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
-        ChangeTracker.Commit();
+        var pendingChanges = ChangeTracker.PendingChanges.ToArray();
+
+        if (pendingChanges.Length == 1)
+        {
+            var result = await Database
+                .CommitAsync(pendingChanges[0], cancellationToken)
+                .ConfigureAwait(false);
+
+            ChangeTracker.Commit(pendingChanges[0]);
+            
+            return DocumentOperationResultFactory.Create(result);
+        }
+        
+        foreach (var entry in pendingChanges)
+        {
+            var result = await Database.CommitAsync(entry, cancellationToken).ConfigureAwait(false);
+            ChangeTracker.Commit(entry);
+        }
+
+        return new SuccessDocumentOperationResult();
     }
 
     /// <inheritdoc />
     public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
     {
-        await Database.CommitTransactionAsync(ChangeTracker.PendingChanges, cancellationToken).ConfigureAwait(false);
-        ChangeTracker.Commit();
+        var pendingChanges = ChangeTracker.PendingChanges.ToArray();
+
+        await Database.CommitTransactionAsync(pendingChanges, cancellationToken).ConfigureAwait(false);
+        
+        foreach(var entry in pendingChanges)
+            ChangeTracker.Commit(entry);
     }
 
     public EntityEntry Entity(object entity) =>

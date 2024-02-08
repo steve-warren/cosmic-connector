@@ -4,7 +4,7 @@ using Microsoft.Azure.Cosmos;
 
 namespace Cosmodust.Operations;
 
-internal class CreateItemOperation : ICosmosWriteOperation
+internal class CreateItemOperation : IDocumentWriteOperation
 {
     private static readonly ItemRequestOptions s_requestOptions = new()
     { EnableContentResponseOnWrite = false };

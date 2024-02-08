@@ -48,8 +48,6 @@ public class TransactionalBatchOperation
         var container = _database.GetContainer(containerName);
 
         var batch = container.CreateTransactionalBatch(new PartitionKey(partitionKey));
-        var batchOptions = new TransactionalBatchItemRequestOptions
-            { EnableContentResponseOnWrite = false };
 
         var entityEntries = entries.ToList();
         var domainEvents = new List<Dictionary<string, object>>();
@@ -58,15 +56,20 @@ public class TransactionalBatchOperation
         {
             // send the json properties to the provider
             // for the json serializer to pick up
-            entry.WriteShadowProperties();
+            entry.ClearAndPushShadowPropertiesToSerializer();
 
+            var batchOptions = new TransactionalBatchItemRequestOptions
+            {
+                EnableContentResponseOnWrite = false,
+                IfNoneMatchEtag = entry.ETag
+            };
+            
             _ = entry.State switch
             {
                 EntityState.Added => batch.CreateItem(entry.Entity, batchOptions),
                 EntityState.Removed => batch.DeleteItem(entry.Id, batchOptions),
                 EntityState.Modified => batch.ReplaceItem(entry.Id, entry.Entity, batchOptions),
-                EntityState.Unchanged or
-                    EntityState.Detached => batch,
+                EntityState.Unchanged => throw new InvalidOperationException(),
                 _ => throw new InvalidOperationException()
             };
 
@@ -84,8 +87,10 @@ public class TransactionalBatchOperation
             }
         }
 
+        var createBatchOptions = new TransactionalBatchItemRequestOptions { EnableContentResponseOnWrite = false };
+        
         foreach (var eventEntry in domainEvents)
-            batch.CreateItem(eventEntry, batchOptions);
+            batch.CreateItem(eventEntry, createBatchOptions);
 
         var batchResponse = await batch
             .ExecuteAsync(cancellationToken)
@@ -96,7 +101,7 @@ public class TransactionalBatchOperation
             var entry = entityEntries[i];
             var itemResponse = batchResponse[i];
 
-            entry.ReadShadowProperties();
+            entry.PullShadowPropertiesFromSerializer();
             entry.UpdateETag(itemResponse.ETag);
         }
 

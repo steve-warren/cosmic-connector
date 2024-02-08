@@ -52,7 +52,7 @@ public record EntityConfiguration(Type EntityType)
             DomainEventAccessor = DomainEventAccessor
         };
 
-        entry.ReadShadowProperties();
+        entry.PullShadowPropertiesFromSerializer();
 
         if (state == EntityState.Added)
         {

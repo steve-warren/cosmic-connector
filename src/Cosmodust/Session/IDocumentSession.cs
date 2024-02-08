@@ -1,3 +1,4 @@
+using Cosmodust.Operations;
 using Cosmodust.Query;
 using Cosmodust.Tracking;
 
@@ -40,6 +41,14 @@ public interface IDocumentSession
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
     /// <param name="entity">The entity to update.</param>
     void Update<TEntity>(TEntity entity);
+
+    /// <summary>
+    /// Attaches the specified entity to the session.
+    /// </summary>
+    /// <typeparam name="TEntity">The type of entity to attach.</typeparam>
+    /// <param name="entity">The entity to attach.</param>
+    /// <param name="eTag">The entity tag (optional).</param>
+    void Attach<TEntity>(TEntity entity, string? eTag = null);
     /// <summary>
     /// Returns a queryable object for the specified entity type and partition key.
     /// </summary>
@@ -63,7 +72,7 @@ public interface IDocumentSession
     /// Commits all pending changes made in the session to the database.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
-    Task CommitAsync(CancellationToken cancellationToken = default);
+    Task<IDocumentOperationResult> CommitAsync(CancellationToken cancellationToken = default);
     /// <summary>
     /// Commits the pending changes in the current transaction to the database.
     /// </summary>

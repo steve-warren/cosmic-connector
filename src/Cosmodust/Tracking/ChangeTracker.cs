@@ -52,16 +52,15 @@ public sealed class ChangeTracker : IDisposable
     /// </summary>
     /// <param name="entity">The entity to register.</param>
     /// <param name="eTag">The ETag of the entity.</param>
-    public void RegisterUnchanged(object entity, string? eTag = null)
+    public void RegisterUnchanged(
+        object entity,
+        string? eTag = null)
     {
         Ensure.NotNull(entity);
 
         var entry = CreateEntry(entity, EntityState.Unchanged);
 
-        if (eTag is not null)
-            entry.WriteShadowProperty("_etag", eTag);
-
-        entry.ETag = eTag ?? entry.ReadShadowProperty<string>("_etag");
+        entry.UpdateETag(eTag);
 
         TrackEntity(entry);
     }
@@ -137,35 +136,17 @@ public sealed class ChangeTracker : IDisposable
         return _entityByTypeId.ContainsKey((Type: typeof(TEntity), Id: id));
     }
 
-    /// <summary>
-    /// Commits all changes made to the tracked entities by removing all entities
-    /// marked as removed and unchanging all entities marked as added or modified.
-    /// </summary>
-    public void Commit()
+    public void Commit(EntityEntry entry)
     {
-        for (var i = 0; i < _entries.Count; i++)
+        entry.ClearDomainEvents();
+
+        if (entry.State is EntityState.Added or EntityState.Modified)
+            entry.Unchange();
+
+        else if (entry.State == EntityState.Removed)
         {
-            var entry = _entries[i];
-
-            EntityConfiguration
-                .GetEntityConfiguration(entry.EntityType)
-                .DomainEventAccessor
-                .ClearDomainEvents(entry.Entity);
-
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                case EntityState.Modified:
-                    entry.Unchange();
-                    break;
-
-                case EntityState.Removed:
-                    UntrackEntity(entry);
-                    i--;
-                    break;
-                case EntityState.Unchanged:
-                    break;
-            }
+            _entries.Remove(entry);
+            _entityByTypeId.Remove((Type: entry.EntityType, entry.Id));
         }
     }
 
@@ -190,20 +171,13 @@ public sealed class ChangeTracker : IDisposable
         _entriesByEntity.Add(key: entry.Entity, value: entry);
     }
 
-    private void UntrackEntity(EntityEntry entry)
-    {
-        entry.Detach();
-        _entries.Remove(entry);
-        _entityByTypeId.Remove((Type: entry.EntityType, entry.Id));
-    }
-
     public void Dispose()
     {
         foreach (var entry in _entries)
         {
             try
             {
-                entry.ReadShadowProperties();
+                entry.PullShadowPropertiesFromSerializer();
             }
 
             catch

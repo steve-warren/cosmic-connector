@@ -151,52 +151,62 @@ public sealed class CosmosDatabase : IDatabase
         }
     }
 
-    public async Task CommitAsync(
-        IEnumerable<EntityEntry> entries,
+    /// <summary>
+    /// Commits the changes made to the entity entry to the Cosmos database.
+    /// </summary>
+    /// <param name="entry">The entity entry to commit.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An IDocumentOperationResult representing the result of the commit operation.</returns>
+    public async Task<OperationResult> CommitAsync(
+        EntityEntry entry,
         CancellationToken cancellationToken = default)
     {
-        Ensure.NotNull(entries);
+        Ensure.NotNull(entry);
 
-        foreach (var entry in entries)
-        {
-            if (entry.IsUnchanged)
-                continue;
+        entry.ClearAndPushShadowPropertiesToSerializer();
 
-            entry.WriteShadowProperties();
+        var operation = CreateWriteOperation(entry);
 
-            var operation = CreateWriteOperation(entry);
-            var response = await operation
-                .ExecuteAsync(cancellationToken)
+        var response = await operation
+            .ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        // pull shadow properties back before updating the etag
+        entry.PullShadowPropertiesFromSerializer();
+        entry.UpdateETag(response.ETag);
+
+        foreach(var domainEvent in entry.GetDomainEvents())
+            await CommitDomainEventAsync(entry, domainEvent, cancellationToken)
                 .ConfigureAwait(false);
 
-            Debug.WriteLine(
-                $"AddOrUpdate operation HTTP {response.StatusCode} - {response.Cost} RUs");
+        return response;
+    }
 
-            foreach(var domainEvent in
-                    entry.DomainEventAccessor.GetDomainEvents(entry.Entity))
-            {
-                var eventEntry = new Dictionary<string, object>
-                {
-                    { "id", entry.DomainEventAccessor.NextId() },
-                    { entry.PartitionKeyName, entry.PartitionKey },
-                    { "domainEvent", domainEvent }
-                };
+    private async Task CommitDomainEventAsync(
+        EntityEntry entry,
+        object domainEvent,
+        CancellationToken cancellationToken)
+    {
+        var eventEntry = new Dictionary<string, object>
+        {
+            { "id", entry.DomainEventAccessor.NextId() },
+            { entry.PartitionKeyName, entry.PartitionKey },
+            { "domainEvent", domainEvent }
+        };
 
-                var container = _containerProvider.GetOrAddContainer(entry.ContainerName);
+        var container = _containerProvider.GetOrAddContainer(entry.ContainerName);
 
-                var createItemOperation = new CreateItemOperation(
-                    container,
-                    eventEntry,
-                    entry.PartitionKey);
+        var createItemOperation = new CreateItemOperation(
+            container,
+            eventEntry,
+            entry.PartitionKey);
 
-                response = await createItemOperation
-                    .ExecuteAsync(cancellationToken)
-                    .ConfigureAwait(false);
+        var response = await createItemOperation
+            .ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-                Debug.WriteLine(
-                    $"AddOrUpdate operation HTTP {response.StatusCode} - {response.Cost} RUs");
-            }
-        }
+        Debug.WriteLine(
+            $"AddOrUpdate operation HTTP {response.StatusCode} - {response.Cost} RUs");
     }
 
     public async Task CommitTransactionAsync(
@@ -213,7 +223,7 @@ public sealed class CosmosDatabase : IDatabase
             .ConfigureAwait(false);
     }
 
-    private ICosmosWriteOperation CreateWriteOperation(EntityEntry entry)
+    private IDocumentWriteOperation CreateWriteOperation(EntityEntry entry)
     {
         var container = _containerProvider.GetOrAddContainer(entry.ContainerName);
 
@@ -221,7 +231,12 @@ public sealed class CosmosDatabase : IDatabase
         {
             EntityState.Added => new CreateItemOperation(container, entry.Entity, entry.PartitionKey),
             EntityState.Removed => new DeleteItemOperation(container, entry.Id, entry.PartitionKey),
-            EntityState.Modified => new ReplaceItemOperation(container, entry.Entity, entry.Id, entry.PartitionKey),
+            EntityState.Modified => new ReplaceDocumentOperation(
+                container,
+                entry.Entity,
+                entry.Id,
+                entry.PartitionKey,
+                entry.ETag),
             _ => throw new NotImplementedException()
         };
     }

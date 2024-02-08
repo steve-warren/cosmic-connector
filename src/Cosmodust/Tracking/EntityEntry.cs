@@ -14,10 +14,10 @@ public sealed class EntityEntry
     public required Type EntityType { get; init; }
     public required ShadowPropertyProvider Provider { get; init; }
     public required DomainEventAccessor DomainEventAccessor { get; init; }
-    public string? ETag { get; set; }
+    public string? ETag { get; private set; }
     public IDictionary<string, object?> ShadowProperties { get; private set; }
         = new Dictionary<string, object?>();
-    public EntityState State { get; set; } = EntityState.Detached;
+    public EntityState State { get; set; } = EntityState.Unchanged;
 
     public bool IsModified => State == EntityState.Modified;
     public bool IsRemoved => State == EntityState.Removed;
@@ -49,10 +49,7 @@ public sealed class EntityEntry
     public void Unchange() =>
         State = EntityState.Unchanged;
 
-    public void Detach() =>
-        State = EntityState.Detached;
-
-    public void UpdateETag(string eTag)
+    public void UpdateETag(string? eTag)
     {
         ETag = eTag;
         ShadowProperties["_etag"] = eTag;
@@ -72,7 +69,7 @@ public sealed class EntityEntry
     /// <summary>
     /// Reads JSON properties from the provider for the current entity.
     /// </summary>
-    public void ReadShadowProperties()
+    public void PullShadowPropertiesFromSerializer()
     {
         Debug.Assert(Entity != null);
         ShadowProperties = Provider.RemoveAll(Entity) ?? ShadowProperties;
@@ -82,7 +79,7 @@ public sealed class EntityEntry
     /// <summary>
     /// Writes the JSON properties of the entity to the provider for serialization.
     /// </summary>
-    public void WriteShadowProperties()
+    public void ClearAndPushShadowPropertiesToSerializer()
     {
         Debug.Assert(Entity != null);
 
@@ -97,4 +94,10 @@ public sealed class EntityEntry
             ShadowProperties = ShadowPropertyProvider.EmptyShadowProperties;
         }
     }
+
+    public IEnumerable<object> GetDomainEvents()
+        => DomainEventAccessor.GetDomainEvents(Entity);
+
+    public void ClearDomainEvents()
+        => DomainEventAccessor.ClearDomainEvents(Entity);
 }

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Runtime.CompilerServices;
+using Azure;
 using Cosmodust.Linq;
 using Cosmodust.Operations;
 using Cosmodust.Query;
@@ -34,11 +35,18 @@ public sealed class MockDatabase : IDatabase
         _entities.Add((entity.GetType(), id), entity);
     }
 
-    public Task CommitAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)
+    public Task<OperationResult> CommitAsync(EntityEntry entry, CancellationToken cancellationToken = default)
     {
         CommitWasCalled = true;
 
-        return Task.CompletedTask;
+        return Task.FromResult(new OperationResult
+        {
+            Entity = entry.Entity,
+            EntityType = entry.EntityType,
+            StatusCode = HttpStatusCode.OK,
+            ETag = "",
+            Cost = 0.00
+        });
     }
 
     public Task CommitTransactionAsync(IEnumerable<EntityEntry> entries, CancellationToken cancellationToken = default)

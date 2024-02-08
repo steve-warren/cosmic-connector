@@ -257,7 +257,6 @@ public class DocumentStoreTests
         await session.CommitAsync();
 
         session.ChangeTracker.Entries.Should().HaveCount(0, because: "we should have no entities in the change tracker");
-        trackedEntity.State.Should().Be(EntityState.Detached, because: "we should have the entity in the detached state");
     }
 
     [Fact]
@@ -305,31 +304,6 @@ public class DocumentStoreTests
         _ = await session.FindAsync<ReminderList>("id", "id");
 
         session.ChangeTracker.Entries[0].State.Should().Be(EntityState.Unchanged, because: "we should have one entity in the change tracker in the unchanged state after finding it");
-    }
-
-    [Fact]
-    public async Task Call_To_SaveChanges_Should_Call_Database()
-    {
-        var entity = new ReminderList("id");
-
-        var database = new MockDatabase();
-        database.Add("id", entity);
-
-        var documentStore = CreateStore(database, builder =>
-            {
-                builder.DefineEntity<ReminderList>()
-                       .WithId(e => e.Id)
-                       .WithPartitionKey(e => e.Id)
-                       .ToContainer("db");
-            });
-
-        var session = documentStore.CreateSession();
-
-        _ = await session.FindAsync<ReminderList>("id", "id");
-
-        await session.CommitAsync();
-
-        database.CommitWasCalled.Should().BeTrue(because: "we should have called the database's CommitAsync method");
     }
 
     [Fact]

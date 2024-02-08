@@ -179,12 +179,12 @@ public class EntityBuilder<TEntity> : IEntityBuilder where TEntity : class
     }
 
     /// <summary>
-    /// Adds a JSON property to the entity builder.
+    /// Adds a shadow property to the entity builder.
     /// </summary>
     /// <typeparam name="TProperty">The type of the property.</typeparam>
     /// <param name="propertyName">The name of the property.</param>
     /// <returns>The entity builder instance.</returns>
-    public EntityBuilder<TEntity> WithJsonProperty<TProperty>(string propertyName)
+    public EntityBuilder<TEntity> WithShadowProperty<TProperty>(string propertyName)
     {
         Ensure.NotNullOrWhiteSpace(propertyName);
 

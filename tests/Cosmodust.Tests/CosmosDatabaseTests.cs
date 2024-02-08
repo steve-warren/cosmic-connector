@@ -7,6 +7,7 @@ using Cosmodust.Cosmos.Tests.Domain.Blogs;
 using Cosmodust.Extensions;
 using Cosmodust.Json;
 using Cosmodust.Linq;
+using Cosmodust.Operations;
 using Cosmodust.Query;
 using Cosmodust.Serialization;
 using Cosmodust.Store;
@@ -65,7 +66,7 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
 
         modelBuilder.DefineEntity<BlogPostComment>()
             .WithId(e => e.Id)
-            .WithJsonProperty<DateTime>("createdOn")
+            .WithShadowProperty<DateTime>("createdOn")
             .WithPartitionKey(e => e.PostId)
             .ToContainer("blogPosts");
 
@@ -179,6 +180,106 @@ public class CosmosDatabaseTests : IClassFixture<CosmosTextFixture>
         readEntity.Should().NotBeSameAs(updatedEntity, because: "the entity should be a different instance since it is from a different session");
         readEntity.Should().NotBeNull(because: "we should be able to find the entity we just updated");
         readEntity!.Name.Should().Be(updatedEntity.Name, because: "we should have updated the entity name");
+    }
+    
+    [Fact]
+    public async Task Can_Update_And_Attach_Existing_Entity_In_Separate_Session_Without_ETag_Value()
+    {
+        var entityId = Guid.NewGuid().ToString();
+
+        // create new entity
+        var entity = new AccountPlan(id: entityId);
+        var writeSession = _store.CreateSession();
+
+        writeSession.Store(entity);
+        await writeSession.CommitAsync();
+
+        // attach entity to separate session
+        var updateSession = _store.CreateSession();
+        var attachEntity = new AccountPlan(id: entityId)
+        {
+            Name = "Updated Plan"
+        };
+
+        updateSession.Attach(attachEntity);
+        
+        var entry = updateSession.Entity(attachEntity);
+
+        entry.Entity.Should().BeSameAs(attachEntity, because: "the entity should be the instance we just attached.");
+        entry.Id.Should().Be(entityId, because: "the id should be set.");
+        entry.State.Should().Be(EntityState.Unchanged, because: "an attached entity's state should be 'unchanged'.");
+
+        // mark the entity for update
+        updateSession.Update(attachEntity);
+        
+        await updateSession.CommitAsync();
+
+        var readSession = _store.CreateSession();
+        var readEntity = await readSession.FindAsync<AccountPlan>(entity.Id, entity.Id);
+
+        readEntity.Should().NotBeSameAs(attachEntity, because: "the entity should be a different instance since it is from a different session");
+        readEntity.Should().NotBeNull(because: "we should be able to find the entity we just updated");
+        readEntity!.Name.Should().Be(attachEntity.Name, because: "we should have updated the entity name");
+    }
+
+    [Fact]
+    public async Task Can_Update_Entity_With_Same_ETag_Values()
+    {
+        var entityId = Guid.NewGuid().ToString();
+
+        // create new entity
+        var entity = new AccountPlan(id: entityId);
+
+        var writeSession = _store.CreateSession();
+        writeSession.Store(entity);
+        await writeSession.CommitAsync();
+
+        var writeSessionEntry = writeSession.Entity(entity);
+
+        // attach entity to separate session with etag
+        var attachSession = _store.CreateSession();
+        attachSession.Attach(
+            entity,
+            writeSessionEntry.ETag);
+        
+        var attachSessionEntry = attachSession.Entity(entity);
+
+        attachSessionEntry.ETag.Should().Be(writeSessionEntry.ETag, because: "no modifications to the entity were made therefore the eTags should match.");
+
+        attachSession.Update(entity);
+
+        await attachSession.CommitAsync();
+        
+        attachSessionEntry.ETag.Should().NotBe(writeSessionEntry.ETag, because: "modifications were made therefore a new eTag should exist.");
+    }
+    
+    [Fact]
+    public async Task Prevent_Entity_Update_With_Different_ETag_Values_Outside_Transaction()
+    {
+        var entityId = Guid.NewGuid().ToString();
+
+        // create new entity
+        var entity = new AccountPlan(id: entityId);
+
+        var writeSession = _store.CreateSession();
+        writeSession.Store(entity);
+        await writeSession.CommitAsync();
+
+        var writeSessionEntry = writeSession.Entity(entity);
+
+        // attach entity to separate session with etag
+        var attachSession = _store.CreateSession();
+        attachSession.Attach(
+            entity,
+            eTag: "000");
+        
+        var attachSessionEntry = attachSession.Entity(entity);
+        attachSession.Update(entity);
+
+        var result = await attachSession.CommitAsync();
+
+        result.Should()
+            .BeOfType<ConcurrencyConflictDocumentOperationResult>(because: "concurrency conflict should be detected.");
     }
 
     [Fact]
