@@ -120,20 +120,26 @@ public sealed class CosmosDatabase : IDatabase
     }
 
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(
-        SqlQuery<TEntity> query,
+        string containerName,
+        string partitionKey,
+        string sql,
+        IEnumerable<(string Name, object? Value)>? parameters = default,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        Ensure.NotNull(query);
+        Ensure.NotNullOrWhiteSpace(containerName);
+        Ensure.NotNullOrWhiteSpace(partitionKey);
+        Ensure.NotNullOrWhiteSpace(sql);
+        
+        var queryDefinition = new QueryDefinition(sql);
 
-        var queryDefinition = new QueryDefinition(query.Sql);
+        if (parameters is not null)
+            foreach (var parameter in parameters)
+                queryDefinition.WithParameter(name: parameter.Name, value: parameter.Value);
 
-        foreach (var parameter in query.Parameters)
-            queryDefinition.WithParameter(name: parameter.Name, value: parameter.Value);
-
-        var container = _containerProvider.GetOrAddContainer(query.EntityConfiguration.ContainerName);
+        var container = _containerProvider.GetOrAddContainer(containerName);
 
         var queryRequestOptions =
-            new QueryRequestOptions { PartitionKey = new PartitionKey(query.PartitionKey) };
+            new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKey) };
 
         using var feed = container.GetItemQueryIterator<TEntity>(
             queryDefinition,

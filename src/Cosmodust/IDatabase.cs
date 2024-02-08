@@ -17,8 +17,12 @@ public interface IDatabase
     IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(
         CosmodustLinqQuery<TEntity> query,
         CancellationToken cancellationToken = default);
+
     IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(
-        SqlQuery<TEntity> query,
+        string containerName,
+        string partitionKey,
+        string sql,
+        IEnumerable<(string Name, object? Value)>? parameters = default,
         CancellationToken cancellationToken = default);
     Task<OperationResult> CommitAsync(
         EntityEntry entry,

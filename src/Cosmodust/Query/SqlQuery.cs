@@ -60,7 +60,12 @@ public class SqlQuery<TEntity>
     public async IAsyncEnumerable<TEntity> ToAsyncEnumerable(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var items = Database.ToAsyncEnumerable(this, cancellationToken);
+        var items = Database.ToAsyncEnumerable<TEntity>(
+            containerName: this.EntityConfiguration.ContainerName,
+            partitionKey: this.PartitionKey,
+            sql: this.Sql,
+            parameters: this.Parameters,
+            cancellationToken);
 
         await foreach (var item in items)
         {
@@ -70,5 +75,25 @@ public class SqlQuery<TEntity>
 
             yield return item;
         }
+    }
+
+    public async Task<List<TEntity>> ToListAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var list = new List<TEntity>();
+
+        await foreach(var item in ToAsyncEnumerable(cancellationToken))
+            list.Add(item);
+
+        return list;
+    }
+
+    public async Task<TEntity?> FirstOrDefaultAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await foreach (var item in ToAsyncEnumerable(cancellationToken))
+            return item;
+
+        return default;
     }
 }

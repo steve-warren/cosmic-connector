@@ -35,6 +35,12 @@ public sealed class MockDatabase : IDatabase
         _entities.Add((entity.GetType(), id), entity);
     }
 
+    public IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(string containerName, string partitionKey, string sql,
+        IEnumerable<(string Name, object? Value)>? parameters = default, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<OperationResult> CommitAsync(EntityEntry entry, CancellationToken cancellationToken = default)
     {
         CommitWasCalled = true;
@@ -71,10 +77,5 @@ public sealed class MockDatabase : IDatabase
             await Task.Yield();
             yield return entity;
         }
-    }
-
-    public IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(SqlQuery<TEntity> query, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
     }
 }
